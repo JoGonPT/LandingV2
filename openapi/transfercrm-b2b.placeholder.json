@@ -1,0 +1,758 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TransferCRM B2B Booking API",
+    "version": "2.0.0",
+    "summary": "Headless booking engine for chauffeur and VIP transfer operators.",
+    "description": "The B2B Booking API v2 lets hotels, travel agencies, OTAs and any external\nsystem create and manage chauffeur bookings programmatically. Every request\nis authenticated with a per-tenant API key — generate yours in the\n**Developer** section of your TransferCRM dashboard.\n\n## Key features\n\n- **Idempotent bookings** — pass `external_reference` and retries return the\n  existing booking instead of creating duplicates.\n- **Auto-pricing** — omit `price` and the system quotes from your pricing\n  rule using `distance_km`, vehicle multipliers and time surcharges.\n- **HMAC-signed webhooks** — subscribe to order lifecycle events and verify\n  every delivery via `X-Webhook-Signature` (SHA-256 of `timestamp.body`).\n- **CORS-ready** — all `/api/v2/*` endpoints accept cross-origin requests,\n  so you can call them straight from a browser.\n\n## Rate limits\n\nEach API key is limited to **60 requests per minute**. Exceeding this\nreturns HTTP 429 with a `Retry-After` header.\n\n## Error shape\n\nValidation errors follow Laravel convention:\n\n```json\n{ \"message\": \"The given data was invalid.\", \"errors\": { \"field\": [\"...\"] } }\n```\n\nAuth failures return `401`, rate limit `429`, business logic errors `422`.",
+    "contact": {
+      "name": "TransferCRM Support",
+      "email": "support@transfercrm.com",
+      "url": "https://transfercrm.com"
+    },
+    "license": {
+      "name": "Proprietary",
+      "url": "https://transfercrm.com/terms"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{slug}.transfercrm.com/api",
+      "description": "Tenant server. Replace {slug} with your TransferCRM subdomain.",
+      "variables": {
+        "slug": {
+          "default": "demo",
+          "description": "Your tenant subdomain (e.g. \"demo\" for demo.transfercrm.com)"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Pricing",
+      "description": "Availability checks and price quotes"
+    },
+    {
+      "name": "Bookings",
+      "description": "Create, inspect and cancel bookings"
+    }
+  ],
+  "security": [
+    {
+      "BearerApiKey": []
+    }
+  ],
+  "paths": {
+    "/v2/availability": {
+      "get": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "getAvailability",
+        "summary": "Check vehicle availability and starting prices",
+        "description": "Returns active vehicle types matching passenger count with an estimated price for each. If `distance_km` is supplied the price is fully computed; otherwise it represents the starting fare (base fee + vehicle multiplier + time surcharge).",
+        "parameters": [
+          {
+            "name": "pickup_location",
+            "in": "query",
+            "required": true,
+            "description": "Pickup address",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Warsaw Chopin Airport"
+          },
+          {
+            "name": "dropoff_location",
+            "in": "query",
+            "required": true,
+            "description": "Dropoff address",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Marriott Warsaw"
+          },
+          {
+            "name": "pickup_date",
+            "in": "query",
+            "required": true,
+            "description": "ISO-8601 pickup datetime, must be in the future",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "2026-06-01T14:00:00Z"
+          },
+          {
+            "name": "passengers",
+            "in": "query",
+            "required": false,
+            "description": "Number of passengers (1–50)",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 2
+          },
+          {
+            "name": "distance_km",
+            "in": "query",
+            "required": false,
+            "description": "Known trip distance in kilometres",
+            "schema": {
+              "type": "number"
+            },
+            "example": 12.5
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AvailabilityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v2/quote": {
+      "post": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "postQuote",
+        "summary": "Get a detailed price quote",
+        "description": "Calculates a final price for the given route, vehicle and pickup date with a full breakdown (base fee, per-km rate, vehicle multiplier, time surcharge, minimum fare).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Full price breakdown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/QuoteResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v2/book": {
+      "post": {
+        "tags": [
+          "Bookings"
+        ],
+        "operationId": "postBook",
+        "summary": "Create a booking",
+        "description": "Creates a new transfer booking. Idempotent on `external_reference` — repeating the same value returns the existing booking with HTTP 200 instead of creating a duplicate.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotency hit — existing booking returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingEnvelope"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Booking created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v2/bookings/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          },
+          "description": "Booking ID returned by POST /v2/book"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "operationId": "getBooking",
+        "summary": "Get booking status and assignment",
+        "description": "Returns the current status, driver/vehicle assignment and flight tracking state for a single booking.",
+        "responses": {
+          "200": {
+            "description": "Booking detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDetailEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Booking not found or belongs to another tenant"
+          }
+        }
+      }
+    },
+    "/v2/bookings/{id}/cancel": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Bookings"
+        ],
+        "operationId": "postCancelBooking",
+        "summary": "Cancel a booking",
+        "description": "Cancels a booking and fires the `order.cancelled` webhook. Returns 422 if the booking is already completed or cancelled.",
+        "responses": {
+          "200": {
+            "description": "Booking cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "booking_id": {
+                          "type": "integer"
+                        },
+                        "order_number": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "cancelled"
+                          ]
+                        },
+                        "cancelled_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Booking not found"
+          },
+          "422": {
+            "description": "Booking already completed or cancelled"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "TransferCRM API Key (tcrm_...)",
+        "description": "Pass your API key as `Authorization: Bearer tcrm_...`. Alternatively use the `X-API-Key` header."
+      }
+    },
+    "schemas": {
+      "AvailabilityResponse": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "description": "True when at least one vehicle type matches"
+          },
+          "pickup_location": {
+            "type": "string"
+          },
+          "dropoff_location": {
+            "type": "string"
+          },
+          "pickup_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "passengers": {
+            "type": "integer"
+          },
+          "vehicle_types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "vehicle_type": {
+                  "type": "string",
+                  "example": "sedan"
+                },
+                "seats_available": {
+                  "type": "integer"
+                },
+                "estimated_price": {
+                  "type": "number",
+                  "format": "float",
+                  "nullable": true
+                },
+                "currency": {
+                  "type": "string",
+                  "example": "EUR"
+                },
+                "includes_distance": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "QuoteRequest": {
+        "type": "object",
+        "required": [
+          "pickup_location",
+          "dropoff_location",
+          "pickup_date",
+          "distance_km"
+        ],
+        "properties": {
+          "pickup_location": {
+            "type": "string",
+            "example": "Warsaw Chopin Airport"
+          },
+          "dropoff_location": {
+            "type": "string",
+            "example": "Marriott Warsaw"
+          },
+          "pickup_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "distance_km": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "vehicle_type": {
+            "type": "string",
+            "nullable": true,
+            "example": "sedan"
+          },
+          "passengers": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 50
+          }
+        }
+      },
+      "QuoteResponse": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "number",
+            "format": "float"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "distance_km": {
+            "type": "number"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "breakdown": {
+            "type": "object",
+            "properties": {
+              "base_fee": {
+                "type": "number"
+              },
+              "per_km_rate": {
+                "type": "number"
+              },
+              "per_min_rate": {
+                "type": "number"
+              },
+              "vehicle_multiplier": {
+                "type": "number"
+              },
+              "time_surcharge": {
+                "type": "number"
+              },
+              "minimum_fare": {
+                "type": "number"
+              }
+            }
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BookingRequest": {
+        "type": "object",
+        "required": [
+          "pickup_location",
+          "dropoff_location",
+          "pickup_date",
+          "passenger_name"
+        ],
+        "properties": {
+          "pickup_location": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "dropoff_location": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "pickup_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "passenger_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "passenger_phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "passenger_email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "flight_number": {
+            "type": "string",
+            "nullable": true,
+            "example": "LH1234"
+          },
+          "vehicle_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "passengers_count": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 50
+          },
+          "distance_km": {
+            "type": "number",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "nullable": true,
+            "description": "Explicit price — overrides auto-quote"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true,
+            "example": "EUR"
+          },
+          "meet_board_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2000
+          },
+          "external_reference": {
+            "type": "string",
+            "nullable": true,
+            "description": "Idempotency key — repeat calls return the existing booking"
+          }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "integer"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "confirmed",
+              "in_progress",
+              "completed",
+              "cancelled"
+            ]
+          },
+          "travel_status": {
+            "type": "string",
+            "nullable": true
+          },
+          "pickup_location": {
+            "type": "string"
+          },
+          "dropoff_location": {
+            "type": "string"
+          },
+          "pickup_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "distance_km": {
+            "type": "number",
+            "nullable": true
+          },
+          "flight_number": {
+            "type": "string",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string"
+          },
+          "tracking_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "external_reference": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "BookingDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Booking"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "driver": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              },
+              "vehicle": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "registration": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  }
+                }
+              },
+              "flight_status": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "BookingEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Booking"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "BookingDetailEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BookingDetail"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "The given data was invalid."
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing or invalid API key",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Request body failed validation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests — 60/minute per API key",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait before retrying",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Full integration guide",
+    "url": "https://127.0.0.1:8080/developer"
+  }
+}

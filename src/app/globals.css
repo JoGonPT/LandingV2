@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --gold: #D4AF37;
+  --gray-light: #F3F3F3;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Reserve Transfer Widget - Responsive Styles */
+#booking-widget-container {
+  position: relative;
+  width: 100%;
+  background: white !important;
+}
+
+#booking-widget-container iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+  border: none !important;
+  border-radius: 16px !important;
+  min-height: 600px;
+}
+
+#booking-widget-container > div,
+#booking-widget-container > section {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 640px) {
+  #booking-widget-container iframe {
+    min-height: 800px;
+  }
+}

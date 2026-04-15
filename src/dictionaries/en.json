@@ -1,0 +1,184 @@
+{
+    "common": {
+        "back": "← Back to home",
+        "reserve": "Book",
+        "faq": "FAQ",
+        "privacy": "Privacy",
+        "contact": "Contact",
+        "loading": "Loading...",
+        "copyright": "© {year} Way2Go. All rights reserved."
+    },
+    "hero": {
+        "badge": "Premium Transfer Service",
+        "title": "Your Reliable Worldwide Airport Transfers",
+        "subtitle": "Premium private transport service with professional drivers and guaranteed punctuality.",
+        "cta": "Book Now"
+    },
+    "booking": {
+        "title": "Make your Booking",
+        "route": "Route",
+        "pickup": "Pickup location",
+        "dropoff": "Destination",
+        "datetime": "Date and Time",
+        "date": "Date",
+        "time": "Time",
+        "details": "Details",
+        "passengers": "Passengers",
+        "luggage": "Luggage",
+        "distanceKm": "Trip distance (km)",
+        "flight": "Flight Number (Optional)",
+        "childSeat": "Child seat",
+        "contactInfo": "Contact Information",
+        "name": "Full Name",
+        "email": "E-mail",
+        "whatsapp": "WhatsApp / Mobile",
+        "gdpr": {
+            "text": "I accept the privacy policy and terms of service.",
+            "link": "privacy policy"
+        },
+        "submit": "Send Booking",
+        "checkout": {
+            "chooseVehicle": "Continue",
+            "continueToPay": "Continue to payment",
+            "loadingVehicles": "Checking availability…",
+            "loadingCheckout": "Preparing secure checkout…",
+            "totalToPay": "Total to pay",
+            "confirmPay": "Confirm and pay",
+            "processing": "Processing…",
+            "back": "Back",
+            "noVehicles": "No vehicles are available for this trip. Try another time or contact us.",
+            "stripeMissing": "Online payment is not available yet. Please contact us to book.",
+            "breakdownTitle": "Price breakdown",
+            "breakdown": {
+                "baseFee": "Base fee",
+                "perKm": "Per km",
+                "perMin": "Per minute",
+                "vehicleMultiplier": "Vehicle multiplier",
+                "timeSurcharge": "Time surcharge",
+                "minimumFare": "Minimum fare"
+            }
+        },
+        "success": {
+            "title": "Booking confirmed!",
+            "message": "Thank you — your Way2Go transfer is booked.",
+            "close": "Close"
+        },
+        "errors": {
+            "generic": "Could not submit your booking. Please try again.",
+            "gdpr": "You must accept the privacy policy."
+        }
+    },
+    "faq": {
+        "title": "Frequently Asked Questions",
+        "items": [
+            {
+                "question": "How can I cancel my reservation?",
+                "answer": "You can cancel for free up to 24 hours before the service. Between 12h and 24h, 50% will be charged. Less than 12 hours, the full amount will be retained."
+            },
+            {
+                "question": "Does the driver wait for me at the airport?",
+                "answer": "Yes, our driver will be waiting for you in the arrivals hall with a sign with your name. We monitor your flight to adjust in case of delay."
+            },
+            {
+                "question": "What are the payment methods?",
+                "answer": "We accept cash, debit/credit cards, MB Way and advance bank transfer."
+            },
+            {
+                "question": "Do the vehicles have Wi-Fi and water?",
+                "answer": "Yes, all our vehicles are equipped with free Wi-Fi, bottled water and USB chargers for your comfort."
+            },
+            {
+                "question": "What is your operating area?",
+                "answer": "We operate throughout the national territory and Spain, with special focus on Lisbon, Porto and Algarve."
+            }
+        ]
+    },
+    "footer": {
+        "contacts": "Contact",
+        "legal": "Legal Information",
+        "privacy": "Privacy Policy",
+        "terms": "Terms and Conditions",
+        "cookies": "Cookie Management",
+        "about": "About Us",
+        "aboutText": "Professional transfer service with more than 10 years of experience. Comfort, punctuality and discretion guaranteed."
+    },
+    "cookies": {
+        "text": "We use cookies to improve your experience. By continuing to browse, you agree to our ",
+        "policy": "Cookie Policy",
+        "accept": "Accept",
+        "reject": "Reject"
+    },
+    "legal": {
+        "privacy": {
+            "title": "Privacy Policy",
+            "updated": "Last update: {date}",
+            "sections": [
+                {
+                    "title": "1. Introduction",
+                    "content": "This Privacy Policy describes how we collect, use and protect your personal data in accordance with the General Data Protection Regulation (GDPR) of the European Union."
+                },
+                {
+                    "title": "2. Data Collected",
+                    "content": "We collect the following personal data:",
+                    "list": [
+                        "Full name",
+                        "E-mail address",
+                        "Telephone/WhatsApp number",
+                        "Travel information (locations, dates, times)",
+                        "Flight number (when applicable)"
+                    ]
+                },
+                {
+                    "title": "3. Purpose of Treatment",
+                    "content": "Your data is used exclusively for:",
+                    "list": [
+                        "Process and confirm transfer reservations",
+                        "Communicate information about the service",
+                        "Improve the quality of our service",
+                        "Comply with legal and fiscal obligations"
+                    ]
+                },
+                {
+                    "title": "4. Legal Basis",
+                    "content": "The processing of your personal data is based on your express consent and the execution of the service provision contract."
+                },
+                {
+                    "title": "5. Data Sharing",
+                    "content": "Your data is not shared with third parties, except when necessary for the provision of the service (e.g. drivers) or by legal obligation."
+                }
+            ]
+        },
+        "terms": {
+            "title": "Terms and Conditions",
+            "updated": "Last update: {date}",
+            "sections": [
+                {
+                    "title": "1. Object",
+                    "content": "These terms regulate the private transfer service provided by Way2Go."
+                },
+                {
+                    "title": "2. Reservations",
+                    "content": "Reservations must be made at least 12 hours in advance. Last minute reservations are subject to availability."
+                },
+                {
+                    "title": "3. Cancellations",
+                    "content": "Free cancellations up to 24h before. Between 12h-24h 50% fee. Less than 12h no refund."
+                }
+            ]
+        },
+        "cookies": {
+            "title": "Cookie Policy",
+            "updated": "Last update: {date}",
+            "sections": [
+                {
+                    "title": "1. What are cookies?",
+                    "content": "Cookies are small text files stored on your device to improve navigation."
+                },
+                {
+                    "title": "2. How we use",
+                    "content": "We use technical cookies for the functioning of the site and analytical ones for visit statistics."
+                }
+            ]
+        }
+    }
+}

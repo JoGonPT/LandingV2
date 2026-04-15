@@ -1,0 +1,184 @@
+{
+    "common": {
+        "back": "← Voltar ao início",
+        "reserve": "Reservar",
+        "faq": "FAQ",
+        "privacy": "Privacidade",
+        "contact": "Contactar",
+        "loading": "A carregar...",
+        "copyright": "© {year} Way2Go. Todos os direitos reservados."
+    },
+    "hero": {
+        "badge": "Serviço Premium de Transfer",
+        "title": "Os Seus Transfers de Aeroporto de Confiança em Todo o Mundo",
+        "subtitle": "Serviço premium de transporte privado com motoristas profissionais e pontualidade garantida.",
+        "cta": "Reservar Agora"
+    },
+    "booking": {
+        "title": "Faça a sua Reserva",
+        "route": "Trajeto",
+        "pickup": "Local de recolha",
+        "dropoff": "Destino",
+        "datetime": "Data e Hora",
+        "date": "Data",
+        "time": "Hora",
+        "details": "Detalhes",
+        "passengers": "Passageiros",
+        "luggage": "Malas",
+        "distanceKm": "Distância do trajeto (km)",
+        "flight": "Número do Voo (Opcional)",
+        "childSeat": "Cadeira de criança",
+        "contactInfo": "Dados de Contacto",
+        "name": "Nome Completo",
+        "email": "E-mail",
+        "whatsapp": "WhatsApp / Telemóvel",
+        "gdpr": {
+            "text": "Aceito a política de privacidade e os termos de serviço.",
+            "link": "política de privacidade"
+        },
+        "submit": "Enviar Reserva",
+        "checkout": {
+            "chooseVehicle": "Continuar",
+            "continueToPay": "Ir para o pagamento",
+            "loadingVehicles": "A verificar disponibilidade…",
+            "loadingCheckout": "A preparar pagamento seguro…",
+            "totalToPay": "Total a pagar",
+            "confirmPay": "Confirmar e pagar",
+            "processing": "A processar…",
+            "back": "Voltar",
+            "noVehicles": "Não há viaturas disponíveis para este trajeto. Tente noutra hora ou contacte-nos.",
+            "stripeMissing": "O pagamento online ainda não está disponível. Contacte-nos para reservar.",
+            "breakdownTitle": "Detalhe do preço",
+            "breakdown": {
+                "baseFee": "Taxa base",
+                "perKm": "Por km",
+                "perMin": "Por minuto",
+                "vehicleMultiplier": "Multiplicador de viatura",
+                "timeSurcharge": "Sobretaxa horária",
+                "minimumFare": "Tarifa mínima"
+            }
+        },
+        "success": {
+            "title": "Reserva confirmada!",
+            "message": "Obrigado — o seu transfer Way2Go está reservado.",
+            "close": "Fechar"
+        },
+        "errors": {
+            "generic": "Não foi possível enviar a reserva. Tente novamente.",
+            "gdpr": "É necessário aceitar a política de privacidade."
+        }
+    },
+    "faq": {
+        "title": "Perguntas Frequentes",
+        "items": [
+            {
+                "question": "Como posso cancelar a minha reserva?",
+                "answer": "Pode cancelar gratuitamente até 24 horas antes do serviço. Entre as 12h e 24h, será cobrado 50%. Menos de 12 horas, o valor integral será retido."
+            },
+            {
+                "question": "O motorista espera por mim no aeroporto?",
+                "answer": "Sim, o nosso motorista estará à sua espera no átrio de chegadas com uma placa com o seu nome. Monitorizamos o seu voo para ajustar em caso de atraso."
+            },
+            {
+                "question": "Quais são os métodos de pagamento?",
+                "answer": "Aceitamos numerário, cartões de débito/crédito, MB Way e transferência bancária antecipada."
+            },
+            {
+                "question": "Os veículos têm Wi-Fi e água?",
+                "answer": "Sim, todos os nossos veículos estão equipados com Wi-Fi gratuito, garrafas de água e carregadores USB para o seu conforto."
+            },
+            {
+                "question": "Qual é a vossa área de operação?",
+                "answer": "Operamos em todo o território nacional e Espanha, com especial incidência em Lisboa, Porto e Algarve."
+            }
+        ]
+    },
+    "footer": {
+        "contacts": "Contactos",
+        "legal": "Informação Legal",
+        "privacy": "Política de Privacidade",
+        "terms": "Termos e Condições",
+        "cookies": "Gestão de Cookies",
+        "about": "Sobre Nós",
+        "aboutText": "Serviço de transfer profissional com mais de 10 anos de experiência. Conforto, pontualidade e discrição garantidos."
+    },
+    "cookies": {
+        "text": "Utilizamos cookies para melhorar a sua experiência. Ao continuar a navegar, concorda com a nossa ",
+        "policy": "Política de Cookies",
+        "accept": "Aceitar",
+        "reject": "Rejeitar"
+    },
+    "legal": {
+        "privacy": {
+            "title": "Política de Privacidade",
+            "updated": "Última atualização: {date}",
+            "sections": [
+                {
+                    "title": "1. Introdução",
+                    "content": "A presente Política de Privacidade descreve como recolhemos, utilizamos e protegemos os seus dados pessoais em conformidade com o Regulamento Geral de Proteção de Dados (RGPD) da União Europeia."
+                },
+                {
+                    "title": "2. Dados Recolhidos",
+                    "content": "Recolhemos os seguintes dados pessoais:",
+                    "list": [
+                        "Nome completo",
+                        "Endereço de e-mail",
+                        "Número de telefone/WhatsApp",
+                        "Informações de viagem (locais, datas, horários)",
+                        "Número de voo (quando aplicável)"
+                    ]
+                },
+                {
+                    "title": "3. Finalidade do Tratamento",
+                    "content": "Os seus dados são utilizados exclusivamente para:",
+                    "list": [
+                        "Processar e confirmar reservas de transfer",
+                        "Comunicar informações sobre o serviço",
+                        "Melhorar a qualidade do nosso serviço",
+                        "Cumprir obrigações legais e fiscais"
+                    ]
+                },
+                {
+                    "title": "4. Base Legal",
+                    "content": "O tratamento dos seus dados pessoais baseia-se no seu consentimento expresso e na execução do contrato de prestação de serviços."
+                },
+                {
+                    "title": "5. Partilha de Dados",
+                    "content": "Os seus dados não são partilhados com terceiros, exceto quando necessário para a prestação do serviço (ex: motoristas) ou por obrigação legal."
+                }
+            ]
+        },
+        "terms": {
+            "title": "Termos e Condições",
+            "updated": "Última atualização: {date}",
+            "sections": [
+                {
+                    "title": "1. Objeto",
+                    "content": "Estes termos regulam o serviço de transfer privado prestado pela Way2Go."
+                },
+                {
+                    "title": "2. Reservas",
+                    "content": "As reservas devem ser efetuadas com pelo menos 12 horas de antecedência. Reservas de última hora estão sujeitas a disponibilidade."
+                },
+                {
+                    "title": "3. Cancelamentos",
+                    "content": "Cancelamentos gratuitos até 24h antes. Entre 12h-24h taxa de 50%. Menos de 12h não há reembolso."
+                }
+            ]
+        },
+        "cookies": {
+            "title": "Política de Cookies",
+            "updated": "Última atualização: {date}",
+            "sections": [
+                {
+                    "title": "1. O que são cookies?",
+                    "content": "Cookies são pequenos ficheiros de texto armazenados no seu dispositivo para melhorar a navegação."
+                },
+                {
+                    "title": "2. Como usamos",
+                    "content": "Usamos cookies técnicos para o funcionamento do site e analíticos para estatísticas de visita."
+                }
+            ]
+        }
+    }
+}
