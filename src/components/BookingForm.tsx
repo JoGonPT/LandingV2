@@ -3,6 +3,7 @@
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe, type StripeElementsOptions } from "@stripe/stripe-js";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AddressAutocompleteInput } from "@/components/AddressAutocompleteInput";
 import { CheckoutPaymentStep } from "@/components/CheckoutPaymentStep";
 import type { BookingPayload, BookingLocale, CheckoutCompleteSuccess, TransferCrmVehicleOption } from "@/lib/transfercrm/types";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
@@ -377,8 +378,18 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
       {phase === "form" ? (
         <form onSubmit={loadVehicles} className="w-full h-full bg-white p-5 md:p-6 space-y-4 min-h-[600px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Input label={dict.pickup || "Pickup"} value={formData.pickup} onChange={(pickup) => setFormData((s) => ({ ...s, pickup }))} required />
-            <Input label={dict.dropoff || "Dropoff"} value={formData.dropoff} onChange={(dropoff) => setFormData((s) => ({ ...s, dropoff }))} required />
+            <AddressAutocompleteInput
+              label={dict.pickup || "Pickup"}
+              value={formData.pickup}
+              onChange={(pickup) => setFormData((s) => ({ ...s, pickup }))}
+              required
+            />
+            <AddressAutocompleteInput
+              label={dict.dropoff || "Dropoff"}
+              value={formData.dropoff}
+              onChange={(dropoff) => setFormData((s) => ({ ...s, dropoff }))}
+              required
+            />
             <Input label={dict.date || "Date"} type="date" min={today} value={formData.date} onChange={(date) => setFormData((s) => ({ ...s, date }))} required />
             <Input label={dict.time || "Time"} type="time" value={formData.time} onChange={(time) => setFormData((s) => ({ ...s, time }))} required />
             <Input

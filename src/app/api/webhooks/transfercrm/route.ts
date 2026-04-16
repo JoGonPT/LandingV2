@@ -8,7 +8,14 @@ import {
 export async function POST(request: Request) {
   const secret = process.env.TRANSFERCRM_WEBHOOK_SECRET?.trim();
   if (!secret) {
-    return NextResponse.json({ ok: false, message: "Webhook secret is not configured." }, { status: 500 });
+    return NextResponse.json(
+      {
+        ok: true,
+        ignored: true,
+        message: "Webhook secret is not configured yet.",
+      },
+      { status: 202 },
+    );
   }
 
   const rawBody = await request.text();
