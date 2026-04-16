@@ -126,6 +126,29 @@ export class TransferCrmApiClient {
       transferCrmFetch<unknown>(this.http, `/bookings/${encodeURIComponent(bookingId)}`, { method: "GET" }),
     );
   }
+
+  /** GET /v2/bookings — list assigned bookings (query keys depend on TransferCRM tenant). */
+  async listBookings(query?: Record<string, string | undefined>): Promise<unknown> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== "") params.set(k, v);
+      }
+    }
+    const qs = params.toString();
+    const path = qs ? `/bookings?${qs}` : `/bookings`;
+    return withRateLimitRetry(() => transferCrmFetch<unknown>(this.http, path, { method: "GET" }));
+  }
+
+  /** PATCH /v2/bookings/{id} — partial update (e.g. travel_status). */
+  async patchBooking(bookingId: string, body: Record<string, unknown>): Promise<unknown> {
+    return withRateLimitRetry(() =>
+      transferCrmFetch<unknown>(this.http, `/bookings/${encodeURIComponent(bookingId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    );
+  }
 }
 
 export function createTransferCrmClientFromEnv(): TransferCrmApiClient {

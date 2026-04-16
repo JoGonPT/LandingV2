@@ -39,6 +39,8 @@
         "submit": "Enviar Reserva",
         "checkout": {
             "chooseVehicle": "Continuar",
+            "vehicleStepTitle": "Escolha a sua classe",
+            "continueFromForm": "Continuar",
             "continueToPay": "Ir para o pagamento",
             "loadingVehicles": "A verificar disponibilidade…",
             "loadingCheckout": "A preparar pagamento seguro…",
@@ -49,6 +51,29 @@
             "noVehicles": "Não há viaturas disponíveis para este trajeto. Tente noutra hora ou contacte-nos.",
             "stripeMissing": "O pagamento online ainda não está disponível. Contacte-nos para reservar.",
             "breakdownTitle": "Detalhe do preço",
+            "summary": {
+                "title": "A sua viagem",
+                "route": "Trajeto",
+                "when": "Quando",
+                "vehicle": "Viatura",
+                "extras": "Extras",
+                "childSeat": "Cadeira de criança",
+                "luggage": "{n} malas",
+                "seats": "{n} lugares disponíveis",
+                "total": "Total",
+                "updating": "A atualizar preço…",
+                "pendingPrice": "Escolha uma viatura",
+                "none": "Nenhum"
+            },
+            "vehicles": {
+                "businessClass": "Classe Business",
+                "firstClass": "Primeira Classe",
+                "businessVan": "Carrinha Business",
+                "businessHint": "Classe E ou similar",
+                "firstHint": "Classe S ou similar",
+                "vanHint": "Classe V ou similar",
+                "seats": "{n} lugares disponíveis"
+            },
             "breakdown": {
                 "baseFee": "Taxa base",
                 "perKm": "Por km",
@@ -59,8 +84,10 @@
             }
         },
         "success": {
-            "title": "Reserva confirmada!",
+            "title": "Reserva confirmada",
             "message": "Obrigado — o seu transfer Way2Go está reservado.",
+            "orderLabel": "Número de encomenda Way2Go",
+            "referenceHint": "Guarde esta referência para o seu arquivo.",
             "close": "Fechar"
         },
         "errors": {

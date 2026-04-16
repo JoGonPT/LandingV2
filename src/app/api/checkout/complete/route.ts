@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
     const vehicleType = String(body.vehicleType).trim();
     const checkout = createCheckoutServiceFromEnv();
-    const booking = await checkout.finalizePaidBooking({
+    const { booking } = await checkout.finalizePaidBooking({
       payload: validated.data,
       vehicleType,
       paymentIntentId: paymentIntentId.trim(),

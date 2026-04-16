@@ -99,6 +99,9 @@ export interface BookingResponse {
 }
 
 export interface BookingDetailResponse extends BookingResponse {
+  passenger_name?: string | null;
+  passenger_phone?: string | null;
+  passenger_email?: string | null;
   driver?: { name?: string; phone?: string | null } | null;
   vehicle?: {
     name?: string;

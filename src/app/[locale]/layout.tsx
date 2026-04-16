@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "../globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 
 export function generateStaticParams() {
     return [{ locale: "pt" }, { locale: "en" }];
@@ -14,7 +12,7 @@ export const metadata: Metadata = {
     keywords: "transfer, airport, transport, portugal, chauffeur, transferes, aeroporto",
 };
 
-export default async function RootLayout({
+export default async function LocaleLayout({
     children,
     params,
 }: {
@@ -24,51 +22,50 @@ export default async function RootLayout({
     const { locale } = await params;
 
     return (
-        <html lang={locale} suppressHydrationWarning>
-            <head>
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify({
-                            "@context": "https://schema.org",
-                            "@type": "LocalBusiness",
-                            "name": "Way2Go",
-                            "description": "Serviço de transfer profissional em Portugal",
-                            "url": "https://way2go.pt",
-                            "telephone": "+351XXXXXXXXX",
-                            "address": {
-                                "@type": "PostalAddress",
-                                "streetAddress": "Lisboa",
-                                "addressLocality": "Lisboa",
-                                "addressRegion": "Lisboa",
-                                "postalCode": "1000",
-                                "addressCountry": "PT",
-                            },
-                            "geo": {
-                                "@type": "GeoCoordinates",
-                                "latitude": 38.7223,
-                                "longitude": -9.1393,
-                            },
-                            "openingHoursSpecification": {
-                                "@type": "OpeningHoursSpecification",
-                                "dayOfWeek": [
-                                    "Monday",
-                                    "Tuesday",
-                                    "Wednesday",
-                                    "Thursday",
-                                    "Friday",
-                                    "Saturday",
-                                    "Sunday"
-                                ],
-                                "opens": "00:00",
-                                "closes": "23:59",
-                            },
-                            "priceRange": "$$",
-                        }),
-                    }}
-                />
-            </head>
-            <body className={inter.className}>{children}</body>
-        </html>
+        <>
+            <LocaleHtmlLang locale={locale} />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "LocalBusiness",
+                        "name": "Way2Go",
+                        "description": "Serviço de transfer profissional em Portugal",
+                        "url": "https://way2go.pt",
+                        "telephone": "+351XXXXXXXXX",
+                        "address": {
+                            "@type": "PostalAddress",
+                            "streetAddress": "Lisboa",
+                            "addressLocality": "Lisboa",
+                            "addressRegion": "Lisboa",
+                            "postalCode": "1000",
+                            "addressCountry": "PT",
+                        },
+                        "geo": {
+                            "@type": "GeoCoordinates",
+                            "latitude": 38.7223,
+                            "longitude": -9.1393,
+                        },
+                        "openingHoursSpecification": {
+                            "@type": "OpeningHoursSpecification",
+                            "dayOfWeek": [
+                                "Monday",
+                                "Tuesday",
+                                "Wednesday",
+                                "Thursday",
+                                "Friday",
+                                "Saturday",
+                                "Sunday",
+                            ],
+                            "opens": "00:00",
+                            "closes": "23:59",
+                        },
+                        "priceRange": "$$",
+                    }),
+                }}
+            />
+            {children}
+        </>
     );
 }

@@ -39,6 +39,8 @@
         "submit": "Send Booking",
         "checkout": {
             "chooseVehicle": "Continue",
+            "vehicleStepTitle": "Choose your class",
+            "continueFromForm": "Continue",
             "continueToPay": "Continue to payment",
             "loadingVehicles": "Checking availability…",
             "loadingCheckout": "Preparing secure checkout…",
@@ -49,6 +51,29 @@
             "noVehicles": "No vehicles are available for this trip. Try another time or contact us.",
             "stripeMissing": "Online payment is not available yet. Please contact us to book.",
             "breakdownTitle": "Price breakdown",
+            "summary": {
+                "title": "Your trip",
+                "route": "Route",
+                "when": "When",
+                "vehicle": "Vehicle",
+                "extras": "Extras",
+                "childSeat": "Child seat",
+                "luggage": "{n} bags",
+                "seats": "{n} seats available",
+                "total": "Total",
+                "updating": "Updating price…",
+                "pendingPrice": "Select a vehicle",
+                "none": "None"
+            },
+            "vehicles": {
+                "businessClass": "Business Class",
+                "firstClass": "First Class",
+                "businessVan": "Business Van",
+                "businessHint": "E-Class or similar",
+                "firstHint": "S-Class or similar",
+                "vanHint": "V-Class or similar",
+                "seats": "{n} seats available"
+            },
             "breakdown": {
                 "baseFee": "Base fee",
                 "perKm": "Per km",
@@ -59,8 +84,10 @@
             }
         },
         "success": {
-            "title": "Booking confirmed!",
+            "title": "Booking confirmed",
             "message": "Thank you — your Way2Go transfer is booked.",
+            "orderLabel": "Way2Go order number",
+            "referenceHint": "Save this reference for your records.",
             "close": "Close"
         },
         "errors": {

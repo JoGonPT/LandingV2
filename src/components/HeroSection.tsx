@@ -50,7 +50,7 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
                             </div>
 
                             {/* Booking Form Container */}
-                            <div className="relative w-full rounded-xl border border-gray-100 shadow-sm overflow-hidden min-h-[550px] lg:min-h-[600px]">
+                            <div className="relative w-full min-h-[550px] overflow-hidden border border-neutral-200 bg-white lg:min-h-[600px]">
                                 <BookingForm dict={bookingDict} locale={locale} />
                             </div>
                         </div>

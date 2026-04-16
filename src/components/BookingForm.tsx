@@ -4,7 +4,10 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe, type StripeElementsOptions } from "@stripe/stripe-js";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AddressAutocompleteInput } from "@/components/AddressAutocompleteInput";
+import { BookingStickySummary } from "@/components/booking/BookingStickySummary";
+import { VehicleClassSelector } from "@/components/booking/VehicleClassSelector";
 import { CheckoutPaymentStep } from "@/components/CheckoutPaymentStep";
+import { useDebouncedQuote } from "@/hooks/useDebouncedQuote";
 import type { BookingPayload, BookingLocale, CheckoutCompleteSuccess, TransferCrmVehicleOption } from "@/lib/transfercrm/types";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
 import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
@@ -34,10 +37,12 @@ interface BookingFormProps {
     whatsapp?: string;
     gdpr?: { text?: string };
     submit?: string;
-    success?: { title?: string; message?: string; close?: string };
+    success?: { title?: string; message?: string; close?: string; orderLabel?: string; referenceHint?: string };
     errors?: { generic?: string; gdpr?: string };
     checkout?: {
       chooseVehicle?: string;
+      vehicleStepTitle?: string;
+      continueFromForm?: string;
       continueToPay?: string;
       loadingVehicles?: string;
       loadingCheckout?: string;
@@ -48,6 +53,29 @@ interface BookingFormProps {
       noVehicles?: string;
       stripeMissing?: string;
       breakdownTitle?: string;
+      summary?: {
+        title?: string;
+        route?: string;
+        when?: string;
+        vehicle?: string;
+        extras?: string;
+        childSeat?: string;
+        luggage?: string;
+        seats?: string;
+        total?: string;
+        updating?: string;
+        pendingPrice?: string;
+        none?: string;
+      };
+      vehicles?: {
+        businessClass?: string;
+        firstClass?: string;
+        businessVan?: string;
+        businessHint?: string;
+        firstHint?: string;
+        vanHint?: string;
+        seats?: string;
+      };
       breakdown?: {
         baseFee?: string;
         perKm?: string;
@@ -104,6 +132,46 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
 
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() ?? "";
   const stripePromise = useMemo(() => (publishableKey ? loadStripe(publishableKey) : null), [publishableKey]);
+
+  const { quote: debouncedQuote, loading: quoteLoading } = useDebouncedQuote({
+    payload: pendingPayload,
+    vehicleType: selectedVehicle,
+    enabled: phase === "vehicles" && Boolean(pendingPayload && selectedVehicle),
+  });
+
+  const summaryLabels = useMemo(
+    () => ({
+      title: ck?.summary?.title ?? "Your trip",
+      route: ck?.summary?.route ?? "Route",
+      when: ck?.summary?.when ?? "When",
+      vehicle: ck?.summary?.vehicle ?? "Vehicle",
+      extras: ck?.summary?.extras ?? "Extras",
+      childSeat: ck?.summary?.childSeat ?? "Child seat",
+      luggage: ck?.summary?.luggage ?? "{n} bags",
+      seats: ck?.summary?.seats ?? "{n} seats",
+      total: ck?.summary?.total ?? "Total",
+      updating: ck?.summary?.updating ?? "Updating price…",
+      pendingPrice: ck?.summary?.pendingPrice ?? "—",
+      none: ck?.summary?.none ?? "—",
+      businessClass: ck?.vehicles?.businessClass ?? "Business Class",
+      firstClass: ck?.vehicles?.firstClass ?? "First Class",
+      businessVan: ck?.vehicles?.businessVan ?? "Business Van",
+    }),
+    [ck?.summary, ck?.vehicles],
+  );
+
+  const vehicleSelectorLabels = useMemo(
+    () => ({
+      businessClass: ck?.vehicles?.businessClass ?? "Business Class",
+      firstClass: ck?.vehicles?.firstClass ?? "First Class",
+      businessVan: ck?.vehicles?.businessVan ?? "Business Van",
+      businessHint: ck?.vehicles?.businessHint ?? "E-Class or similar",
+      firstHint: ck?.vehicles?.firstHint ?? "S-Class or similar",
+      vanHint: ck?.vehicles?.vanHint ?? "V-Class or similar",
+      seats: ck?.vehicles?.seats ?? "{n} seats available",
+    }),
+    [ck?.vehicles],
+  );
 
   function buildPayload(): BookingPayload | null {
     const distanceRaw = formData.distanceKm.trim();
@@ -288,7 +356,7 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
   async function startPaymentIntent() {
     setError("");
     if (!pendingPayload || !selectedVehicle) {
-      setError(ck?.chooseVehicle || "Please choose a vehicle.");
+      setError(ck?.vehicleStepTitle || "Please choose a vehicle.");
       return;
     }
 
@@ -354,14 +422,14 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
       variables: {
         colorPrimary: "#000000",
         colorBackground: "#ffffff",
-        colorText: "#111111",
+        colorText: "#0a0a0a",
         colorDanger: "#b91c1c",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        borderRadius: "6px",
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        borderRadius: "4px",
         spacingUnit: "3px",
       },
       rules: {
-        ".Input": { borderColor: "#e5e5e5", boxShadow: "none" },
+        ".Input": { borderColor: "#d4d4d4", boxShadow: "none" },
         ".Input:focus": { borderColor: "#000000", boxShadow: "0 0 0 1px #000000" },
       },
     }),
@@ -373,197 +441,273 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
       ? formatMoneyAmount(Number(checkoutSession.quote.price), checkoutSession.quote.currency, bookingLocale)
       : null;
 
+  const summaryTrip = pendingPayload ?? buildPayload();
+  const showSticky = Boolean(summaryTrip) && (phase === "form" || phase === "vehicles" || phase === "payment");
+  const stickySelectedVehicle = phase === "vehicles" || phase === "payment" ? selectedVehicle : "";
+
+  const summaryProps = summaryTrip
+    ? {
+        phase,
+        pickup: summaryTrip.route.pickup,
+        dropoff: summaryTrip.route.dropoff,
+        date: summaryTrip.route.date,
+        time: summaryTrip.route.time,
+        selectedVehicleType: stickySelectedVehicle,
+        vehicleOptions,
+        childSeat: summaryTrip.route.childSeat,
+        luggage: summaryTrip.details.luggage,
+        debouncedQuote,
+        quoteLoading,
+        paymentQuote: checkoutSession?.quote ?? null,
+        paymentCurrency: checkoutSession?.currency ?? "EUR",
+        labels: summaryLabels,
+        locale: bookingLocale,
+      }
+    : null;
+
   return (
-    <div className="w-full h-full relative">
-      {phase === "form" ? (
-        <form onSubmit={loadVehicles} className="w-full h-full bg-white p-5 md:p-6 space-y-4 min-h-[600px]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <AddressAutocompleteInput
-              label={dict.pickup || "Pickup"}
-              value={formData.pickup}
-              onChange={(pickup) => setFormData((s) => ({ ...s, pickup }))}
-              locale={bookingLocale}
-              required
-            />
-            <AddressAutocompleteInput
-              label={dict.dropoff || "Dropoff"}
-              value={formData.dropoff}
-              onChange={(dropoff) => setFormData((s) => ({ ...s, dropoff }))}
-              locale={bookingLocale}
-              required
-            />
-            <Input label={dict.date || "Date"} type="date" min={today} value={formData.date} onChange={(date) => setFormData((s) => ({ ...s, date }))} required />
-            <Input label={dict.time || "Time"} type="time" value={formData.time} onChange={(time) => setFormData((s) => ({ ...s, time }))} required />
-            <Input
-              label={dict.passengers || "Passengers"}
-              type="number"
-              min="1"
-              value={String(formData.passengers)}
-              onChange={(value) => setFormData((s) => ({ ...s, passengers: Number(value || 1) }))}
-              required
-            />
-            <Input
-              label={dict.luggage || "Luggage"}
-              type="number"
-              min="0"
-              value={String(formData.luggage)}
-              onChange={(value) => setFormData((s) => ({ ...s, luggage: Number(value || 0) }))}
-              required
-            />
-            <Input
-              label={dict.distanceKm || "Trip distance (km)"}
-              type="number"
-              min="0"
-              step="0.1"
-              value={formData.distanceKm}
-              onChange={(value) => setFormData((s) => ({ ...s, distanceKm: value }))}
-              required
-            />
-          </div>
+    <div className="relative w-full">
+      <div className={`flex flex-col gap-8 lg:flex-row lg:items-start ${showSticky ? "pb-28 lg:pb-0" : ""}`}>
+        <div className="min-w-0 flex-1">
+          {phase === "form" ? (
+            <form onSubmit={loadVehicles} className="min-h-[560px] space-y-5 bg-white p-5 md:p-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <AddressAutocompleteInput
+                  label={dict.pickup || "Pickup"}
+                  value={formData.pickup}
+                  onChange={(pickup) => setFormData((s) => ({ ...s, pickup }))}
+                  locale={bookingLocale}
+                  required
+                />
+                <AddressAutocompleteInput
+                  label={dict.dropoff || "Dropoff"}
+                  value={formData.dropoff}
+                  onChange={(dropoff) => setFormData((s) => ({ ...s, dropoff }))}
+                  locale={bookingLocale}
+                  required
+                />
+                <Input
+                  label={dict.date || "Date"}
+                  type="date"
+                  min={today}
+                  value={formData.date}
+                  onChange={(date) => setFormData((s) => ({ ...s, date }))}
+                  required
+                />
+                <Input
+                  label={dict.time || "Time"}
+                  type="time"
+                  value={formData.time}
+                  onChange={(time) => setFormData((s) => ({ ...s, time }))}
+                  required
+                />
+                <Input
+                  label={dict.passengers || "Passengers"}
+                  type="number"
+                  min="1"
+                  value={String(formData.passengers)}
+                  onChange={(value) => setFormData((s) => ({ ...s, passengers: Number(value || 1) }))}
+                  required
+                />
+                <Input
+                  label={dict.luggage || "Luggage"}
+                  type="number"
+                  min="0"
+                  value={String(formData.luggage)}
+                  onChange={(value) => setFormData((s) => ({ ...s, luggage: Number(value || 0) }))}
+                  required
+                />
+                <Input
+                  label={dict.distanceKm || "Trip distance (km)"}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={formData.distanceKm}
+                  onChange={(value) => setFormData((s) => ({ ...s, distanceKm: value }))}
+                  required
+                />
+              </div>
 
-          <Input label={dict.flight || "Flight"} value={formData.flight} onChange={(flight) => setFormData((s) => ({ ...s, flight }))} />
-          <Input label={dict.name || "Name"} value={formData.name} onChange={(name) => setFormData((s) => ({ ...s, name }))} required />
-          <Input label={dict.email || "Email"} type="email" value={formData.email} onChange={(email) => setFormData((s) => ({ ...s, email }))} required />
-          <Input label={dict.whatsapp || "Phone"} value={formData.phone} onChange={(phone) => setFormData((s) => ({ ...s, phone }))} required />
+              <Input label={dict.flight || "Flight"} value={formData.flight} onChange={(flight) => setFormData((s) => ({ ...s, flight }))} />
+              <Input label={dict.name || "Name"} value={formData.name} onChange={(name) => setFormData((s) => ({ ...s, name }))} required />
+              <Input
+                label={dict.email || "Email"}
+                type="email"
+                value={formData.email}
+                onChange={(email) => setFormData((s) => ({ ...s, email }))}
+                required
+              />
+              <Input label={dict.whatsapp || "Phone"} value={formData.phone} onChange={(phone) => setFormData((s) => ({ ...s, phone }))} required />
 
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={formData.childSeat}
-              onChange={(event) => setFormData((s) => ({ ...s, childSeat: event.target.checked }))}
-            />
-            {dict.childSeat || "Child seat"}
-          </label>
+              <label className="flex items-center gap-3 text-sm text-neutral-800">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-neutral-400 text-black focus:ring-black"
+                  checked={formData.childSeat}
+                  onChange={(event) => setFormData((s) => ({ ...s, childSeat: event.target.checked }))}
+                />
+                {dict.childSeat || "Child seat"}
+              </label>
 
-          <label className="flex items-start gap-2 text-sm text-gray-700">
-            <input type="checkbox" checked={gdprAccepted} onChange={(event) => setGdprAccepted(event.target.checked)} />
-            <span>{dict.gdpr?.text || "I accept the privacy policy."}</span>
-          </label>
+              <label className="flex items-start gap-3 text-sm text-neutral-800">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-neutral-400 text-black focus:ring-black"
+                  checked={gdprAccepted}
+                  onChange={(event) => setGdprAccepted(event.target.checked)}
+                />
+                <span>{dict.gdpr?.text || "I accept the privacy policy."}</span>
+              </label>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-black text-white rounded-lg py-3 font-semibold disabled:opacity-60"
-          >
-            {isLoading ? ck?.loadingVehicles || "Loading…" : ck?.chooseVehicle || "Continue"}
-          </button>
-        </form>
-      ) : null}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full min-h-[52px] bg-black text-sm font-semibold tracking-wide text-white disabled:opacity-50"
+              >
+                {isLoading ? ck?.loadingVehicles || "Loading…" : ck?.continueFromForm ?? ck?.chooseVehicle ?? "Continue"}
+              </button>
+            </form>
+          ) : null}
 
-      {phase === "vehicles" ? (
-        <div className="w-full h-full bg-white p-5 md:p-6 space-y-4 min-h-[600px]">
-          <h3 className="text-sm font-semibold text-black">{ck?.chooseVehicle || "Choose your vehicle"}</h3>
-          <ul className="space-y-2">
-            {vehicleOptions.map((v) => (
-              <li key={v.vehicleType}>
-                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="vehicle"
-                    checked={selectedVehicle === v.vehicleType}
-                    onChange={() => setSelectedVehicle(v.vehicleType)}
-                  />
-                  <span className="text-sm text-gray-900 capitalize flex-1">{v.vehicleType}</span>
-                  <span className="text-sm text-gray-600">
-                    {formatMoneyAmount(v.estimatedPrice, v.currency, bookingLocale)}
-                    {v.seatsAvailable ? ` · ${v.seatsAvailable} seats` : ""}
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              type="button"
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm"
-              onClick={() => {
-                setPhase("form");
-                setError("");
-              }}
-            >
-              {ck?.back || "Back"}
-            </button>
-            <button
-              type="button"
-              disabled={isLoading || !selectedVehicle}
-              className="flex-1 bg-black text-white rounded-lg py-3 font-semibold disabled:opacity-60"
-              onClick={() => void startPaymentIntent()}
-            >
-              {isLoading ? ck?.loadingCheckout || "Preparing checkout…" : ck?.continueToPay || "Continue to payment"}
-            </button>
-          </div>
+          {phase === "vehicles" ? (
+            <div className="min-h-[560px] space-y-6 bg-white p-5 md:p-6">
+              <h3 className="text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
+                {ck?.vehicleStepTitle || "Choose your vehicle"}
+              </h3>
+              <VehicleClassSelector
+                options={vehicleOptions}
+                selected={selectedVehicle}
+                onSelect={setSelectedVehicle}
+                locale={bookingLocale}
+                labels={vehicleSelectorLabels}
+              />
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  className="min-h-[48px] border border-neutral-300 px-4 text-sm font-medium text-neutral-900"
+                  onClick={() => {
+                    setPhase("form");
+                    setError("");
+                  }}
+                >
+                  {ck?.back || "Back"}
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoading || !selectedVehicle}
+                  className="min-h-[52px] flex-1 bg-black text-sm font-semibold tracking-wide text-white disabled:opacity-50"
+                  onClick={() => void startPaymentIntent()}
+                >
+                  {isLoading ? ck?.loadingCheckout || "Preparing checkout…" : ck?.continueToPay || "Continue to payment"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {phase === "payment" && checkoutSession && pendingPayload && stripePromise ? (
+            <div className="min-h-[560px] space-y-6 bg-white p-5 md:p-6">
+              <div className="space-y-1 border-b border-neutral-200 pb-4">
+                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500">
+                  {ck?.totalToPay || "Total to pay"}
+                </p>
+                <p className="text-3xl font-light tracking-tight text-black tabular-nums">{quotePrice}</p>
+              </div>
+
+              <PriceBreakdown
+                quote={checkoutSession.quote}
+                labels={ck?.breakdown}
+                title={ck?.breakdownTitle}
+                locale={bookingLocale}
+              />
+
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret: checkoutSession.clientSecret,
+                  appearance: elementsAppearance,
+                }}
+                key={checkoutSession.clientSecret}
+              >
+                <CheckoutPaymentStep
+                  paymentIntentId={checkoutSession.paymentIntentId}
+                  payload={pendingPayload}
+                  vehicleType={selectedVehicle}
+                  labels={{
+                    pay: ck?.confirmPay || "Confirm and pay",
+                    processing: ck?.processing || "Processing…",
+                    back: ck?.back || "Back",
+                  }}
+                  onSuccess={handlePaidSuccess}
+                  onBack={() => {
+                    setPhase("vehicles");
+                    setCheckoutSession(null);
+                    setError("");
+                    try {
+                      sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                />
+              </Elements>
+            </div>
+          ) : null}
         </div>
-      ) : null}
 
-      {phase === "payment" && checkoutSession && pendingPayload && stripePromise ? (
-        <div className="w-full h-full bg-white p-5 md:p-6 space-y-4 min-h-[600px]">
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{ck?.totalToPay || "Total to pay"}</p>
-            <p className="text-2xl font-semibold text-black">{quotePrice}</p>
+        {showSticky && summaryProps ? (
+          <div className="hidden w-full shrink-0 lg:block lg:w-[min(100%,320px)]">
+            <div className="lg:sticky lg:top-28">
+              <BookingStickySummary variant="desktop" {...summaryProps} />
+            </div>
           </div>
+        ) : null}
+      </div>
 
-          <PriceBreakdown
-            quote={checkoutSession.quote}
-            labels={ck?.breakdown}
-            title={ck?.breakdownTitle}
-            locale={bookingLocale}
-          />
-
-          <Elements
-            stripe={stripePromise}
-            options={{
-              clientSecret: checkoutSession.clientSecret,
-              appearance: elementsAppearance,
-            }}
-            key={checkoutSession.clientSecret}
-          >
-            <CheckoutPaymentStep
-              paymentIntentId={checkoutSession.paymentIntentId}
-              payload={pendingPayload}
-              vehicleType={selectedVehicle}
-              labels={{
-                pay: ck?.confirmPay || "Confirm and pay",
-                processing: ck?.processing || "Processing…",
-                back: ck?.back || "Back",
-              }}
-              onSuccess={handlePaidSuccess}
-              onBack={() => {
-                setPhase("vehicles");
-                setCheckoutSession(null);
-                setError("");
-                try {
-                  sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
-                } catch {
-                  /* ignore */
-                }
-              }}
-            />
-          </Elements>
+      {showSticky && summaryProps ? (
+        <div className="fixed bottom-0 left-0 right-0 z-20 lg:hidden">
+          <BookingStickySummary variant="mobile" {...summaryProps} />
         </div>
       ) : null}
 
       {showSuccess && successData ? (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center p-5 z-10">
-          <div className="text-center max-w-md space-y-3">
-            <h3 className="text-lg font-bold text-black">{dict.success?.title || "Thank you!"}</h3>
-            <p className="text-sm text-gray-600">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/95 p-6 backdrop-blur-sm">
+          <div className="w-full max-w-md space-y-8 border border-neutral-200 bg-white p-8 text-center shadow-sm">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+                {dict.success?.title || "Thank you"}
+              </p>
+              {successData.orderReference ? (
+                <div className="mt-6 border-y border-black py-6">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+                    {dict.success?.orderLabel || "Way2Go order number"}
+                  </p>
+                  <p className="mt-3 text-4xl font-light tracking-tight text-black">{successData.orderReference}</p>
+                  {dict.success?.referenceHint ? (
+                    <p className="mt-2 text-xs text-neutral-500">{dict.success.referenceHint}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            <p className="text-sm leading-relaxed text-neutral-600">
               {dict.success?.message || "Your transfer is confirmed."}
             </p>
             {successData.totalPaidFormatted ? (
-              <p className="text-sm font-medium text-black">{successData.totalPaidFormatted}</p>
+              <p className="text-sm font-medium tabular-nums text-black">{successData.totalPaidFormatted}</p>
             ) : null}
-            <p className="text-xs text-gray-500 text-left rounded-lg bg-gray-50 p-3">
+            <p className="rounded-lg border border-neutral-100 bg-neutral-50 p-4 text-left text-xs text-neutral-600">
               {successData.trip.pickup} → {successData.trip.dropoff}
               <br />
-              {successData.trip.date} · {successData.trip.time}
+              <span className="tabular-nums">
+                {successData.trip.date} · {successData.trip.time}
+              </span>
             </p>
             {successData.trackingUrl ? (
               <a
                 href={successData.trackingUrl}
-                className="inline-block text-sm text-black underline"
+                className="inline-block text-sm text-black underline underline-offset-4"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -571,7 +715,8 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
               </a>
             ) : null}
             <button
-              className="px-4 py-2 rounded-md bg-black text-white w-full"
+              type="button"
+              className="w-full min-h-[48px] bg-black text-sm font-semibold tracking-wide text-white"
               onClick={() => {
                 setShowSuccess(false);
                 setSuccessData(null);
@@ -640,11 +785,11 @@ function PriceBreakdown({
   if (rows.length === 0) return null;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-3 text-sm space-y-2">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{title || "Price breakdown"}</p>
-      <ul className="space-y-1">
+    <div className="border border-neutral-200 p-4 text-sm">
+      <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500">{title || "Price breakdown"}</p>
+      <ul className="mt-3 space-y-2">
         {rows.map((r) => (
-          <li key={r.label} className="flex justify-between gap-4 text-gray-700">
+          <li key={r.label} className="flex justify-between gap-4 text-neutral-700">
             <span>{r.label}</span>
             <span className="tabular-nums">{r.value}</span>
           </li>
@@ -673,9 +818,9 @@ function Input({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm text-gray-700 mb-1">{label}</span>
+      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-neutral-500">{label}</span>
       <input
-        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+        className="min-h-[44px] w-full border border-neutral-300 bg-white px-3 text-sm text-black outline-none transition-colors focus:border-black"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         type={type}

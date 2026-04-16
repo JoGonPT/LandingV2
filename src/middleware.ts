@@ -13,35 +13,48 @@ function getLocale(request: NextRequest): string | undefined {
 
   const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
 
-  const locale = matchLocale(languages, locales, defaultLocale);
+  return matchLocale(languages, locales, defaultLocale);
+}
 
-  return locale;
+function isDriversHost(request: NextRequest): boolean {
+  const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
+  return host.startsWith("drivers.");
 }
 
 export function middleware(request: NextRequest) {
-    const pathname = request.nextUrl.pathname;
+  const pathname = request.nextUrl.pathname;
 
-    // Check if there is any supported locale in the pathname
-    const pathnameIsMissingLocale = locales.every(
-        (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  if (
+    pathname.startsWith("/drivers-pwa") ||
+    pathname.startsWith("/partner") ||
+    pathname.startsWith("/internal") ||
+    pathname.startsWith("/master-admin")
+  ) {
+    return NextResponse.next();
+  }
+
+  if (isDriversHost(request)) {
+    const suffix = pathname === "/" ? "/" : pathname;
+    const url = request.nextUrl.clone();
+    url.pathname = `/drivers-pwa${suffix === "/" ? "/" : suffix}`;
+    return NextResponse.rewrite(url);
+  }
+
+  const pathnameIsMissingLocale = locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
+  );
+
+  if (pathnameIsMissingLocale) {
+    const locale = getLocale(request);
+    return NextResponse.redirect(
+      new URL(
+        `/${locale}${pathname === "/" ? "" : pathname}`,
+        request.url,
+      ),
     );
-
-    // Redirect if there is no locale
-    if (pathnameIsMissingLocale) {
-        const locale = getLocale(request);
-
-        // e.g. incoming request is /products
-        // The new URL is now /en/products
-        return NextResponse.redirect(
-            new URL(
-                `/${locale}${pathname.startsWith("/") ? "" : "/"}${pathname}`,
-                request.url
-            )
-        );
-    }
+  }
 }
 
 export const config = {
-    // Matcher ignoring `/_next/` and `/api/`
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

@@ -28,7 +28,35 @@ export function externalReferenceForWay2GoOrder(internalOrderId: string): string
   return `w2g_ord_${createHash("sha256").update(internalOrderId).digest("hex").slice(0, 20)}`;
 }
 
+export function b2bSafeSegment(raw: string, max: number): string {
+  const s = raw
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, max);
+  return s.length > 0 ? s : "Partner";
+}
+
+/** Prefix for filtering partner bookings from `GET /v2/bookings` (external_reference starts with this). */
+export function partnerExternalReferencePrefix(partnerRefId: string): string {
+  return `B2B-REF-${b2bSafeSegment(partnerRefId, 48)}-`;
+}
+
+/** Account / invoice bookings: B2B-REF-[PartnerID]-[Timestamp] (not used when paying with Stripe — PI id wins). */
+export function resolveB2BExternalReference(payload: BookingPayload): string {
+  const p = payload.partnerBooking;
+  if (!p?.partnerDisplayName?.trim()) {
+    throw new Error("partnerBooking.partnerDisplayName is required for B2B reference.");
+  }
+  const idSeg = p.partnerRefId?.trim() ? b2bSafeSegment(p.partnerRefId, 48) : b2bSafeSegment(p.partnerDisplayName, 48);
+  return `B2B-REF-${idSeg}-${Date.now()}`.slice(0, 200);
+}
+
 export function resolveExternalReference(payload: BookingPayload): string {
+  const pb = payload.partnerBooking;
+  if (pb?.partnerDisplayName?.trim() && pb.paymentMethod === "account") {
+    return resolveB2BExternalReference(payload);
+  }
   const internal = payload.internalOrderId?.trim();
   if (internal) return externalReferenceForWay2GoOrder(internal);
   return createExternalReference(payload);
@@ -66,6 +94,21 @@ export function mapBookingPayloadToQuoteRequest(payload: BookingPayload, vehicle
 
 function buildNotesFromPayload(payload: BookingPayload): string | undefined {
   const parts: string[] = [];
+  const pb = payload.partnerBooking;
+  if (pb?.partnerDisplayName?.trim()) {
+    if (pb.paymentMethod) {
+      const pay = pb.paymentMethod === "stripe" ? "Stripe" : "Account";
+      parts.push(`B2B Booking - Partner: ${pb.partnerDisplayName.trim()} - Payment: ${pay}`);
+    } else {
+      parts.push(`B2B | Partner: ${pb.partnerDisplayName.trim()}`);
+    }
+    if (pb.internalReference?.trim()) {
+      parts.push(`Partner internal ref: ${pb.internalReference.trim()}`);
+    }
+    if (pb.vipRequests?.trim()) {
+      parts.push(`VIP / special requests: ${pb.vipRequests.trim()}`);
+    }
+  }
   if (payload.details.notes?.trim()) {
     parts.push(payload.details.notes.trim());
   }
