@@ -3,11 +3,17 @@ import type { NextConfig } from "next";
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' blob: https://js.stripe.com https://m.stripe.network",
+  "script-src-elem 'self' 'unsafe-inline' blob: https://js.stripe.com https://m.stripe.network",
+  "worker-src 'self' blob:",
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://m.stripe.network",
+  "child-src 'self' blob: https://js.stripe.com https://hooks.stripe.com https://m.stripe.network",
   "connect-src 'self' https://api.stripe.com https://m.stripe.network",
   "img-src 'self' data: https:",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
 ].join("; ");
 
 const nextConfig: NextConfig = {
