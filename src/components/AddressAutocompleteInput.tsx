@@ -11,10 +11,17 @@ interface AddressAutocompleteInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  locale?: string;
   required?: boolean;
 }
 
-export function AddressAutocompleteInput({ label, value, onChange, required = false }: AddressAutocompleteInputProps) {
+export function AddressAutocompleteInput({
+  label,
+  value,
+  onChange,
+  locale = "en",
+  required = false,
+}: AddressAutocompleteInputProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<Suggestion[]>([]);
@@ -30,7 +37,9 @@ export function AddressAutocompleteInput({ label, value, onChange, required = fa
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/places/autocomplete?q=${encodeURIComponent(q)}`);
+        const response = await fetch(
+          `/api/places/autocomplete?q=${encodeURIComponent(q)}&locale=${encodeURIComponent(locale)}`,
+        );
         const data = (await response.json().catch(() => null)) as
           | { success?: boolean; suggestions?: Suggestion[] }
           | null;

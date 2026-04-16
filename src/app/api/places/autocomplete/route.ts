@@ -5,6 +5,11 @@ interface PlaceSuggestion {
   label: string;
 }
 
+interface PlacesRequestContext {
+  languageCode: string;
+  countries: string[];
+}
+
 function createRequestId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -13,7 +18,27 @@ function sanitizeQuery(q: string | null): string {
   return (q ?? "").trim().slice(0, 120);
 }
 
-async function fetchGoogleSuggestions(input: string, apiKey: string): Promise<PlaceSuggestion[]> {
+function parseCountriesFromEnv(): string[] {
+  const raw = (process.env.PLACES_COUNTRIES ?? "pt,es").trim();
+  return raw
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter((item) => /^[a-z]{2}$/.test(item))
+    .slice(0, 5);
+}
+
+function resolveLanguageCode(locale: string | null): string {
+  const normalized = (locale ?? "").trim().toLowerCase();
+  if (normalized.startsWith("pt")) return "pt-PT";
+  if (normalized.startsWith("es")) return "es-ES";
+  return "en-GB";
+}
+
+async function fetchGoogleSuggestions(
+  input: string,
+  apiKey: string,
+  context: PlacesRequestContext,
+): Promise<PlaceSuggestion[]> {
   const response = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
     method: "POST",
     headers: {
@@ -23,12 +48,15 @@ async function fetchGoogleSuggestions(input: string, apiKey: string): Promise<Pl
     },
     body: JSON.stringify({
       input,
-      languageCode: "en",
+      languageCode: context.languageCode,
+      includedRegionCodes: context.countries,
       includeQueryPredictions: false,
     }),
   });
 
-  if (!response.ok) return [];
+  if (!response.ok) {
+    throw new Error(`Google places autocomplete failed with status ${response.status}`);
+  }
   const json = (await response.json()) as {
     suggestions?: Array<{
       placePrediction?: {
@@ -49,12 +77,17 @@ async function fetchGoogleSuggestions(input: string, apiKey: string): Promise<Pl
     .slice(0, 6);
 }
 
-async function fetchNominatimSuggestions(input: string): Promise<PlaceSuggestion[]> {
+async function fetchNominatimSuggestions(
+  input: string,
+  context: PlacesRequestContext,
+): Promise<PlaceSuggestion[]> {
   const params = new URLSearchParams({
     q: input,
     format: "jsonv2",
     addressdetails: "0",
     limit: "6",
+    "accept-language": context.languageCode,
+    countrycodes: context.countries.join(","),
   });
 
   const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
@@ -84,14 +117,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true as const, suggestions: [] }, { status: 200 });
     }
 
+    const context: PlacesRequestContext = {
+      languageCode: resolveLanguageCode(searchParams.get("locale")),
+      countries: parseCountriesFromEnv(),
+    };
+
     const provider = (process.env.PLACES_PROVIDER ?? "nominatim").trim().toLowerCase();
     const googleApiKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
 
     let suggestions: PlaceSuggestion[] = [];
     if (provider === "google" && googleApiKey) {
-      suggestions = await fetchGoogleSuggestions(query, googleApiKey);
+      try {
+        suggestions = await fetchGoogleSuggestions(query, googleApiKey, context);
+      } catch {
+        // Quota/auth/network errors on Google should not break UX; fallback to OSM.
+        suggestions = await fetchNominatimSuggestions(query, context);
+      }
     } else {
-      suggestions = await fetchNominatimSuggestions(query);
+      suggestions = await fetchNominatimSuggestions(query, context);
     }
 
     return NextResponse.json({ success: true as const, suggestions }, { status: 200 });

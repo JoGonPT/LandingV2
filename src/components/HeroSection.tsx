@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import BookingForm from "./BookingForm";
 
 interface HeroSectionProps {
@@ -79,16 +78,17 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
                         </div>
                     </div>
 
-                    {/* RIGHT: Image — Highly balanced with the left column */}
+                    {/* RIGHT: Visual panel (no missing static asset dependency) */}
                     <div className="hidden lg:block w-full lg:w-1/2 relative">
-                        <div className="relative h-full w-full rounded-[2.5rem] overflow-hidden shadow-2xl">
-                            <Image 
-                                src="/hero-main.webp" 
-                                alt="Profession Transfer Chauffeur Service"
-                                fill
-                                className="object-cover"
-                                priority
-                            />
+                        <div className="relative h-full w-full rounded-[2.5rem] overflow-hidden shadow-2xl bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-600">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_46%),radial-gradient(circle_at_80%_85%,rgba(255,255,255,0.18),transparent_48%)]" />
+                            <div className="absolute inset-0 flex items-end p-10">
+                                <p className="text-white/90 text-xl font-semibold leading-relaxed max-w-md">
+                                    {isPT
+                                        ? "Viagens premium com pontualidade e conforto."
+                                        : "Premium rides with punctuality and comfort."}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

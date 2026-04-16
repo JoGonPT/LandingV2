@@ -382,12 +382,14 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
               label={dict.pickup || "Pickup"}
               value={formData.pickup}
               onChange={(pickup) => setFormData((s) => ({ ...s, pickup }))}
+              locale={bookingLocale}
               required
             />
             <AddressAutocompleteInput
               label={dict.dropoff || "Dropoff"}
               value={formData.dropoff}
               onChange={(dropoff) => setFormData((s) => ({ ...s, dropoff }))}
+              locale={bookingLocale}
               required
             />
             <Input label={dict.date || "Date"} type="date" min={today} value={formData.date} onChange={(date) => setFormData((s) => ({ ...s, date }))} required />
