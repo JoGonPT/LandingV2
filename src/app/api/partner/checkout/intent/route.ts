@@ -36,13 +36,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: validated.message, requestId: rid }, { status: 400 });
     }
 
-    if (validated.data.details.distanceKm === undefined) {
-      return NextResponse.json(
-        { success: false, message: "Trip distance (km) is required.", requestId: rid },
-        { status: 400 },
-      );
-    }
-
     const vehicleType = body.vehicleType.trim();
     if (!isNonEmptyString(vehicleType)) {
       return NextResponse.json({ success: false, message: "Vehicle is required.", requestId: rid }, { status: 400 });

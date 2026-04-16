@@ -23,18 +23,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (validated.data.details.distanceKm === undefined) {
-      return NextResponse.json(
-        {
-          success: false as const,
-          code: "DISTANCE_REQUIRED",
-          message: "Trip distance (km) is required to confirm your price and pay online.",
-          requestId,
-        },
-        { status: 400 },
-      );
-    }
-
     if (!isNonEmptyString(body.vehicleType)) {
       return NextResponse.json(
         { success: false as const, code: "VEHICLE_REQUIRED", message: "Please choose a vehicle.", requestId },

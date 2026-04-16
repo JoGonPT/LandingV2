@@ -22,13 +22,6 @@ export async function POST(request: Request) {
       return NextResponse.json(asError(validated.message, requestId), { status: 400 });
     }
 
-    if (validated.data.details.distanceKm === undefined) {
-      return NextResponse.json(
-        asError("Trip distance (km) is required for a price quote.", requestId),
-        { status: 400 },
-      );
-    }
-
     const quote = await postQuoteForBooking(validated.data, body.vehicleType);
     return NextResponse.json({ success: true as const, data: quote }, { status: 200 });
   } catch (error) {

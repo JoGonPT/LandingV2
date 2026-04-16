@@ -119,7 +119,6 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
     time: "",
     passengers: 1,
     luggage: 0,
-    distanceKm: "",
     flight: "",
     childSeat: false,
     name: "",
@@ -174,18 +173,19 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
   );
 
   function buildPayload(): BookingPayload | null {
-    const distanceRaw = formData.distanceKm.trim();
-    const distanceKm =
-      distanceRaw !== "" && Number.isFinite(Number(distanceRaw)) ? Number(distanceRaw) : undefined;
-    if (distanceKm === undefined) return null;
+    const pickup = formData.pickup.trim();
+    const dropoff = formData.dropoff.trim();
+    const date = formData.date.trim();
+    const time = formData.time.trim();
+    if (!pickup || !dropoff || !date || !time) return null;
 
     return {
       locale: bookingLocale,
       route: {
-        pickup: formData.pickup.trim(),
-        dropoff: formData.dropoff.trim(),
-        date: formData.date.trim(),
-        time: formData.time.trim(),
+        pickup,
+        dropoff,
+        date,
+        time,
         flightNumber: formData.flight.trim() || undefined,
         childSeat: formData.childSeat,
       },
@@ -193,7 +193,6 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
         passengers: Number(formData.passengers),
         luggage: Number(formData.luggage),
         notes: formData.notes.trim() || undefined,
-        distanceKm,
       },
       contact: {
         fullName: formData.name.trim(),
@@ -212,7 +211,6 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
       time: "",
       passengers: 1,
       luggage: 0,
-      distanceKm: "",
       flight: "",
       childSeat: false,
       name: "",
@@ -310,8 +308,8 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
     if (!payload) {
       setError(
         bookingLocale === "pt"
-          ? "Indique a distância do trajeto (km) para continuar."
-          : "Please enter trip distance (km) to continue.",
+          ? "Preencha origem, destino, data e hora para continuar."
+          : "Please fill pickup, dropoff, date, and time to continue.",
       );
       return;
     }
@@ -441,8 +439,8 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
       ? formatMoneyAmount(Number(checkoutSession.quote.price), checkoutSession.quote.currency, bookingLocale)
       : null;
 
-  const summaryTrip = pendingPayload ?? buildPayload();
-  const showSticky = Boolean(summaryTrip) && (phase === "form" || phase === "vehicles" || phase === "payment");
+  const summaryTrip = pendingPayload;
+  const showSticky = Boolean(summaryTrip) && (phase === "vehicles" || phase === "payment");
   const stickySelectedVehicle = phase === "vehicles" || phase === "payment" ? selectedVehicle : "";
 
   const summaryProps = summaryTrip
@@ -515,15 +513,6 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
                   min="0"
                   value={String(formData.luggage)}
                   onChange={(value) => setFormData((s) => ({ ...s, luggage: Number(value || 0) }))}
-                  required
-                />
-                <Input
-                  label={dict.distanceKm || "Trip distance (km)"}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={formData.distanceKm}
-                  onChange={(value) => setFormData((s) => ({ ...s, distanceKm: value }))}
                   required
                 />
               </div>

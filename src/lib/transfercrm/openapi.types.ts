@@ -40,7 +40,8 @@ export interface QuoteRequest {
   pickup_location: string;
   dropoff_location: string;
   pickup_date: Iso8601DateTime;
-  distance_km: number;
+  /** When omitted, TransferCRM may derive distance from pickup/dropoff. */
+  distance_km?: number;
   vehicle_type?: string | null;
   passengers?: number | null;
 }

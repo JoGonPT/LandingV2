@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createExternalReference,
+  mapBookingPayloadToQuoteRequest,
   mapBookingToB2bBookBody,
   resolveB2BExternalReference,
   toIsoDateTimeUtc,
@@ -32,6 +33,18 @@ const sample: BookingPayload = {
 };
 
 describe("transfercrm B2B mapping", () => {
+  it("maps quote request without distance when payload omits distanceKm", () => {
+    const p: BookingPayload = {
+      ...sample,
+      details: { passengers: 2, luggage: 3, notes: "Cliente VIP" },
+    };
+    const body = mapBookingPayloadToQuoteRequest(p, "business");
+    expect(body.pickup_location).toBe("Lisboa Aeroporto");
+    expect(body.dropoff_location).toBe("Cascais");
+    expect(body.distance_km).toBeUndefined();
+    expect(body.vehicle_type).toBe("business");
+  });
+
   it("maps booking to v2 /book body", () => {
     const body = mapBookingToB2bBookBody(sample);
     expect(body.pickup_location).toBe("Lisboa Aeroporto");

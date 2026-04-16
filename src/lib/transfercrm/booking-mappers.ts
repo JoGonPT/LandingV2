@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { BookingPayload } from "@/lib/transfercrm/types";
-import type { AvailabilityQuery, BookingRequest, QuoteRequest } from "@/lib/transfercrm/openapi.types";
+import type { AvailabilityQuery, BookingRequest, QuoteRequest, QuoteResponse } from "@/lib/transfercrm/openapi.types";
 
 export function toIsoDateTimeUtc(date: string, time: string): string {
   const local = new Date(`${date}T${time}:00`);
@@ -78,17 +78,27 @@ export function mapBookingPayloadToAvailabilityQuery(payload: BookingPayload): A
 export function mapBookingPayloadToQuoteRequest(payload: BookingPayload, vehicleType?: string): QuoteRequest {
   const base = mapBookingPayloadToAvailabilityQuery(payload);
   const distance = payload.details.distanceKm;
-  if (distance === undefined || distance === null || Number.isNaN(distance)) {
-    throw new Error("distanceKm is required for TransferCRM quotes.");
-  }
   const vt = vehicleType ?? payload.vehicleType;
   return {
     pickup_location: base.pickup_location,
     dropoff_location: base.dropoff_location,
     pickup_date: base.pickup_date,
-    distance_km: distance,
+    ...(distance !== undefined && distance !== null && !Number.isNaN(distance) ? { distance_km: distance } : {}),
     ...(vt ? { vehicle_type: vt } : {}),
     ...(base.passengers !== undefined ? { passengers: base.passengers } : {}),
+  };
+}
+
+/** After a CRM quote, persist computed distance on the payload when the client did not supply it. */
+export function mergeQuoteDistanceIntoPayload(payload: BookingPayload, quote: QuoteResponse): BookingPayload {
+  if (payload.details.distanceKm !== undefined) return payload;
+  const raw = quote.distance_km;
+  if (raw == null) return payload;
+  const d = Number(raw);
+  if (!Number.isFinite(d)) return payload;
+  return {
+    ...payload,
+    details: { ...payload.details, distanceKm: d },
   };
 }
 

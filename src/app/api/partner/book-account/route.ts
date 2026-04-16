@@ -7,6 +7,7 @@ import { getPartnerCreditStore } from "@/lib/partner/credit/factory";
 import { PartnerAuthError, requirePartnerSession } from "@/lib/partner/require-partner-session";
 import { ensurePartnerCreditRow } from "@/lib/partner/sync-credit";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
+import { mergeQuoteDistanceIntoPayload } from "@/lib/transfercrm/booking-mappers";
 import { postQuoteForBooking, submitBooking, toPublicError } from "@/lib/transfercrm/client";
 import type { BookingApiSuccess } from "@/lib/transfercrm/types";
 import { validateBookingPayload } from "@/lib/transfercrm/validation";
@@ -33,13 +34,6 @@ export async function POST(req: Request) {
     const validated = validateBookingPayload(body.payload);
     if (!validated.ok) {
       return NextResponse.json({ success: false, message: validated.message, requestId: rid }, { status: 400 });
-    }
-
-    if (validated.data.details.distanceKm === undefined) {
-      return NextResponse.json(
-        { success: false, message: "Trip distance (km) is required.", requestId: rid },
-        { status: 400 },
-      );
     }
 
     const merged = attachPartnerToPayload(validated.data, displayName, body.slug, {
@@ -100,8 +94,9 @@ export async function POST(req: Request) {
       );
     }
 
+    const mergedWithDistance = mergeQuoteDistanceIntoPayload(merged, quote);
     const bookPayload = {
-      ...merged,
+      ...mergedWithDistance,
       vehicleType,
       quotedPrice: { amount: priceNum, currency: currency.toUpperCase() },
     };

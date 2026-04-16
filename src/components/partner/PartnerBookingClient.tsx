@@ -102,7 +102,6 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
     time: "",
     passengers: 1,
     luggage: 0,
-    distanceKm: "",
     flight: "",
     childSeat: false,
     name: "",
@@ -256,18 +255,19 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
   }
 
   function buildPayload(): BookingPayload | null {
-    const distanceRaw = formData.distanceKm.trim();
-    const distanceKm =
-      distanceRaw !== "" && Number.isFinite(Number(distanceRaw)) ? Number(distanceRaw) : undefined;
-    if (distanceKm === undefined) return null;
+    const pickup = formData.pickup.trim();
+    const dropoff = formData.dropoff.trim();
+    const date = formData.date.trim();
+    const time = formData.time.trim();
+    if (!pickup || !dropoff || !date || !time) return null;
 
     return {
       locale: bookingLocale,
       route: {
-        pickup: formData.pickup.trim(),
-        dropoff: formData.dropoff.trim(),
-        date: formData.date.trim(),
-        time: formData.time.trim(),
+        pickup,
+        dropoff,
+        date,
+        time,
         flightNumber: formData.flight.trim() || undefined,
         childSeat: formData.childSeat,
       },
@@ -275,7 +275,6 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
         passengers: Number(formData.passengers),
         luggage: Number(formData.luggage),
         notes: formData.notes.trim() || undefined,
-        distanceKm,
       },
       contact: {
         fullName: formData.name.trim(),
@@ -384,7 +383,7 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
 
     const payload = buildPayload();
     if (!payload) {
-      setError("Please enter trip distance (km) to continue.");
+      setError("Please fill pickup, dropoff, date, and time to continue.");
       return;
     }
 
@@ -750,15 +749,6 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
               min="0"
               value={String(formData.luggage)}
               onChange={(v) => setFormData((s) => ({ ...s, luggage: Number(v || 0) }))}
-              required
-            />
-            <PartnerInput
-              label="Trip distance (km)"
-              type="number"
-              min="0"
-              step="0.1"
-              value={formData.distanceKm}
-              onChange={(v) => setFormData((s) => ({ ...s, distanceKm: v }))}
               required
             />
           </div>

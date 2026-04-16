@@ -33,13 +33,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: validated.message, requestId: rid }, { status: 400 });
     }
 
-    if (validated.data.details.distanceKm === undefined) {
-      return NextResponse.json(
-        { success: false, message: "Trip distance (km) is required.", requestId: rid },
-        { status: 400 },
-      );
-    }
-
     const merged = attachPartnerToPayload(validated.data, displayName, body.slug, {
       internalReference: body.internalReference,
       vipRequests: body.vipRequests,

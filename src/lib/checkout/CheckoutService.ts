@@ -92,6 +92,9 @@ export class CheckoutService {
 
     const amountMinor = toStripeMinorUnits(stripeMajor, currency);
 
+    const quoteDistance =
+      quote.distance_km != null && Number.isFinite(Number(quote.distance_km)) ? String(Number(quote.distance_km)) : "";
+
     const intent = await this.deps.stripe.paymentIntents.create({
       amount: amountMinor,
       currency: currency.toLowerCase(),
@@ -101,6 +104,9 @@ export class CheckoutService {
         way2go_stripe_total: String(stripeMajor),
         way2go_currency: currency.toUpperCase(),
         way2go_vehicle: vehicleType.slice(0, 500),
+        ...(payload.details.distanceKm === undefined && quoteDistance
+          ? { way2go_distance_km: quoteDistance.slice(0, 32) }
+          : {}),
         ...(partnerSlug ? { way2go_partner_slug: partnerSlug.slice(0, 200) } : {}),
         ...(partnerPricing
           ? {
@@ -163,6 +169,20 @@ export class CheckoutService {
       vehicleType,
     };
 
+    let bookingPayload = payload;
+    if (payload.details.distanceKm === undefined) {
+      const distRaw = meta.way2go_distance_km?.trim();
+      if (distRaw) {
+        const d = Number(distRaw);
+        if (Number.isFinite(d)) {
+          bookingPayload = {
+            ...payload,
+            details: { ...payload.details, distanceKm: d },
+          };
+        }
+      }
+    }
+
     const commission = Number(meta.way2go_partner_commission);
     const slug = meta.way2go_partner_slug?.trim();
     const partnerCommissionDelta =
@@ -178,7 +198,7 @@ export class CheckoutService {
     }
 
     try {
-      const booking = await this.deps.crm.postBookForPaidCheckout(payload, paid);
+      const booking = await this.deps.crm.postBookForPaidCheckout(bookingPayload, paid);
       return { booking, partnerCommissionDelta, partnerPricing };
     } catch (error) {
       if (error instanceof TransferCrmValidationFailedError) {
