@@ -4,15 +4,20 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe, type StripeElementsOptions } from "@stripe/stripe-js";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AddressAutocompleteInput } from "@/components/AddressAutocompleteInput";
+import { BookingRoutePreview } from "@/components/booking/BookingRoutePreview";
 import { BookingStickySummary } from "@/components/booking/BookingStickySummary";
 import { VehicleClassSelector } from "@/components/booking/VehicleClassSelector";
 import { CheckoutPaymentStep } from "@/components/CheckoutPaymentStep";
 import { useDebouncedQuote } from "@/hooks/useDebouncedQuote";
+import { useDebouncedRoutePreview } from "@/hooks/useDebouncedRoutePreview";
 import type { BookingPayload, BookingLocale, CheckoutCompleteSuccess, TransferCrmVehicleOption } from "@/lib/transfercrm/types";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
 import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
 
 const CHECKOUT_STORAGE_KEY = "way2go_checkout_v1";
+
+/** Sidebar + mobile sticky trip summary (off until UX is refined). */
+const BOOKING_STICKY_SUMMARY_ENABLED = false;
 
 type CheckoutSessionStored = {
   payload: BookingPayload;
@@ -31,6 +36,8 @@ interface BookingFormProps {
     luggage?: string;
     distanceKm?: string;
     flight?: string;
+    flightPlaceholder?: string;
+    contactInfo?: string;
     childSeat?: string;
     name?: string;
     email?: string;
@@ -84,6 +91,16 @@ interface BookingFormProps {
         timeSurcharge?: string;
         minimumFare?: string;
       };
+      routePreview?: {
+        title?: string;
+        loading?: string;
+        suggested?: string;
+        from?: string;
+        distanceEta?: string;
+        distanceOnly?: string;
+        etaNote?: string;
+        availabilityNote?: string;
+      };
     };
     [key: string]: unknown;
   };
@@ -135,7 +152,35 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
   const { quote: debouncedQuote, loading: quoteLoading } = useDebouncedQuote({
     payload: pendingPayload,
     vehicleType: selectedVehicle,
-    enabled: phase === "vehicles" && Boolean(pendingPayload && selectedVehicle),
+    enabled:
+      BOOKING_STICKY_SUMMARY_ENABLED && phase === "vehicles" && Boolean(pendingPayload && selectedVehicle),
+  });
+
+  const rp = ck?.routePreview;
+  const routePreviewLabels = useMemo(
+    () => ({
+      title: rp?.title ?? "Route estimate",
+      loading: rp?.loading ?? "Calculating…",
+      suggested: rp?.suggested ?? "Suggested:",
+      from: rp?.from ?? "From",
+      distanceEta: rp?.distanceEta ?? "{km} km · ~{min} min",
+      distanceOnly: rp?.distanceOnly ?? "{km} km",
+      etaNote:
+        rp?.etaNote ??
+        "Drive time is indicative. Final price is confirmed when you choose a vehicle class.",
+      availabilityNote:
+        rp?.availabilityNote ?? "Indicative amount; exact price depends on the class you select.",
+    }),
+    [rp],
+  );
+
+  const { loading: routePreviewLoading, error: routePreviewError, data: routePreviewData } = useDebouncedRoutePreview({
+    pickup: formData.pickup,
+    dropoff: formData.dropoff,
+    date: formData.date,
+    time: formData.time,
+    passengers: formData.passengers,
+    enabled: phase === "form",
   });
 
   const summaryLabels = useMemo(
@@ -439,29 +484,30 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
       ? formatMoneyAmount(Number(checkoutSession.quote.price), checkoutSession.quote.currency, bookingLocale)
       : null;
 
-  const summaryTrip = pendingPayload;
+  const summaryTrip = BOOKING_STICKY_SUMMARY_ENABLED ? pendingPayload : null;
   const showSticky = Boolean(summaryTrip) && (phase === "vehicles" || phase === "payment");
   const stickySelectedVehicle = phase === "vehicles" || phase === "payment" ? selectedVehicle : "";
 
-  const summaryProps = summaryTrip
-    ? {
-        phase,
-        pickup: summaryTrip.route.pickup,
-        dropoff: summaryTrip.route.dropoff,
-        date: summaryTrip.route.date,
-        time: summaryTrip.route.time,
-        selectedVehicleType: stickySelectedVehicle,
-        vehicleOptions,
-        childSeat: summaryTrip.route.childSeat,
-        luggage: summaryTrip.details.luggage,
-        debouncedQuote,
-        quoteLoading,
-        paymentQuote: checkoutSession?.quote ?? null,
-        paymentCurrency: checkoutSession?.currency ?? "EUR",
-        labels: summaryLabels,
-        locale: bookingLocale,
-      }
-    : null;
+  const summaryProps =
+    BOOKING_STICKY_SUMMARY_ENABLED && summaryTrip
+      ? {
+          phase,
+          pickup: summaryTrip.route.pickup,
+          dropoff: summaryTrip.route.dropoff,
+          date: summaryTrip.route.date,
+          time: summaryTrip.route.time,
+          selectedVehicleType: stickySelectedVehicle,
+          vehicleOptions,
+          childSeat: summaryTrip.route.childSeat,
+          luggage: summaryTrip.details.luggage,
+          debouncedQuote,
+          quoteLoading,
+          paymentQuote: checkoutSession?.quote ?? null,
+          paymentCurrency: checkoutSession?.currency ?? "EUR",
+          labels: summaryLabels,
+          locale: bookingLocale,
+        }
+      : null;
 
   return (
     <div className="relative w-full">
@@ -484,6 +530,9 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
                   locale={bookingLocale}
                   required
                 />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Input
                   label={dict.date || "Date"}
                   type="date"
@@ -499,6 +548,31 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
                   onChange={(time) => setFormData((s) => ({ ...s, time }))}
                   required
                 />
+                <Input
+                  label={dict.flight || "Flight number"}
+                  placeholder={dict.flightPlaceholder}
+                  value={formData.flight}
+                  onChange={(flight) => setFormData((s) => ({ ...s, flight }))}
+                />
+              </div>
+
+              {(routePreviewLoading ||
+                routePreviewError ||
+                routePreviewData?.distanceKm != null ||
+                (routePreviewData?.price != null && routePreviewData?.currency)) && (
+                <BookingRoutePreview
+                  loading={routePreviewLoading}
+                  error={routePreviewError}
+                  distanceKm={routePreviewData?.distanceKm ?? undefined}
+                  price={routePreviewData?.price ?? undefined}
+                  currency={routePreviewData?.currency ?? undefined}
+                  source={routePreviewData?.source}
+                  locale={bookingLocale}
+                  labels={routePreviewLabels}
+                />
+              )}
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Input
                   label={dict.passengers || "Passengers"}
                   type="number"
@@ -517,7 +591,9 @@ export default function BookingForm({ dict, locale }: BookingFormProps) {
                 />
               </div>
 
-              <Input label={dict.flight || "Flight"} value={formData.flight} onChange={(flight) => setFormData((s) => ({ ...s, flight }))} />
+              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500">
+                {dict.contactInfo || "Contact"}
+              </p>
               <Input label={dict.name || "Name"} value={formData.name} onChange={(name) => setFormData((s) => ({ ...s, name }))} required />
               <Input
                 label={dict.email || "Email"}
@@ -796,6 +872,7 @@ function Input({
   required = false,
   min,
   step,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -804,6 +881,7 @@ function Input({
   required?: boolean;
   min?: string;
   step?: string;
+  placeholder?: string;
 }) {
   return (
     <label className="block">
@@ -816,6 +894,7 @@ function Input({
         required={required}
         min={min}
         step={step}
+        placeholder={placeholder?.trim() ? placeholder : undefined}
       />
     </label>
   );

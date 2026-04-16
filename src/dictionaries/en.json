@@ -26,7 +26,8 @@
         "passengers": "Passengers",
         "luggage": "Luggage",
         "distanceKm": "Trip distance (km)",
-        "flight": "Flight Number (Optional)",
+        "flight": "Flight number",
+        "flightPlaceholder": "e.g. LH 1234",
         "childSeat": "Child seat",
         "contactInfo": "Contact Information",
         "name": "Full Name",
@@ -73,6 +74,16 @@
                 "firstHint": "S-Class or similar",
                 "vanHint": "V-Class or similar",
                 "seats": "{n} seats available"
+            },
+            "routePreview": {
+                "title": "Route estimate",
+                "loading": "Calculating distance and price…",
+                "suggested": "Suggested:",
+                "from": "From",
+                "distanceEta": "{km} km · ~{min} min",
+                "distanceOnly": "{km} km",
+                "etaNote": "Drive time is indicative (traffic varies). Final price is confirmed when you choose a vehicle class.",
+                "availabilityNote": "Indicative amount from available rates; exact price depends on the class you select."
             },
             "breakdown": {
                 "baseFee": "Base fee",

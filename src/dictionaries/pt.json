@@ -26,7 +26,8 @@
         "passengers": "Passageiros",
         "luggage": "Malas",
         "distanceKm": "Distância do trajeto (km)",
-        "flight": "Número do Voo (Opcional)",
+        "flight": "Número de voo",
+        "flightPlaceholder": "ex. LH 1234",
         "childSeat": "Cadeira de criança",
         "contactInfo": "Dados de Contacto",
         "name": "Nome Completo",
@@ -73,6 +74,16 @@
                 "firstHint": "Classe S ou similar",
                 "vanHint": "Classe V ou similar",
                 "seats": "{n} lugares disponíveis"
+            },
+            "routePreview": {
+                "title": "Estimativa do trajeto",
+                "loading": "A calcular distância e preço…",
+                "suggested": "Sugerido:",
+                "from": "Desde",
+                "distanceEta": "{km} km · ~{min} min",
+                "distanceOnly": "{km} km",
+                "etaNote": "O tempo de percurso é indicativo (trânsito variável). O preço final confirma-se ao escolher a viatura.",
+                "availabilityNote": "Valor indicativo a partir das tarifas disponíveis; o preço exato depende da classe escolhida."
             },
             "breakdown": {
                 "baseFee": "Taxa base",
