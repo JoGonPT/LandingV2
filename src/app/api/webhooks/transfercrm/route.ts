@@ -4,6 +4,7 @@ import {
   TransferCrmWebhookEvent,
   verifyTransferCrmWebhookSignature,
 } from "@/lib/transfercrm/webhook";
+import { getBookingEngineService } from "@/modules/booking-engine/booking-engine.service";
 
 export async function POST(request: Request) {
   const secret = process.env.TRANSFERCRM_WEBHOOK_SECRET?.trim();
@@ -44,9 +45,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ignored: true }, { status: 202 });
   }
 
-  // TODO: Persist event to your internal order timeline or push notifications.
+  const eventName = String(event.event ?? event.type ?? "");
+  const bookingIdCandidate =
+    event?.data && typeof event.data === "object" && "booking_id" in event.data
+      ? (event.data as { booking_id?: string | number }).booking_id
+      : event.id;
+
+  if (bookingIdCandidate !== undefined && bookingIdCandidate !== null) {
+    const providerBookingId = String(bookingIdCandidate);
+    const statusCandidate =
+      event?.data && typeof event.data === "object" && "status" in event.data
+        ? (event.data as { status?: string }).status
+        : undefined;
+    const travelStatusCandidate =
+      event?.data && typeof event.data === "object" && "travel_status" in event.data
+        ? (event.data as { travel_status?: string }).travel_status
+        : undefined;
+
+    await getBookingEngineService().recordStatusEvent({
+      providerBookingId,
+      status: statusCandidate || eventName || "EVENT_RECEIVED",
+      travelStatus: travelStatusCandidate,
+      actor: "webhook.transfercrm",
+      payload: {
+        event: eventName,
+        webhookId: event.id ? String(event.id) : undefined,
+      },
+    });
+  }
+
   console.info("[transfercrm-webhook]", {
-    event: event.event ?? event.type,
+    event: eventName,
     id: event.id,
   });
 

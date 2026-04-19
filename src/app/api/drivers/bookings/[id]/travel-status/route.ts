@@ -5,6 +5,7 @@ import { requireDriverSessionCookie } from "@/lib/drivers/require-session";
 import { postDriverStatusWebhook } from "@/lib/drivers/status-webhook";
 import { createTransferCrmClientFromEnv } from "@/lib/transfercrm/TransferCrmApiClient";
 import { TransferCrmHttpError } from "@/lib/transfercrm/http-core";
+import { getBookingEngineService } from "@/modules/booking-engine/booking-engine.service";
 
 const Body = z.object({
   travel_status: z.string().trim().min(1).max(64),
@@ -32,6 +33,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const client = createTransferCrmClientFromEnv();
     await client.patchBooking(id, { travel_status: body.travel_status });
+    await getBookingEngineService().recordStatusEvent({
+      providerBookingId: id,
+      status: "STATUS_UPDATED",
+      travelStatus: body.travel_status,
+      actor: "driver",
+      payload: { source: "driver_api" },
+    });
 
     try {
       await postDriverStatusWebhook({
