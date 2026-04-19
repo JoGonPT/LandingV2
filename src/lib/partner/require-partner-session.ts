@@ -23,7 +23,7 @@ export async function requirePartnerSession(expectedSlug: string): Promise<{ slu
   if (!slug || slug !== expectedSlug.trim()) {
     throw new PartnerAuthError("unauthorized");
   }
-  const partner = getPartnerBySlug(slug);
+  const partner = await getPartnerBySlug(slug);
   if (!partner) {
     throw new PartnerAuthError("unauthorized");
   }

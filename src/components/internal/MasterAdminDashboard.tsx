@@ -6,8 +6,12 @@ import { useRouter } from "next/navigation";
 type PartnerPricingModel = "MARKUP" | "NET_PRICE";
 
 type PartnerRow = {
+  id?: number;
   slug: string;
   displayName: string;
+  token?: string;
+  isActive?: boolean;
+  commissionPercentage?: number;
   creditLimit: number;
   currentUsage: number;
   available: number;
@@ -24,6 +28,13 @@ export function MasterAdminDashboard() {
   const [commissionEdits, setCommissionEdits] = useState<Record<string, string>>({});
   const [pricingEdits, setPricingEdits] = useState<Record<string, PartnerPricingModel>>({});
   const [busySlug, setBusySlug] = useState<string | null>(null);
+  const [createForm, setCreateForm] = useState({
+    slug: "",
+    name: "",
+    token: "",
+    commissionPercentage: "0",
+    isActive: true,
+  });
 
   const load = useCallback(async () => {
     setError("");
@@ -114,6 +125,52 @@ export function MasterAdminDashboard() {
     }
   }
 
+  async function createPartner(e: FormEvent) {
+    e.preventDefault();
+    const slug = createForm.slug.trim();
+    const name = createForm.name.trim();
+    const token = createForm.token.trim();
+    const commission = Number(createForm.commissionPercentage);
+    if (!slug || !name || !token) {
+      setError("Slug, name and token are required.");
+      return;
+    }
+    if (!Number.isFinite(commission) || commission < 0 || commission > 100) {
+      setError("Commission must be between 0 and 100.");
+      return;
+    }
+    setBusySlug("__create__");
+    setError("");
+    try {
+      const res = await fetch("/api/internal/admin/partners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          name,
+          token,
+          commissionPercentage: commission,
+          isActive: createForm.isActive,
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+      if (!res.ok || !data?.ok) {
+        setError(data && typeof data.message === "string" ? data.message : "Could not create partner.");
+        return;
+      }
+      setCreateForm({
+        slug: "",
+        name: "",
+        token: "",
+        commissionPercentage: "0",
+        isActive: true,
+      });
+      await load();
+    } finally {
+      setBusySlug(null);
+    }
+  }
+
   if (rows === null) {
     return <p className="text-sm text-neutral-500">Loading…</p>;
   }
@@ -138,6 +195,68 @@ export function MasterAdminDashboard() {
       </div>
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
+
+      <section className="border border-neutral-800 bg-neutral-900/30 p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-200">Create partner</h2>
+        <form onSubmit={(e) => void createPartner(e)} className="mt-4 grid gap-4 md:grid-cols-5">
+          <label className="text-sm">
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-neutral-500">Slug</span>
+            <input
+              value={createForm.slug}
+              onChange={(e) => setCreateForm((s) => ({ ...s, slug: e.target.value }))}
+              className="min-h-[44px] w-full border border-neutral-700 bg-neutral-950 px-3 text-white outline-none focus:border-white"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-neutral-500">Name</span>
+            <input
+              value={createForm.name}
+              onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
+              className="min-h-[44px] w-full border border-neutral-700 bg-neutral-950 px-3 text-white outline-none focus:border-white"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-neutral-500">Token</span>
+            <input
+              value={createForm.token}
+              onChange={(e) => setCreateForm((s) => ({ ...s, token: e.target.value }))}
+              className="min-h-[44px] w-full border border-neutral-700 bg-neutral-950 px-3 text-white outline-none focus:border-white"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-neutral-500">Commission %</span>
+            <input
+              value={createForm.commissionPercentage}
+              onChange={(e) => setCreateForm((s) => ({ ...s, commissionPercentage: e.target.value }))}
+              className="min-h-[44px] w-full border border-neutral-700 bg-neutral-950 px-3 text-white outline-none focus:border-white"
+              inputMode="decimal"
+            />
+          </label>
+          <div className="flex items-end gap-3">
+            <label className="inline-flex min-h-[44px] items-center gap-2 text-xs text-neutral-300">
+              <input
+                type="checkbox"
+                checked={createForm.isActive}
+                onChange={(e) => setCreateForm((s) => ({ ...s, isActive: e.target.checked }))}
+              />
+              Active
+            </label>
+            <button
+              type="submit"
+              disabled={busySlug === "__create__"}
+              className="min-h-[44px] bg-white px-4 text-xs font-semibold uppercase tracking-wider text-black disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {rows.length === 0 ? (
+        <div className="border border-neutral-800 bg-neutral-900/30 p-6 text-sm text-neutral-400">
+          No partners found. Create your first partner above.
+        </div>
+      ) : null}
 
       <ul className="space-y-6">
         {rows.map((p) => {

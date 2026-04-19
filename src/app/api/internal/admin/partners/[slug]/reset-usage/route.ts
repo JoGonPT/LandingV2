@@ -16,7 +16,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ slug: string 
 
   const { slug: rawSlug } = await ctx.params;
   const slug = rawSlug.trim();
-  const partner = getPartnerBySlug(slug);
+  const partner = await getPartnerBySlug(slug);
   if (!partner) {
     return NextResponse.json({ ok: false, message: "Unknown partner." }, { status: 404 });
   }

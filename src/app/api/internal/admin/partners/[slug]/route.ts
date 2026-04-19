@@ -5,6 +5,7 @@ import { MasterAdminAuthError, requireMasterAdminSession } from "@/lib/internal-
 import type { PartnerPricingModel } from "@/lib/partner/commission-pricing";
 import { getPartnerBySlug } from "@/lib/partner/config";
 import { getPartnerCreditStore, getPartnerDefaultCreditLimit } from "@/lib/partner/credit/factory";
+import { PartnerService } from "@/lib/partner/partner.service";
 
 const Body = z
   .object({
@@ -29,7 +30,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ slug: string 
 
   const { slug: rawSlug } = await ctx.params;
   const slug = rawSlug.trim();
-  const partner = getPartnerBySlug(slug);
+  const partner = await getPartnerBySlug(slug);
   if (!partner) {
     return NextResponse.json({ ok: false, message: "Unknown partner." }, { status: 404 });
   }
@@ -55,6 +56,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ slug: string 
   if (body.creditLimit !== undefined) patch.creditLimit = body.creditLimit;
   if (body.commissionRate !== undefined) patch.commissionRate = body.commissionRate;
   if (body.pricingModel !== undefined) patch.pricingModel = body.pricingModel;
+
+  const partnerService = new PartnerService();
+  if (body.commissionRate !== undefined) {
+    await partnerService.patchPartner(partner.slug, {
+      commissionPercentage: body.commissionRate,
+    });
+  }
 
   const acc = await store.updatePartnerTerms(partner.slug, patch);
   const available = Math.max(0, acc.creditLimit - acc.currentUsage);

@@ -3,7 +3,7 @@ import { getPartnerCreditStore, getPartnerDefaultCreditLimit } from "@/lib/partn
 import type { PartnerCreditAccount } from "@/lib/partner/credit/types";
 
 export async function ensurePartnerCreditRow(slug: string): Promise<PartnerCreditAccount | null> {
-  const p = getPartnerBySlug(slug);
+  const p = await getPartnerBySlug(slug);
   if (!p) return null;
   const store = getPartnerCreditStore();
   return store.ensureAccount(slug, p.displayName, getPartnerDefaultCreditLimit());

@@ -4,11 +4,11 @@ import { PartnerDashboardClient } from "@/components/partner/PartnerDashboardCli
 import { getPartnerBySlug, isPartnerPortalConfigured } from "@/lib/partner/config";
 
 export default async function PartnerDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
-  if (!isPartnerPortalConfigured()) {
+  if (!(await isPartnerPortalConfigured())) {
     redirect("/partner/book/");
   }
   const { slug } = await params;
-  const partner = getPartnerBySlug(slug);
+  const partner = await getPartnerBySlug(slug);
   if (!partner) {
     notFound();
   }

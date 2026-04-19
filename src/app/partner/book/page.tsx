@@ -2,20 +2,19 @@ import { redirect } from "next/navigation";
 
 import { getAllPartners, isPartnerPortalConfigured } from "@/lib/partner/config";
 
-export default function PartnerBookIndexPage() {
-  if (!isPartnerPortalConfigured()) {
+export default async function PartnerBookIndexPage() {
+  if (!(await isPartnerPortalConfigured())) {
     return (
       <main className="mx-auto max-w-lg px-6 py-24 text-center">
         <h1 className="text-xl font-semibold tracking-tight">Partner portal</h1>
         <p className="mt-4 text-sm text-neutral-600">
-          The B2B booking portal is not configured. Set <code className="text-xs">PARTNERS_JSON</code> or partner env
-          variables on the server.
+          The B2B booking portal has no configured partners.
         </p>
       </main>
     );
   }
 
-  const partners = getAllPartners();
+  const partners = await getAllPartners();
   if (partners.length === 1) {
     redirect(`/partner/${partners[0].slug}/book/`);
   }
