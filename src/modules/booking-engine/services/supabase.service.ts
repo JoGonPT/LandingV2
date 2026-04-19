@@ -76,6 +76,21 @@ export class SupabaseService {
     return rows[0] ?? null;
   }
 
+  async selectMany<T>(
+    table: string,
+    filters: Record<string, Primitive> = {},
+    select = "*",
+  ): Promise<T[]> {
+    const where = buildFilterQuery(filters);
+    const qs = where ? `${where}&` : "";
+    const url = `${this.baseUrl}/rest/v1/${table}?${qs}select=${encodeURIComponent(select)}`;
+    const response = await fetch(url, { method: "GET", headers: this.headers() });
+    if (!response.ok) {
+      throw new SupabaseHttpError(`Supabase select failed for ${table}.`, response.status, await this.parseBody(response));
+    }
+    return (await response.json()) as T[];
+  }
+
   async insertOne<T>(table: string, payload: Record<string, unknown>): Promise<T> {
     const response = await fetch(`${this.baseUrl}/rest/v1/${table}`, {
       method: "POST",
@@ -166,6 +181,20 @@ export class SupabaseService {
       payload as unknown as Record<string, unknown>,
     );
   }
+
+  async getRateCardByVehicleClass(vehicleClass: string): Promise<RateCardRow | null> {
+    const normalized = vehicleClass.trim().toUpperCase();
+    return this.selectOne<RateCardRow>("rate_cards", { vehicle_class: normalized, active: true });
+  }
+
+  async listRateCards(): Promise<RateCardRow[]> {
+    return this.selectMany<RateCardRow>("rate_cards", { active: true });
+  }
+
+  async countAvailableFleetSlots(): Promise<number> {
+    const rows = await this.selectMany<FleetAvailabilityRow>("fleet_availability", { is_available: true }, "available_units");
+    return rows.reduce((sum, row) => sum + Math.max(0, Number(row.available_units) || 0), 0);
+  }
 }
 
 export interface BookingOrderRow {
@@ -234,4 +263,20 @@ export interface BookingStatusEventRow {
   event_payload: unknown;
   occurred_at: string;
   created_at: string;
+}
+
+export interface RateCardRow {
+  id: string;
+  vehicle_class: string;
+  base_fee: number | string;
+  per_km_rate: number | string;
+  min_fare: number | string;
+  currency: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FleetAvailabilityRow {
+  available_units: number | string;
 }

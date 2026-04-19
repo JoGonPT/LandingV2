@@ -5,6 +5,7 @@ import type {
   IBookingProvider,
 } from "@/modules/booking-engine/ports/booking-provider.port";
 import { TransferCrmProvider } from "@/modules/booking-engine/providers/transfer-crm.provider";
+import { Way2GoNativeProvider } from "@/modules/booking-engine/providers/way2go-native.provider";
 import type { BookingPayload } from "@/lib/transfercrm/types";
 import { BookingRepository } from "@/modules/booking-engine/repositories/bookings.repo";
 import { SupabaseService } from "@/modules/booking-engine/services/supabase.service";
@@ -26,12 +27,41 @@ function isTransientProviderError(error: unknown): boolean {
 
 export class BookingEngineService {
   constructor(
-    private readonly provider: IBookingProvider,
+    private readonly provider: IBookingProvider, // primary
+    private readonly shadowProvider?: IBookingProvider,
     private readonly bookingsRepo?: BookingRepository,
   ) {}
 
-  quote(payload: BookingPayload, vehicleType?: string): Promise<BookingQuoteResult> {
-    return this.provider.quote({ payload, vehicleType });
+  async quote(payload: BookingPayload, vehicleType?: string): Promise<BookingQuoteResult> {
+    const primaryPromise = this.provider.quote({ payload, vehicleType });
+    const shadowPromise = this.shadowProvider?.quote({ payload, vehicleType });
+
+    const primaryQuote = await primaryPromise;
+
+    if (shadowPromise) {
+      void shadowPromise
+        .then((shadowQuote) => {
+          const primary = Number(primaryQuote.price ?? NaN);
+          const shadow = Number(shadowQuote.price ?? NaN);
+          const delta = Number.isFinite(primary) && Number.isFinite(shadow) ? shadow - primary : null;
+          console.info("[booking-engine.shadow-quote]", {
+            primaryProvider: this.provider.name,
+            shadowProvider: this.shadowProvider?.name,
+            primaryPrice: Number.isFinite(primary) ? primary : null,
+            shadowPrice: Number.isFinite(shadow) ? shadow : null,
+            delta,
+            vehicleType: vehicleType ?? payload.vehicleType ?? null,
+          });
+        })
+        .catch((error: unknown) => {
+          console.warn("[booking-engine.shadow-quote-failed]", {
+            shadowProvider: this.shadowProvider?.name,
+            error: error instanceof Error ? error.message : "Unknown shadow quote error",
+          });
+        });
+    }
+
+    return primaryQuote;
   }
 
   getVehicleOptions(payload: BookingPayload): Promise<BookingVehiclesResult> {
@@ -128,19 +158,27 @@ export class BookingEngineService {
 
 let defaultService: BookingEngineService | null = null;
 let defaultRepo: BookingRepository | null = null;
+let defaultShadowProvider: IBookingProvider | null = null;
 
 export function getBookingEngineService(provider?: IBookingProvider): BookingEngineService {
+  const supabase = SupabaseService.fromEnv();
   if (provider) {
-    if (!defaultRepo) {
-        const supabase = SupabaseService.fromEnv();
-        if (supabase) defaultRepo = new BookingRepository(supabase);
+    if (!defaultRepo && supabase) {
+      defaultRepo = new BookingRepository(supabase);
     }
-    return new BookingEngineService(provider, defaultRepo ?? undefined);
+    if (!defaultShadowProvider && supabase) {
+      defaultShadowProvider = new Way2GoNativeProvider(supabase);
+    }
+    return new BookingEngineService(provider, defaultShadowProvider ?? undefined, defaultRepo ?? undefined);
   }
   if (!defaultService) {
-    const supabase = SupabaseService.fromEnv();
     defaultRepo = supabase ? new BookingRepository(supabase) : null;
-    defaultService = new BookingEngineService(new TransferCrmProvider(), defaultRepo ?? undefined);
+    defaultShadowProvider = supabase ? new Way2GoNativeProvider(supabase) : null;
+    defaultService = new BookingEngineService(
+      new TransferCrmProvider(),
+      defaultShadowProvider ?? undefined,
+      defaultRepo ?? undefined,
+    );
   }
   return defaultService;
 }
