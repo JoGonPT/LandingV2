@@ -2,6 +2,7 @@ import type { BookingPayload, TransferCrmAvailabilityResult, TransferCrmBookingR
 import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
 import { TransferCrmHttpError, TransferCrmValidationFailedError } from "@/lib/transfercrm/http-core";
 import { createTransferCrmClientFromEnv, TransferCrmApiClient } from "@/lib/transfercrm/TransferCrmApiClient";
+import { getBookingEngineService } from "@/modules/booking-engine/booking-engine.service";
 
 let defaultClient: TransferCrmApiClient | null = null;
 
@@ -13,19 +14,19 @@ export function getTransferCrmApiClient(): TransferCrmApiClient {
 }
 
 export async function getVehicleOptions(payload: BookingPayload): Promise<TransferCrmAvailabilityResult> {
-  return getTransferCrmApiClient().getAvailabilityForBooking(payload);
+  return getBookingEngineService().getVehicleOptions(payload);
 }
 
 export async function postQuoteForBooking(payload: BookingPayload, vehicleType?: string): Promise<QuoteResponse> {
-  return getTransferCrmApiClient().postQuoteForBooking(payload, vehicleType);
+  return getBookingEngineService().quote(payload, vehicleType);
 }
 
 export async function submitBooking(payload: BookingPayload): Promise<TransferCrmBookingResult> {
-  return getTransferCrmApiClient().postBookForPayload(payload);
+  return getBookingEngineService().create(payload);
 }
 
 export async function getBookingStatus(bookingId: string): Promise<unknown> {
-  return getTransferCrmApiClient().getBooking(bookingId);
+  return getBookingEngineService().getById(bookingId);
 }
 
 export function toPublicError(error: unknown): { code: string; message: string; details?: unknown } {
