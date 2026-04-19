@@ -1,4 +1,5 @@
 import type { BookingOrderRow } from "@/modules/booking-engine/repositories/bookings.repo";
+import { VendusFiscalProvider } from "@/modules/booking-engine/providers/fiscal/vendus.provider";
 
 export interface FiscalIssueInvoiceInput {
   bookingId: string;
@@ -8,6 +9,8 @@ export interface FiscalIssueInvoiceInput {
   customerEmail: string;
   amount: number;
   currency: string;
+  pickup: string;
+  dropoff: string;
   issuedAtIso: string;
 }
 
@@ -78,24 +81,22 @@ function readExternalReference(row: BookingOrderRow): string {
   return row.public_reference?.trim() || row.idempotency_key;
 }
 
-class MockFiscalProvider implements IFiscalProvider {
-  readonly name = "WAY2GO_MOCK_FISCAL";
+function readPickup(row: BookingOrderRow): string {
+  const requestPayload = asRecord(row.request_payload);
+  const route = asRecord(requestPayload?.route);
+  const raw = route?.pickup;
+  return typeof raw === "string" && raw.trim() ? raw.trim() : "Ponto de recolha";
+}
 
-  async issueInvoice(input: FiscalIssueInvoiceInput): Promise<FiscalIssueInvoiceResult> {
-    const date = input.issuedAtIso.slice(0, 10).replace(/-/g, "");
-    const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const invoiceNumber = `FT-${date}-${suffix}`;
-    return {
-      provider: this.name,
-      invoiceNumber,
-      invoiceUrl: `https://fiscal.local/invoices/${invoiceNumber}`,
-      issuedAtIso: input.issuedAtIso,
-    };
-  }
+function readDropoff(row: BookingOrderRow): string {
+  const requestPayload = asRecord(row.request_payload);
+  const route = asRecord(requestPayload?.route);
+  const raw = route?.dropoff;
+  return typeof raw === "string" && raw.trim() ? raw.trim() : "Destino";
 }
 
 export class FiscalService {
-  constructor(private readonly provider: IFiscalProvider = new MockFiscalProvider()) {}
+  constructor(private readonly provider: IFiscalProvider = new VendusFiscalProvider()) {}
 
   async issueInvoiceForCompletedBooking(row: BookingOrderRow): Promise<FiscalIssueInvoiceResult | null> {
     if (row.status !== "COMPLETED") return null;
@@ -112,8 +113,12 @@ export class FiscalService {
       customerEmail: readCustomerEmail(row),
       amount,
       currency,
+      pickup: readPickup(row),
+      dropoff: readDropoff(row),
       issuedAtIso,
     });
   }
 }
+
+export { VendusFiscalProvider };
 
