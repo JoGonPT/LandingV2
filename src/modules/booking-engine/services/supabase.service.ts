@@ -228,6 +228,59 @@ export class SupabaseService {
       { current_lat: lat, current_lng: lng, updated_at: new Date().toISOString() },
     );
   }
+
+  async getEngineAuditSummary(): Promise<EngineAuditSummary> {
+    const bookings = await this.selectMany<BookingOrderRow>("booking_orders");
+    let comparedQuotesCount = 0;
+    let deltaSum = 0;
+    let nativeTotalCount = 0;
+    let nativeAssignedCount = 0;
+    let failoverCount = 0;
+
+    for (const booking of bookings) {
+      const providerResponse =
+        booking.provider_response && typeof booking.provider_response === "object"
+          ? (booking.provider_response as Record<string, unknown>)
+          : null;
+      const requestPayload =
+        booking.request_payload && typeof booking.request_payload === "object"
+          ? (booking.request_payload as Record<string, unknown>)
+          : null;
+      const quote =
+        providerResponse?.quote && typeof providerResponse.quote === "object"
+          ? (providerResponse.quote as Record<string, unknown>)
+          : null;
+      const crmPrice = Number((requestPayload?.quotedPrice as { amount?: unknown } | undefined)?.amount);
+      const nativePrice = Number(quote?.price ?? providerResponse?.price);
+      if (Number.isFinite(crmPrice) && Number.isFinite(nativePrice)) {
+        comparedQuotesCount += 1;
+        deltaSum += nativePrice - crmPrice;
+      }
+
+      if (booking.provider === "WAY2GO_NATIVE") {
+        nativeTotalCount += 1;
+        if (booking.status === "ASSIGNED" || booking.status === "DRIVER_EN_ROUTE" || booking.status === "PASSENGER_ON_BOARD" || booking.status === "COMPLETED") {
+          nativeAssignedCount += 1;
+        }
+      }
+
+      if (booking.status === "PENDING_INTERNAL_PROCESSING" || booking.failover_reason) {
+        failoverCount += 1;
+      }
+    }
+
+    const nativeAssignmentSuccessRate = nativeTotalCount > 0 ? nativeAssignedCount / nativeTotalCount : 0;
+    const averagePriceDelta = comparedQuotesCount > 0 ? deltaSum / comparedQuotesCount : 0;
+
+    return {
+      average_price_delta: Number(averagePriceDelta.toFixed(4)),
+      compared_quotes_count: comparedQuotesCount,
+      native_assignment_success_rate: Number(nativeAssignmentSuccessRate.toFixed(4)),
+      native_total_count: nativeTotalCount,
+      native_assigned_count: nativeAssignedCount,
+      failover_count: failoverCount,
+    };
+  }
 }
 
 export interface BookingOrderRow {
@@ -362,4 +415,13 @@ export interface DriverCandidateRow {
   available_units: number | string | null;
   active: boolean;
   vehicle_class: string;
+}
+
+export interface EngineAuditSummary {
+  average_price_delta: number;
+  compared_quotes_count: number;
+  native_assignment_success_rate: number;
+  native_total_count: number;
+  native_assigned_count: number;
+  failover_count: number;
 }

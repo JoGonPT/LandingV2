@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import { requireDriverSessionCookie } from "@/lib/drivers/require-session";
 import { postDriverStatusWebhook } from "@/lib/drivers/status-webhook";
-import { createTransferCrmClientFromEnv } from "@/lib/transfercrm/TransferCrmApiClient";
 import { TransferCrmHttpError } from "@/lib/transfercrm/http-core";
 import { getBookingEngineService } from "@/modules/booking-engine/booking-engine.service";
 
@@ -19,7 +18,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const { id } = await params;
-  if (!id || !/^\d+$/.test(id)) {
+  if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
     return NextResponse.json({ error: "Invalid booking id." }, { status: 400 });
   }
 
@@ -31,9 +30,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   try {
-    const client = createTransferCrmClientFromEnv();
-    await client.patchBooking(id, { travel_status: body.travel_status });
-    await getBookingEngineService().recordStatusEvent({
+    const engine = getBookingEngineService();
+    await engine.updateStatus(id, body.travel_status, "driver");
+    await engine.recordStatusEvent({
       providerBookingId: id,
       status: "STATUS_UPDATED",
       travelStatus: body.travel_status,

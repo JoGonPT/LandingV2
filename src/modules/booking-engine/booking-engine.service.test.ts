@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BookingPayload } from "@/lib/transfercrm/types";
 import type { IBookingProvider } from "@/modules/booking-engine/ports/booking-provider.port";
@@ -45,6 +45,12 @@ function providerStub(overrides?: Partial<IBookingProvider>): IBookingProvider {
     ...overrides,
   };
 }
+
+afterEach(() => {
+  delete process.env.BOOKING_ENGINE_MODE;
+  delete process.env.BOOKING_ENGINE_NATIVE_RATIO;
+  vi.restoreAllMocks();
+});
 
 describe("BookingEngineService shadow mode", () => {
   it("returns primary quote while invoking shadow quote in parallel", async () => {
@@ -97,5 +103,56 @@ describe("BookingEngineService shadow mode", () => {
         provider: "TRANSFER_CRM",
       }),
     );
+  });
+});
+
+describe("BookingEngineService engine mode routing", () => {
+  it("uses native provider for create in STRICT_NATIVE mode", async () => {
+    process.env.BOOKING_ENGINE_MODE = "STRICT_NATIVE";
+
+    const crm = providerStub({
+      name: "TRANSFER_CRM",
+      create: vi.fn(async () => ({ bookingId: "crm_1", status: "CONFIRMED" })),
+    });
+    const native = providerStub({
+      name: "WAY2GO_NATIVE",
+      create: vi.fn(async () => ({ bookingId: "native_1", status: "CONFIRMED" })),
+    });
+
+    const repo = {
+      upsertMirror: vi.fn(async () => null),
+    } as unknown as BookingRepository;
+    const service = new BookingEngineService(crm, native, repo);
+
+    const created = await service.create(basePayload);
+    expect(created.bookingId).toBe("native_1");
+    expect(native.create).toHaveBeenCalledTimes(1);
+    expect(crm.create).not.toHaveBeenCalled();
+  });
+
+  it("supports load balance mode using configured ratio", async () => {
+    process.env.BOOKING_ENGINE_MODE = "LOAD_BALANCE";
+    process.env.BOOKING_ENGINE_NATIVE_RATIO = "0.2";
+
+    const crm = providerStub({
+      name: "TRANSFER_CRM",
+      create: vi.fn(async () => ({ bookingId: "crm_1", status: "CONFIRMED" })),
+    });
+    const native = providerStub({
+      name: "WAY2GO_NATIVE",
+      create: vi.fn(async () => ({ bookingId: "native_1", status: "CONFIRMED" })),
+    });
+
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const repo = {
+      upsertMirror: vi.fn(async () => null),
+    } as unknown as BookingRepository;
+    const service = new BookingEngineService(crm, native, repo);
+
+    const created = await service.create(basePayload);
+    expect(created.bookingId).toBe("native_1");
+    expect(native.create).toHaveBeenCalledTimes(1);
+    expect(crm.create).not.toHaveBeenCalled();
+    expect(randomSpy).toHaveBeenCalled();
   });
 });

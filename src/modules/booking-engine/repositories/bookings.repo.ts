@@ -1,4 +1,4 @@
-import { SupabaseService } from "@/modules/booking-engine/services/supabase.service";
+import { SupabaseService, type BookingStatusEventRow, type EngineAuditSummary } from "@/modules/booking-engine/services/supabase.service";
 
 export type BookingOrderStatus =
   | "PENDING_QUOTE"
@@ -128,9 +128,9 @@ export class BookingRepository {
     actor?: string;
     payload?: Record<string, unknown>;
     provider?: string;
-  }): Promise<void> {
+  }): Promise<BookingOrderRow | null> {
     const booking = await this.supabase.getBookingOrderById(input.bookingId);
-    if (!booking) return;
+    if (!booking) return null;
     const toStatus = normalizeUnifiedStatus(input.status);
     await this.supabase.insertBookingStatusEvent({
       booking_id: booking.id,
@@ -139,20 +139,22 @@ export class BookingRepository {
       travel_status: input.travelStatus ?? null,
       actor: input.actor ?? null,
       source: "booking_engine",
-      provider: input.provider ?? booking.provider ?? null,
+      provider: input.provider ?? booking.provider,
       event_payload: input.payload ?? null,
       occurred_at: new Date().toISOString(),
     });
-    await this.supabase.patchBookingOrderById(booking.id, {
+    return this.supabase.patchBookingOrderById(booking.id, {
       status: toStatus,
       updated_at: new Date().toISOString(),
     });
   }
 
-  async createStatusEventByProviderBookingId(input: Omit<StatusEventInput, "bookingId"> & { providerBookingId: string }): Promise<void> {
+  async createStatusEventByProviderBookingId(
+    input: Omit<StatusEventInput, "bookingId"> & { providerBookingId: string },
+  ): Promise<BookingOrderRow | null> {
     const booking = await this.getByProviderBookingId(input.provider ?? "TRANSFER_CRM", input.providerBookingId);
-    if (!booking) return;
-    await this.appendStatusEvent({
+    if (!booking) return null;
+    return this.appendStatusEvent({
       bookingId: booking.id,
       status: input.toStatus,
       travelStatus: input.travelStatus ?? undefined,
@@ -160,5 +162,17 @@ export class BookingRepository {
       payload: (input.eventPayload as Record<string, unknown> | undefined) ?? undefined,
       provider: input.provider ?? undefined,
     });
+  }
+
+  async hasFiscalInvoiceEvent(bookingId: string): Promise<boolean> {
+    const row = await this.supabase.selectOne<BookingStatusEventRow>("booking_status_events", {
+      booking_id: bookingId,
+      actor: "fiscal.service",
+    });
+    return Boolean(row);
+  }
+
+  async getEngineAuditSummary(): Promise<EngineAuditSummary> {
+    return this.supabase.getEngineAuditSummary();
   }
 }
