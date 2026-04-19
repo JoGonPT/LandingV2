@@ -14,8 +14,11 @@ import type {
   UpdateBookingStatusInput,
   UpdateBookingStatusResult,
 } from "@/modules/booking-engine/ports/booking-provider.port";
+import type { BookingPayload } from "@/lib/transfercrm/types";
 import { SupabaseService } from "@/modules/booking-engine/services/supabase.service";
 import { createExternalReference } from "@/lib/transfercrm/booking-mappers";
+import { AssignmentService } from "@/modules/booking-engine/services/assignment.service";
+import { RoutingService, type RouteDistanceResult } from "@/modules/booking-engine/services/routing.service";
 
 function normalizeVehicleClass(vehicleType?: string): string {
   const raw = (vehicleType ?? "business").trim().toUpperCase();
@@ -34,17 +37,50 @@ function mirrorRowIdForIdempotencyKey(key: string): string {
 export class Way2GoNativeProvider implements IBookingProvider {
   readonly name: BookingProviderName = "WAY2GO_NATIVE";
 
-  constructor(private readonly supabase: SupabaseService = (() => {
-    const svc = SupabaseService.fromEnv();
-    if (!svc) {
-      throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for Way2GoNativeProvider.");
-    }
-    return svc;
-  })()) {}
+  private readonly assignmentService: AssignmentService;
+  private readonly routingService: RoutingService;
+
+  constructor(
+    private readonly supabase: SupabaseService = (() => {
+      const svc = SupabaseService.fromEnv();
+      if (!svc) {
+        throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for Way2GoNativeProvider.");
+      }
+      return svc;
+    })(),
+    assignmentService?: AssignmentService,
+    routingService?: RoutingService,
+  ) {
+    this.assignmentService = assignmentService ?? new AssignmentService(this.supabase);
+    this.routingService = routingService ?? new RoutingService();
+  }
+
+  private parsePickupCoordinates(input: BookingPayload): { lat: number; lng: number } | undefined {
+    const note = input.details.notes?.trim() ?? "";
+    if (!note) return undefined;
+    const re = /pickup_lat=(-?\d+(?:\.\d+)?),\s*pickup_lng=(-?\d+(?:\.\d+)?)/i;
+    const m = re.exec(note);
+    if (!m) return undefined;
+    const lat = Number(m[1]);
+    const lng = Number(m[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+    return { lat, lng };
+  }
 
   async quote(input: BookingQuoteInput): Promise<BookingQuoteResult> {
     const vehicleClass = normalizeVehicleClass(input.vehicleType ?? input.payload.vehicleType);
-    const distanceKm = Number(input.payload.details.distanceKm ?? 0);
+    const payloadDistanceKm = Number(input.payload.details.distanceKm ?? 0);
+    let routing: RouteDistanceResult | null = null;
+    try {
+      routing = await this.routingService.resolveDistanceKm({
+        pickup: input.payload.route.pickup,
+        dropoff: input.payload.route.dropoff,
+        requestedDistanceKm: payloadDistanceKm,
+      });
+    } catch {
+      routing = null;
+    }
+    const distanceKm = routing?.distanceKm ?? payloadDistanceKm;
     const rate = await this.supabase.getRateCardByVehicleClass(vehicleClass);
     if (!rate) {
       throw new Error(`No native rate card configured for vehicle class ${vehicleClass}.`);
@@ -99,7 +135,7 @@ export class Way2GoNativeProvider implements IBookingProvider {
     const idempotencyKey = input.payload.internalOrderId?.trim() || createExternalReference(input.payload);
     const quote = await this.quote({ payload: input.payload, vehicleType: input.payload.vehicleType });
     const providerBookingId = `native_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const status = "PENDING_INTERNAL_PROCESSING";
+    let status = "PENDING_INTERNAL_PROCESSING";
     await this.supabase.upsertBookingOrder({
       id: mirrorRowIdForIdempotencyKey(idempotencyKey),
       public_reference: idempotencyKey,
@@ -113,6 +149,24 @@ export class Way2GoNativeProvider implements IBookingProvider {
       last_error_code: null,
       last_error_message: null,
     });
+
+    const assignment = await this.assignmentService.assignDriver({
+      bookingId: providerBookingId,
+      vehicleClass: normalizeVehicleClass(input.payload.vehicleType),
+      pickupLat: this.parsePickupCoordinates(input.payload)?.lat,
+      pickupLng: this.parsePickupCoordinates(input.payload)?.lng,
+    });
+    if (assignment.assigned) {
+      status = "ASSIGNED";
+      const row = await this.supabase.getBookingOrderByProviderBookingId("WAY2GO_NATIVE", providerBookingId);
+      if (row) {
+        await this.supabase.patchBookingOrderById(row.id, {
+          status,
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+
     return {
       bookingId: providerBookingId,
       orderNumber: idempotencyKey,

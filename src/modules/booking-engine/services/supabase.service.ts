@@ -195,6 +195,39 @@ export class SupabaseService {
     const rows = await this.selectMany<FleetAvailabilityRow>("fleet_availability", { is_available: true }, "available_units");
     return rows.reduce((sum, row) => sum + Math.max(0, Number(row.available_units) || 0), 0);
   }
+
+  async listActiveDrivers(): Promise<DriverRow[]> {
+    return this.selectMany<DriverRow>("drivers", { active: true });
+  }
+
+  async listFleetVehiclesByClass(vehicleClass: string): Promise<FleetVehicleRow[]> {
+    const normalized = vehicleClass.trim().toUpperCase();
+    return this.selectMany<FleetVehicleRow>("fleet_vehicles", { vehicle_class: normalized, active: true });
+  }
+
+  async listActiveDriverCandidatesByVehicleClass(vehicleClass: string): Promise<DriverCandidateRow[]> {
+    const normalized = vehicleClass.trim().toUpperCase();
+    return this.selectMany<DriverCandidateRow>(
+      "driver_vehicle_live",
+      { vehicle_class: normalized, active: true },
+      "driver_id,vehicle_id,current_lat,current_lng,available_units,active,vehicle_class",
+    );
+  }
+
+  async insertDriverBookingAssignment(payload: DriverBookingAssignmentInsertPayload): Promise<DriverBookingAssignmentRow> {
+    return this.insertOne<DriverBookingAssignmentRow>(
+      "driver_booking_assignments",
+      payload as unknown as Record<string, unknown>,
+    );
+  }
+
+  async patchDriverLocation(driverId: string, lat: number, lng: number): Promise<DriverRow | null> {
+    return this.patchOne<DriverRow>(
+      "drivers",
+      { id: driverId },
+      { current_lat: lat, current_lng: lng, updated_at: new Date().toISOString() },
+    );
+  }
 }
 
 export interface BookingOrderRow {
@@ -279,4 +312,54 @@ export interface RateCardRow {
 
 export interface FleetAvailabilityRow {
   available_units: number | string;
+}
+
+export interface DriverRow {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  active: boolean;
+  current_lat: number | string | null;
+  current_lng: number | string | null;
+  default_vehicle_id: string | null;
+}
+
+export interface FleetVehicleRow {
+  id: string;
+  vehicle_class: string;
+  plate: string | null;
+  active: boolean;
+}
+
+export interface DriverBookingAssignmentInsertPayload {
+  id: string;
+  booking_id: string;
+  driver_id: string;
+  vehicle_id: string;
+  status: string;
+  assigned_at: string;
+  notes?: string | null;
+}
+
+export interface DriverBookingAssignmentRow {
+  id: string;
+  booking_id: string;
+  driver_id: string;
+  vehicle_id: string;
+  status: string;
+  assigned_at: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DriverCandidateRow {
+  driver_id: string;
+  vehicle_id: string;
+  current_lat: number | string | null;
+  current_lng: number | string | null;
+  available_units: number | string | null;
+  active: boolean;
+  vehicle_class: string;
 }
