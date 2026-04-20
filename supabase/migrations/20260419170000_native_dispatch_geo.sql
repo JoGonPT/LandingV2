@@ -1,4 +1,6 @@
 -- Native engine phase 4: local dispatch + geolocation basics.
+-- Uses `native_driver_booking_assignments` (not `driver_booking_assignments`) so the
+-- existing CRM proxy table from 20260417120000_driver_booking_assignments.sql stays intact.
 
 create table if not exists public.fleet_vehicles (
   id text primary key,
@@ -27,13 +29,14 @@ create table if not exists public.drivers (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.driver_booking_assignments (
+create table if not exists public.native_driver_booking_assignments (
   id text primary key,
-  booking_order_id text not null references public.booking_orders(id) on delete cascade,
+  booking_id text not null references public.booking_orders(id) on delete cascade,
   driver_id text not null references public.drivers(id) on delete cascade,
-  fleet_vehicle_id text references public.fleet_vehicles(id) on delete set null,
-  assignment_status text not null default 'ASSIGNED',
+  vehicle_id text references public.fleet_vehicles(id) on delete set null,
+  status text not null default 'ASSIGNED',
   assigned_at timestamptz not null default now(),
+  notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -44,19 +47,19 @@ create index if not exists drivers_status_idx on public.drivers (status);
 create index if not exists drivers_vehicle_class_idx on public.drivers (vehicle_class);
 create index if not exists drivers_active_idx on public.drivers (active);
 create index if not exists drivers_geo_idx on public.drivers (current_lat, current_lng);
-create index if not exists driver_booking_assignments_booking_idx on public.driver_booking_assignments (booking_order_id);
-create index if not exists driver_booking_assignments_driver_idx on public.driver_booking_assignments (driver_id);
+create index if not exists native_dba_booking_idx on public.native_driver_booking_assignments (booking_id);
+create index if not exists native_dba_driver_idx on public.native_driver_booking_assignments (driver_id);
 
 alter table public.fleet_vehicles enable row level security;
 alter table public.drivers enable row level security;
-alter table public.driver_booking_assignments enable row level security;
+alter table public.native_driver_booking_assignments enable row level security;
 
 drop policy if exists fleet_vehicles_service_role_all on public.fleet_vehicles;
 drop policy if exists fleet_vehicles_admin_all on public.fleet_vehicles;
 drop policy if exists drivers_service_role_all on public.drivers;
 drop policy if exists drivers_admin_all on public.drivers;
-drop policy if exists driver_booking_assignments_service_role_all on public.driver_booking_assignments;
-drop policy if exists driver_booking_assignments_admin_all on public.driver_booking_assignments;
+drop policy if exists native_dba_service_role_all on public.native_driver_booking_assignments;
+drop policy if exists native_dba_admin_all on public.native_driver_booking_assignments;
 
 create policy fleet_vehicles_service_role_all
   on public.fleet_vehicles
@@ -86,19 +89,37 @@ create policy drivers_admin_all
   using (get_my_role() = 'ADMIN')
   with check (get_my_role() = 'ADMIN');
 
-create policy driver_booking_assignments_service_role_all
-  on public.driver_booking_assignments
+create policy native_dba_service_role_all
+  on public.native_driver_booking_assignments
   for all
   to service_role
   using (true)
   with check (true);
 
-create policy driver_booking_assignments_admin_all
-  on public.driver_booking_assignments
+create policy native_dba_admin_all
+  on public.native_driver_booking_assignments
   for all
   to authenticated
   using (get_my_role() = 'ADMIN')
   with check (get_my_role() = 'ADMIN');
+
+-- PostgREST: join drivers + vehicles for assignment scoring (matches booking-engine SupabaseService).
+create or replace view public.driver_vehicle_live
+with (security_invoker = true) as
+select
+  d.id as driver_id,
+  coalesce(d.fleet_vehicle_id, fv.id) as vehicle_id,
+  d.current_lat,
+  d.current_lng,
+  coalesce(fa.available_units, 1)::integer as available_units,
+  d.active,
+  coalesce(fv.vehicle_class, d.vehicle_class) as vehicle_class
+from public.drivers d
+left join public.fleet_vehicles fv on fv.id = d.fleet_vehicle_id
+left join public.fleet_availability fa on fa.vehicle_class = coalesce(fv.vehicle_class, d.vehicle_class);
+
+grant select on public.driver_vehicle_live to service_role;
+grant select on public.driver_vehicle_live to authenticated;
 
 -- Baseline seed for PT market dispatch testing.
 insert into public.fleet_vehicles (id, vehicle_class, plate, brand, model, year, active)

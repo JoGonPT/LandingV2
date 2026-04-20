@@ -11,7 +11,9 @@
     "start": "next start",
     "start:cpanel": "node server.js",
     "lint": "eslint . --max-warnings=0",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:push": "npx supabase db push --yes",
+    "db:push:dry": "npx supabase db push --dry-run --yes"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.1",

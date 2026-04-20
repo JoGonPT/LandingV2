@@ -216,7 +216,7 @@ export class SupabaseService {
 
   async insertDriverBookingAssignment(payload: DriverBookingAssignmentInsertPayload): Promise<DriverBookingAssignmentRow> {
     return this.insertOne<DriverBookingAssignmentRow>(
-      "driver_booking_assignments",
+      "native_driver_booking_assignments",
       payload as unknown as Record<string, unknown>,
     );
   }
