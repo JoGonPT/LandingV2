@@ -68,7 +68,7 @@ export class PartnerPortalService {
     }
 
     try {
-      const { displayName } = assertPartnerSessionMatchesSlug(cookieHeader, parsed.slug);
+      const { displayName } = await assertPartnerSessionMatchesSlug(cookieHeader, parsed.slug);
       const validated = validateBookingPayload(parsed.payload);
       if (!validated.ok) {
         throw new HttpException({ success: false, message: validated.message, requestId }, HttpStatus.BAD_REQUEST);
@@ -125,7 +125,7 @@ export class PartnerPortalService {
 
     let displayName: string;
     try {
-      ({ displayName } = assertPartnerSessionMatchesSlug(cookieHeader, parsed.slug));
+      ({ displayName } = await assertPartnerSessionMatchesSlug(cookieHeader, parsed.slug));
     } catch (e) {
       if (e instanceof PartnerSessionAuthError) {
         throw new HttpException({ success: false, message: "Unauthorized.", requestId }, HttpStatus.UNAUTHORIZED);

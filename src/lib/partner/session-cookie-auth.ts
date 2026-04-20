@@ -25,17 +25,17 @@ export function readPartnerSessionTokenFromCookieHeader(cookieHeader: string | u
 }
 
 /** Server-agnostic partner portal auth (Nest or any Node server with the same Cookie + env). */
-export function assertPartnerSessionMatchesSlug(
+export async function assertPartnerSessionMatchesSlug(
   cookieHeader: string | undefined,
   bodySlug: string,
-): { slug: string; displayName: string } {
+): Promise<{ slug: string; displayName: string }> {
   const secret = getPartnerSessionSecret();
   const token = readPartnerSessionTokenFromCookieHeader(cookieHeader);
   const slug = verifyPartnerSessionToken(secret, token);
   if (!slug || slug !== bodySlug.trim()) {
     throw new PartnerSessionAuthError("unauthorized");
   }
-  const partner = getPartnerBySlug(slug);
+  const partner = await getPartnerBySlug(slug);
   if (!partner) {
     throw new PartnerSessionAuthError("unauthorized");
   }
