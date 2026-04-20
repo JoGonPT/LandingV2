@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getDriverPortalConfig } from "@/lib/drivers/config";
-import { constantTimeEqualString, normalizeLoginEmail } from "@/lib/drivers/credentials";
-import { DRIVER_SESSION_COOKIE, signDriverSession } from "@/lib/drivers/session";
+import { isDriverSupabaseAuthConfigured } from "@/lib/supabase/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const Body = z.object({
   email: z.string().email(),
@@ -11,11 +10,14 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
-  let cfg;
-  try {
-    cfg = getDriverPortalConfig();
-  } catch {
-    return NextResponse.json({ error: "Driver portal is not configured." }, { status: 503 });
+  if (!isDriverSupabaseAuthConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Driver portal requires Supabase: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+      },
+      { status: 503 },
+    );
   }
 
   let body: z.infer<typeof Body>;
@@ -25,19 +27,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid body." }, { status: 400 });
   }
 
-  const email = normalizeLoginEmail(body.email);
-  if (!constantTimeEqualString(email, cfg.loginEmail) || !constantTimeEqualString(body.password, cfg.loginPassword)) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: body.email.trim(),
+    password: body.password,
+  });
+  if (error || !data.user) {
     return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
   }
 
-  const token = signDriverSession(cfg.sessionSecret, cfg.sessionMaxAgeSec);
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(DRIVER_SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: cfg.sessionMaxAgeSec,
-  });
-  return res;
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  const role =
+    profile && typeof profile.role === "string" ? profile.role.trim().toUpperCase() : "";
+  if (profileError || !profile || role !== "DRIVER") {
+    await supabase.auth.signOut();
+    return NextResponse.json(
+      { error: "This account is not authorized for the driver portal." },
+      { status: 403 },
+    );
+  }
+
+  return NextResponse.json({ ok: true });
 }

@@ -16,6 +16,7 @@ import {
   mapBookingPayloadToQuoteRequest,
   type PaidBookingOverrides,
 } from "@/lib/transfercrm/booking-mappers";
+import { resolveBookingPayloadDistance } from "@/lib/transfercrm/ensure-distance-km";
 
 export class TransferCrmApiClient {
   constructor(private readonly http: TransferCrmHttpOptions) {}
@@ -69,7 +70,8 @@ export class TransferCrmApiClient {
   }
 
   async postQuoteForBooking(payload: BookingPayload, vehicleType?: string): Promise<QuoteResponse> {
-    const body = mapBookingPayloadToQuoteRequest(payload, vehicleType);
+    const ready = await resolveBookingPayloadDistance(payload, this);
+    const body = mapBookingPayloadToQuoteRequest(ready, vehicleType);
     return this.postQuote(body);
   }
 

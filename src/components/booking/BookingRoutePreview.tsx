@@ -1,10 +1,8 @@
+import { estimateDriveMinutesFromKm } from "@/lib/booking/drive-time-estimate";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
 import type { BookingLocale } from "@/lib/transfercrm/types";
 
-/** Rough drive-time hint when the CRM does not return duration (~50 km/h blended average). */
-export function estimateDriveMinutesFromKm(km: number): number {
-  return Math.max(1, Math.round((km / 50) * 60));
-}
+export { estimateDriveMinutesFromKm };
 
 export interface BookingRoutePreviewLabels {
   title: string;

@@ -17,6 +17,8 @@
     "@formatjs/intl-localematcher": "^0.8.1",
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.2.0",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.3",
     "@types/negotiator": "^0.6.4",
     "ajv": "^8.18.0",
     "autoprefixer": "^10.4.24",

@@ -4,8 +4,13 @@ import { NextResponse } from "next/server";
 import { match as matchLocale } from "@formatjs/intl-localematcher";
 import Negotiator from "negotiator";
 
-const locales = ["pt", "en"];
+import { applySupabaseSessionToResponse } from "@/lib/supabase/middleware";
+
+const locales = ["pt", "en"] as const;
 const defaultLocale = "pt";
+
+/** App routes that live outside `app/[locale]` — strip mistaken `/{locale}/…` prefixes. */
+const nonLocalizedTopSections = ["partner", "internal", "master-admin"] as const;
 
 function getLocale(request: NextRequest): string | undefined {
   const negotiatorHeaders: Record<string, string> = {};
@@ -21,7 +26,13 @@ function isDriversHost(request: NextRequest): boolean {
   return host.startsWith("drivers.");
 }
 
-export function middleware(request: NextRequest) {
+function copyCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach((c) => {
+    to.cookies.set(c.name, c.value);
+  });
+}
+
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   if (
@@ -30,14 +41,33 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/internal") ||
     pathname.startsWith("/master-admin")
   ) {
+    if (pathname.startsWith("/drivers-pwa")) {
+      return applySupabaseSessionToResponse(request);
+    }
     return NextResponse.next();
   }
 
   if (isDriversHost(request)) {
+    const sessionResponse = await applySupabaseSessionToResponse(request);
     const suffix = pathname === "/" ? "/" : pathname;
     const url = request.nextUrl.clone();
     url.pathname = `/drivers-pwa${suffix === "/" ? "/" : suffix}`;
-    return NextResponse.rewrite(url);
+    const rewrite = NextResponse.rewrite(url);
+    copyCookies(sessionResponse, rewrite);
+    return rewrite;
+  }
+
+  for (const loc of locales) {
+    const locPrefix = `/${loc}`;
+    if (!pathname.startsWith(`${locPrefix}/`) && pathname !== locPrefix) continue;
+    const afterLocale = pathname === locPrefix ? "/" : pathname.slice(locPrefix.length);
+    for (const section of nonLocalizedTopSections) {
+      if (afterLocale === `/${section}` || afterLocale.startsWith(`/${section}/`)) {
+        const url = request.nextUrl.clone();
+        url.pathname = afterLocale;
+        return NextResponse.redirect(url, 308);
+      }
+    }
   }
 
   const pathnameIsMissingLocale = locales.every(
@@ -53,6 +83,8 @@ export function middleware(request: NextRequest) {
       ),
     );
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

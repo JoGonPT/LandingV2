@@ -4,7 +4,12 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-export function validateBookingPayload(payload: unknown): { ok: true; data: BookingPayload } | { ok: false; message: string } {
+export function validateBookingPayload(
+  payload: unknown,
+  options?: { requireContact?: boolean; requireGdpr?: boolean },
+): { ok: true; data: BookingPayload } | { ok: false; message: string } {
+  const requireContact = options?.requireContact ?? true;
+  const requireGdpr = options?.requireGdpr ?? true;
   if (!payload || typeof payload !== "object") {
     return { ok: false, message: "Invalid payload." };
   }
@@ -60,16 +65,16 @@ export function validateBookingPayload(payload: unknown): { ok: true; data: Book
     }
   }
 
-  if (
-    !candidate.contact ||
-    !isNonEmptyString(candidate.contact.fullName) ||
-    !isNonEmptyString(candidate.contact.email) ||
-    !isNonEmptyString(candidate.contact.phone)
-  ) {
+  const hasContact =
+    !!candidate.contact &&
+    isNonEmptyString(candidate.contact.fullName) &&
+    isNonEmptyString(candidate.contact.email) &&
+    isNonEmptyString(candidate.contact.phone);
+  if (requireContact && !hasContact) {
     return { ok: false, message: "Contact information is required." };
   }
 
-  if (!candidate.gdprAccepted) {
+  if (requireGdpr && !candidate.gdprAccepted) {
     return { ok: false, message: "GDPR consent is required." };
   }
 
@@ -102,11 +107,11 @@ export function validateBookingPayload(payload: unknown): { ok: true; data: Book
         }
       : {}),
     contact: {
-      fullName: candidate.contact.fullName.trim(),
-      email: candidate.contact.email.trim(),
-      phone: candidate.contact.phone.trim(),
+      fullName: candidate.contact?.fullName?.trim() || "",
+      email: candidate.contact?.email?.trim() || "",
+      phone: candidate.contact?.phone?.trim() || "",
     },
-    gdprAccepted: true,
+    gdprAccepted: Boolean(candidate.gdprAccepted),
   };
 
   return { ok: true, data: normalized };

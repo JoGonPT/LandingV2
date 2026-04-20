@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { mkdir, appendFile } from "node:fs/promises";
+import path from "node:path";
 import {
   isSupportedTransferCrmEvent,
   TransferCrmWebhookEvent,
@@ -44,7 +46,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ignored: true }, { status: 202 });
   }
 
-  // TODO: Persist event to your internal order timeline or push notifications.
+  // Persist raw webhook for audit / replay while internal DB timeline is not finalized.
+  try {
+    const dir = path.join(process.cwd(), ".data");
+    await mkdir(dir, { recursive: true });
+    await appendFile(
+      path.join(dir, "transfercrm-webhooks.ndjson"),
+      `${JSON.stringify({
+        receivedAt: new Date().toISOString(),
+        event: event.event ?? event.type,
+        id: event.id,
+        payload: event,
+      })}\n`,
+      "utf8",
+    );
+  } catch (persistErr) {
+    console.error("[transfercrm-webhook] persist_failed", persistErr);
+  }
+
   console.info("[transfercrm-webhook]", {
     event: event.event ?? event.type,
     id: event.id,

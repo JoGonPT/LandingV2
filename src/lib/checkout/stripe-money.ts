@@ -36,3 +36,12 @@ export function minorUnitsMatchStripeIntent(amountMinor: number, stripeAmount: n
   if (stripeAmount == null) return false;
   return amountMinor === stripeAmount;
 }
+
+/** Convert Stripe minor units to major units for display (e.g. cents → EUR). */
+export function stripeMinorToMajorUnits(amountMinor: number, currency: string): number {
+  const code = currency.trim().toLowerCase();
+  if (ZERO_DECIMAL_CURRENCIES.has(code)) {
+    return amountMinor;
+  }
+  return amountMinor / 100;
+}

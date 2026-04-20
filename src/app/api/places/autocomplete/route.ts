@@ -8,6 +8,12 @@ interface PlaceSuggestion {
 interface PlacesRequestContext {
   languageCode: string;
   countries: string[];
+  bbox: {
+    west: number;
+    south: number;
+    east: number;
+    north: number;
+  };
 }
 
 function createRequestId(): string {
@@ -25,6 +31,38 @@ function parseCountriesFromEnv(): string[] {
     .map((item) => item.trim().toLowerCase())
     .filter((item) => /^[a-z]{2}$/.test(item))
     .slice(0, 5);
+}
+
+function parseNumber(value: string): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseBoundingBoxFromEnv() {
+  // Covers mainland Portugal + Spain with a small sea margin.
+  const raw = (process.env.PLACES_BOUNDING_BOX ?? "-10.2,35.4,4.8,44.6").trim();
+  const [westRaw, southRaw, eastRaw, northRaw] = raw.split(",").map((s) => s.trim());
+  const west = parseNumber(westRaw ?? "");
+  const south = parseNumber(southRaw ?? "");
+  const east = parseNumber(eastRaw ?? "");
+  const north = parseNumber(northRaw ?? "");
+
+  if (
+    west === null ||
+    south === null ||
+    east === null ||
+    north === null ||
+    west >= east ||
+    south >= north ||
+    west < -180 ||
+    east > 180 ||
+    south < -90 ||
+    north > 90
+  ) {
+    return { west: -10.2, south: 35.4, east: 4.8, north: 44.6 };
+  }
+
+  return { west, south, east, north };
 }
 
 function resolveLanguageCode(locale: string | null): string {
@@ -51,6 +89,12 @@ async function fetchGoogleSuggestions(
       languageCode: context.languageCode,
       includedRegionCodes: context.countries,
       includeQueryPredictions: false,
+      locationRestriction: {
+        rectangle: {
+          low: { latitude: context.bbox.south, longitude: context.bbox.west },
+          high: { latitude: context.bbox.north, longitude: context.bbox.east },
+        },
+      },
     }),
   });
 
@@ -84,10 +128,12 @@ async function fetchNominatimSuggestions(
   const params = new URLSearchParams({
     q: input,
     format: "jsonv2",
-    addressdetails: "0",
+    addressdetails: "1",
     limit: "6",
     "accept-language": context.languageCode,
     countrycodes: context.countries.join(","),
+    viewbox: `${context.bbox.west},${context.bbox.north},${context.bbox.east},${context.bbox.south}`,
+    bounded: "1",
   });
 
   const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
@@ -99,9 +145,16 @@ async function fetchNominatimSuggestions(
   });
   if (!response.ok) return [];
 
-  const json = (await response.json()) as Array<{ place_id?: number; display_name?: string }>;
+  const json = (await response.json()) as Array<{
+    place_id?: number;
+    display_name?: string;
+    address?: { country_code?: string };
+  }>;
+  const allowed = new Set(context.countries.map((c) => c.toLowerCase()));
   return json
     .map((item) => {
+      const cc = item.address?.country_code?.toLowerCase();
+      if (!cc || !allowed.has(cc)) return null;
       if (!item.place_id || !item.display_name) return null;
       return { id: String(item.place_id), label: item.display_name };
     })
@@ -120,6 +173,7 @@ export async function GET(request: Request) {
     const context: PlacesRequestContext = {
       languageCode: resolveLanguageCode(searchParams.get("locale")),
       countries: parseCountriesFromEnv(),
+      bbox: parseBoundingBoxFromEnv(),
     };
 
     const provider = (process.env.PLACES_PROVIDER ?? "nominatim").trim().toLowerCase();

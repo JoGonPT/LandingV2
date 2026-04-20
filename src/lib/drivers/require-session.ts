@@ -1,29 +1,31 @@
-import { cookies } from "next/headers";
-
-import { getDriverPortalConfig } from "@/lib/drivers/config";
-import { DRIVER_SESSION_COOKIE, verifyDriverSession } from "@/lib/drivers/session";
+import { isDriverSupabaseAuthConfigured } from "@/lib/supabase/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function isDriverAuthenticated(): Promise<boolean> {
+  if (!isDriverSupabaseAuthConfigured()) {
+    return false;
+  }
   try {
-    const cfg = getDriverPortalConfig();
-    const jar = await cookies();
-    const token = jar.get(DRIVER_SESSION_COOKIE)?.value;
-    return Boolean(token && verifyDriverSession(cfg.sessionSecret, token));
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return Boolean(user);
   } catch {
     return false;
   }
 }
 
 export async function requireDriverSessionCookie(): Promise<void> {
-  let cfg;
-  try {
-    cfg = getDriverPortalConfig();
-  } catch {
+  if (!isDriverSupabaseAuthConfigured()) {
     throw new Error("unauthorized");
   }
-  const jar = await cookies();
-  const token = jar.get(DRIVER_SESSION_COOKIE)?.value;
-  if (!token || !verifyDriverSession(cfg.sessionSecret, token)) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) {
     throw new Error("unauthorized");
   }
 }

@@ -164,6 +164,69 @@ export class SupabasePartnerCreditStore implements PartnerCreditStore {
     return this.rowToAccount(slug, rows[0]);
   }
 
+  /**
+   * Atomic credit hold (single round-trip). Requires migration `try_consume_partner_credit`.
+   * Prevents double-spend when two bookings race on the same partner balance.
+   */
+  async tryConsumeCreditAtomic(
+    slug: string,
+    amount: number,
+  ): Promise<
+    | { ok: true; account: PartnerCreditAccount }
+    | { ok: false; reason: string; available?: number; limit?: number; usage?: number }
+  > {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { ok: false, reason: "invalid_amount" };
+    }
+    const res = await fetch(`${this.baseUrl}/rest/v1/rpc/try_consume_partner_credit`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ p_slug: slug, p_amount: amount }),
+    });
+    const text = await res.text().catch(() => "");
+    if (!res.ok) {
+      return { ok: false, reason: `rpc_error_${res.status}`, available: 0, limit: 0, usage: 0 };
+    }
+    let j: unknown;
+    try {
+      j = JSON.parse(text) as unknown;
+    } catch {
+      return { ok: false, reason: "invalid_rpc_response", available: 0, limit: 0, usage: 0 };
+    }
+    if (!j || typeof j !== "object") {
+      return { ok: false, reason: "invalid_rpc_response", available: 0, limit: 0, usage: 0 };
+    }
+    const o = j as Record<string, unknown>;
+    if (o.ok !== true) {
+      const reason = typeof o.reason === "string" ? o.reason : "consume_failed";
+      return { ok: false, reason };
+    }
+    const row: PartnersRow = {
+      display_name: String(o.display_name ?? ""),
+      credit_limit: o.credit_limit as string | number,
+      current_usage: o.current_usage as string | number,
+      commission_rate: o.commission_rate as string | number | null,
+      pricing_model: o.pricing_model as string | null,
+      total_commissions_earned: o.total_commissions_earned as string | number | null,
+    };
+    const s = typeof o.slug === "string" ? o.slug : slug;
+    return { ok: true, account: this.rowToAccount(s, row) };
+  }
+
+  /** Roll back a successful `tryConsumeCreditAtomic` after CRM failure. */
+  async releaseCreditAtomic(slug: string, amount: number): Promise<void> {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    const res = await fetch(`${this.baseUrl}/rest/v1/rpc/release_partner_credit`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ p_slug: slug, p_amount: amount }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(`release_partner_credit failed: ${res.status} ${t}`);
+    }
+  }
+
   async tryConsumeCredit(
     slug: string,
     amount: number,

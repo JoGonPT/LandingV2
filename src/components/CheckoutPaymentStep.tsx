@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import type { BookingPayload, CheckoutCompleteSuccess } from "@/lib/transfercrm/types";
+import type { CheckoutCompleteSuccess } from "@/lib/transfercrm/types";
+
 export interface CheckoutPaymentLabels {
   pay: string;
   processing: string;
@@ -11,17 +12,46 @@ export interface CheckoutPaymentLabels {
 
 interface CheckoutPaymentStepProps {
   paymentIntentId: string;
-  payload: BookingPayload;
-  vehicleType: string;
   labels: CheckoutPaymentLabels;
   onSuccess: (data: CheckoutCompleteSuccess) => void;
   onBack: () => void;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function pollCheckoutStatus(paymentIntentId: string): Promise<CheckoutCompleteSuccess | null> {
+  const maxAttempts = 60;
+  for (let i = 0; i < maxAttempts; i++) {
+    const res = await fetch(
+      `/api/checkout/status?payment_intent=${encodeURIComponent(paymentIntentId)}`,
+      { method: "GET" },
+    );
+    const data = (await res.json().catch(() => null)) as
+      | { state?: string; message?: string; booking?: CheckoutCompleteSuccess }
+      | null;
+
+    if (!data || typeof data !== "object") {
+      await sleep(1000);
+      continue;
+    }
+
+    if (data.state === "failed") {
+      return null;
+    }
+
+    if (data.state === "ready" && data.booking && data.booking.success === true) {
+      return data.booking;
+    }
+
+    await sleep(1000);
+  }
+  return null;
+}
+
 export function CheckoutPaymentStep({
   paymentIntentId,
-  payload,
-  vehicleType,
   labels,
   onSuccess,
   onBack,
@@ -30,28 +60,6 @@ export function CheckoutPaymentStep({
   const elements = useElements();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-
-  async function finalizeBooking(): Promise<boolean> {
-    const res = await fetch("/api/checkout/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload, vehicleType, paymentIntentId }),
-    });
-    const data = (await res.json().catch(() => null)) as
-      | CheckoutCompleteSuccess
-      | { success?: false; message?: string }
-      | null;
-    if (!res.ok || !data || !("success" in data) || data.success !== true) {
-      const message =
-        data && typeof data === "object" && "message" in data && typeof data.message === "string"
-          ? data.message
-          : "We could not confirm your reservation. If you were charged, contact us.";
-      setMsg(message);
-      return false;
-    }
-    onSuccess(data);
-    return true;
-  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -76,10 +84,18 @@ export function CheckoutPaymentStep({
       return;
     }
 
-    const ok = await finalizeBooking();
-    if (!ok) {
+    setMsg(labels.processing);
+    const confirmed = await pollCheckoutStatus(paymentIntentId);
+    if (!confirmed) {
+      setMsg(
+        "Payment received but confirmation is delayed. If the charge appears on your statement, contact us with your email and trip details.",
+      );
       setBusy(false);
+      return;
     }
+
+    onSuccess(confirmed);
+    setBusy(false);
   }
 
   return (

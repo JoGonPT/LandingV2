@@ -35,7 +35,7 @@ export interface BookingPayload {
     passengers: number;
     luggage: number;
     notes?: string;
-    /** Optional for /book (CRM can auto-quote). Required for POST /api/booking/quote. */
+    /** Optional for /book (CRM can auto-quote). Nest quote API resolves distance before CRM. */
     distanceKm?: number;
   };
   vehicleType?: string;

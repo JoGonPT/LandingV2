@@ -1,3 +1,4 @@
+import { getOutboundClientIpHeaders } from "@/lib/http/outbound-forwarded-headers";
 import { buildTransferCrmAuthHeaders, type TransferCrmAuth } from "@/lib/transfercrm/config";
 import type { TransferCrmValidationErrorBody } from "@/lib/transfercrm/openapi.types";
 
@@ -62,6 +63,7 @@ export async function transferCrmFetch<T>(
 
   try {
     const authHeaders = buildTransferCrmAuthHeaders(options.auth);
+    const forwarded = getOutboundClientIpHeaders();
     const response = await fetch(url, {
       ...init,
       signal: controller.signal,
@@ -69,6 +71,7 @@ export async function transferCrmFetch<T>(
         "Content-Type": "application/json",
         Accept: "application/json",
         ...authHeaders,
+        ...forwarded,
         ...(init.headers || {}),
       },
     });

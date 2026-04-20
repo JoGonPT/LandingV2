@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import BookingForm from "./BookingForm";
 
 interface HeroSectionProps {
@@ -18,6 +19,8 @@ interface HeroSectionProps {
 
 export default function HeroSection({ dict, bookingDict, locale }: HeroSectionProps) {
     const isPT = locale === "pt";
+    const [formPhase, setFormPhase] = useState<"form" | "vehicles" | "payment">("form");
+    const bookingOnlyMode = formPhase !== "form";
     const mainTitle = isPT 
         ? "Transfers Privados Portugal — Conforto e Pontualidade"
         : dict.title;
@@ -26,14 +29,23 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
         : dict.subtitle;
 
     return (
-        <section className="relative min-h-screen bg-white px-6 py-20 pt-32 overflow-hidden">
-            <div className="relative max-w-7xl mx-auto w-full">
-                <div className="flex flex-col lg:flex-row items-stretch gap-12 lg:gap-20">
+        <section
+            className={`relative min-h-screen bg-white overflow-hidden ${
+                bookingOnlyMode ? "px-4 py-10 pt-24 lg:px-6" : "px-6 py-20 pt-32"
+            }`}
+        >
+            <div className={`relative mx-auto w-full ${bookingOnlyMode ? "max-w-6xl" : "max-w-7xl"}`}>
+                <div
+                    className={`flex flex-col items-stretch ${
+                        bookingOnlyMode ? "gap-0 lg:items-center" : "gap-12 lg:flex-row lg:gap-20"
+                    }`}
+                >
                     
                     {/* LEFT: Title Area + Booking Form */}
-                    <div className="w-full lg:w-1/2 flex flex-col justify-between">
+                    <div className={`w-full flex flex-col justify-between ${bookingOnlyMode ? "max-w-6xl lg:w-full" : "lg:w-1/2"}`}>
                         <div>
                             {/* Unified Title */}
+                            {!bookingOnlyMode ? (
                             <div className="mb-8 text-center lg:text-left">
                                 <h1 
                                     className="font-bold text-black tracking-tight leading-tight"
@@ -48,14 +60,16 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
                                     {mainSubtitle}
                                 </p>
                             </div>
+                            ) : null}
 
                             {/* Booking Form Container */}
-                            <div className="relative w-full min-h-[550px] overflow-hidden border border-neutral-200 bg-white lg:min-h-[600px]">
-                                <BookingForm dict={bookingDict} locale={locale} />
+                            <div className={`relative w-full min-h-[550px] overflow-hidden bg-white ${bookingOnlyMode ? "lg:min-h-[520px]" : "lg:min-h-[600px]"}`}>
+                                <BookingForm dict={bookingDict} locale={locale} onPhaseChange={setFormPhase} />
                             </div>
                         </div>
 
                         {/* Trustpilot Placeholder - Balanced at the bottom */}
+                        {!bookingOnlyMode ? (
                         <div className="mt-8 flex justify-center lg:justify-start">
                             <div className="flex items-center gap-2">
                                 <span className="font-bold text-sm">EXCELLENT</span>
@@ -76,9 +90,11 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
                                 </span>
                             </div>
                         </div>
+                        ) : null}
                     </div>
 
                     {/* RIGHT: Visual panel (no missing static asset dependency) */}
+                    {!bookingOnlyMode ? (
                     <div className="hidden lg:block w-full lg:w-1/2 relative">
                         <div className="relative h-full w-full rounded-[2.5rem] overflow-hidden shadow-2xl bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-600">
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_46%),radial-gradient(circle_at_80%_85%,rgba(255,255,255,0.18),transparent_48%)]" />
@@ -91,6 +107,7 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
                             </div>
                         </div>
                     </div>
+                    ) : null}
                 </div>
             </div>
         </section>

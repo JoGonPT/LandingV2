@@ -105,6 +105,7 @@ export function BookingDetailClient({ bookingId }: { bookingId: string }) {
   const flightStatus = pickString(row, "flight_status");
   const order = pickString(row, "order_number");
   const travelStatus = row.travel_status != null ? String(row.travel_status) : "";
+  const trackingUrl = pickString(row, "tracking_url")?.trim();
 
   const navigateTarget = pickup || dropoff;
 
@@ -140,6 +141,20 @@ export function BookingDetailClient({ bookingId }: { bookingId: string }) {
           </div>
         )}
       </section>
+
+      {trackingUrl ? (
+        <section className="mt-10 flex flex-col gap-4">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500">Customer view</h2>
+          <a
+            href={trackingUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-h-16 items-center justify-center rounded-2xl border-2 border-violet-600 bg-violet-950/60 text-center text-lg font-semibold text-violet-100 no-underline"
+          >
+            Open tracking page
+          </a>
+        </section>
+      ) : null}
 
       <section className="mt-10 flex flex-col gap-4">
         <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500">Navigation</h2>

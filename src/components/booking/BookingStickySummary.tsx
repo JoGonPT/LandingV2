@@ -1,3 +1,4 @@
+import type { PublicQuoteResponse } from "@/lib/booking/quote-public";
 import type { BookingLocale } from "@/lib/transfercrm/types";
 import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
@@ -61,7 +62,7 @@ export function BookingStickySummary({
   vehicleOptions: TransferCrmVehicleOption[];
   childSeat: boolean;
   luggage: number;
-  debouncedQuote: QuoteResponse | null;
+  debouncedQuote: PublicQuoteResponse | null;
   quoteLoading: boolean;
   paymentQuote: QuoteResponse | null;
   paymentCurrency: string;

@@ -14,10 +14,18 @@ export interface VehicleClassSelectorLabels {
   seats: string;
 }
 
-function brandCopy(lane: ReturnType<typeof inferVehicleBrandLane>, L: VehicleClassSelectorLabels) {
-  if (lane === "van") return { title: L.businessVan, hint: L.vanHint };
-  if (lane === "first") return { title: L.firstClass, hint: L.firstHint };
-  return { title: L.businessClass, hint: L.businessHint };
+function humanizeVehicleType(raw: string): string {
+  return raw
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function brandHint(lane: ReturnType<typeof inferVehicleBrandLane>, L: VehicleClassSelectorLabels): string {
+  if (lane === "van") return L.vanHint;
+  if (lane === "first") return L.firstHint;
+  return L.businessHint;
 }
 
 export function VehicleClassSelector({
@@ -37,7 +45,8 @@ export function VehicleClassSelector({
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-1">
       {options.map((v) => {
         const lane = inferVehicleBrandLane(v.vehicleType);
-        const { title, hint } = brandCopy(lane, labels);
+        const title = humanizeVehicleType(v.vehicleType);
+        const hint = brandHint(lane, labels);
         const active = selected === v.vehicleType;
         const seatLabel = v.seatsAvailable
           ? labels.seats.replace(/\{n\}/g, String(v.seatsAvailable))
@@ -57,9 +66,6 @@ export function VehicleClassSelector({
                   <div>
                     <p className="text-lg font-semibold tracking-tight text-black">{title}</p>
                     <p className="text-xs text-neutral-500">{hint}</p>
-                    <p className="mt-1 text-[11px] uppercase tracking-wider text-neutral-400">
-                      {v.vehicleType.replace(/_/g, " ")}
-                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-light tabular-nums text-black">

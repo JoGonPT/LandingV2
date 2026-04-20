@@ -2,21 +2,18 @@ import type Stripe from "stripe";
 import type { BookingPayload } from "@/lib/transfercrm/types";
 import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
 import type { TransferCrmApiClient } from "@/lib/transfercrm/TransferCrmApiClient";
-import { TransferCrmValidationFailedError } from "@/lib/transfercrm/http-core";
 import {
-  CheckoutAmountMismatchError,
-  CheckoutPaymentMetadataError,
-  CheckoutPaymentNotCompleteError,
   CheckoutQuoteIncompleteError,
-  CheckoutRefundFailedError,
 } from "@/lib/checkout/checkout-errors";
-import { minorUnitsMatchStripeIntent, toStripeMinorUnits } from "@/lib/checkout/stripe-money";
+import { toStripeMinorUnits } from "@/lib/checkout/stripe-money";
 import {
   computePartnerCommissionBreakdown,
   type PartnerCommissionPricingPayload,
   type PartnerPricingModel,
 } from "@/lib/partner/commission-pricing";
 import type { TransferCrmBookingResult } from "@/lib/transfercrm/types";
+import { createB2cTransferPaymentIntent } from "@/lib/checkout/stripe-payment-intent-b2c";
+import { finalizePaidBookingCore } from "@/lib/checkout/finalize-paid-booking-core";
 
 export interface CheckoutServiceDeps {
   stripe: Stripe;
@@ -51,9 +48,7 @@ export interface FinalizePaidBookingResult {
 
 /**
  * Coordinates TransferCRM quoting, Stripe PaymentIntents, and paid booking creation.
- * - Quote is priced by CRM; PI amount is derived from the quote (stored in PI metadata for verification).
- * - After successful charge, CRM `/book` uses the PaymentIntent id as `external_reference` (idempotent).
- * - On CRM validation failure (422), the PaymentIntent is refunded to avoid charging without a booking.
+ * - B2C create-intent is implemented in Nest; this class remains for partner Stripe checkout on Next.js.
  */
 export class CheckoutService {
   constructor(private readonly deps: CheckoutServiceDeps) {}
@@ -90,8 +85,18 @@ export class CheckoutService {
       crmBookMajor = partnerPricing.crmPrice;
     }
 
-    const amountMinor = toStripeMinorUnits(stripeMajor, currency);
+    if (!partnerCommercial || !partnerSlug) {
+      const b2c = await createB2cTransferPaymentIntent(this.deps.stripe, quote, payload, vehicleType);
+      return {
+        paymentIntentId: b2c.paymentIntentId,
+        clientSecret: b2c.clientSecret,
+        quote,
+        amountMinor: b2c.amountMinor,
+        currency: b2c.currency,
+      };
+    }
 
+    const amountMinor = toStripeMinorUnits(stripeMajor, currency);
     const quoteDistance =
       quote.distance_km != null && Number.isFinite(Number(quote.distance_km)) ? String(Number(quote.distance_km)) : "";
 
@@ -137,85 +142,8 @@ export class CheckoutService {
 
   /**
    * Phase 3: verify Stripe succeeded, reconcile amount, then create CRM booking.
-   * Refunds on CRM 422 so the user is not left paid without a reservation.
    */
   async finalizePaidBooking(args: FinalizePaidBookingArgs): Promise<FinalizePaidBookingResult> {
-    const { payload, vehicleType, paymentIntentId } = args;
-
-    const intent = await this.deps.stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (intent.status !== "succeeded") {
-      throw new CheckoutPaymentNotCompleteError(intent.status);
-    }
-
-    const meta = intent.metadata ?? {};
-    const crmPrice = Number(meta.way2go_price);
-    const stripeTotal = Number(meta.way2go_stripe_total ?? meta.way2go_price);
-    const currency = meta.way2go_currency?.trim();
-
-    if (!Number.isFinite(crmPrice) || !Number.isFinite(stripeTotal) || !currency) {
-      throw new CheckoutPaymentMetadataError();
-    }
-
-    const expectedStripeMinor = toStripeMinorUnits(stripeTotal, currency);
-    if (!minorUnitsMatchStripeIntent(expectedStripeMinor, intent.amount)) {
-      throw new CheckoutAmountMismatchError();
-    }
-
-    const paid = {
-      externalReference: paymentIntentId,
-      price: crmPrice,
-      currency,
-      vehicleType,
-    };
-
-    let bookingPayload = payload;
-    if (payload.details.distanceKm === undefined) {
-      const distRaw = meta.way2go_distance_km?.trim();
-      if (distRaw) {
-        const d = Number(distRaw);
-        if (Number.isFinite(d)) {
-          bookingPayload = {
-            ...payload,
-            details: { ...payload.details, distanceKm: d },
-          };
-        }
-      }
-    }
-
-    const commission = Number(meta.way2go_partner_commission);
-    const slug = meta.way2go_partner_slug?.trim();
-    const partnerCommissionDelta =
-      slug && Number.isFinite(commission) && commission > 0 ? { slug, amount: commission } : undefined;
-
-    let partnerPricing: PartnerCommissionPricingPayload | undefined;
-    if (meta.way2go_commission_rate && meta.way2go_pricing_model) {
-      const rate = Number(meta.way2go_commission_rate);
-      const model = meta.way2go_pricing_model === "NET_PRICE" ? "NET_PRICE" : "MARKUP";
-      if (Number.isFinite(crmPrice) && Number.isFinite(rate)) {
-        partnerPricing = computePartnerCommissionBreakdown(crmPrice, rate, model);
-      }
-    }
-
-    try {
-      const booking = await this.deps.crm.postBookForPaidCheckout(bookingPayload, paid);
-      return { booking, partnerCommissionDelta, partnerPricing };
-    } catch (error) {
-      if (error instanceof TransferCrmValidationFailedError) {
-        try {
-          await this.deps.stripe.refunds.create({
-            payment_intent: paymentIntentId,
-            metadata: { way2go_reason: "crm_validation_422" },
-          });
-        } catch (refundErr) {
-          throw new CheckoutRefundFailedError(
-            "Booking could not be completed and automatic refund failed. Please contact support.",
-            refundErr,
-          );
-        }
-        throw error;
-      }
-      throw error;
-    }
+    return finalizePaidBookingCore(this.deps.stripe, this.deps.crm, args);
   }
 }

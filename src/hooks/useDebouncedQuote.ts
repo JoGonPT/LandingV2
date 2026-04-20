@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
-import { quoteCacheKey } from "@/lib/booking/quote-cache-key";
-import type { BookingPayload } from "@/lib/transfercrm/types";
-import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
+import { quotePublicRequestCacheKey, type PublicQuoteResponse, type QuoteRequestDto } from "@/lib/booking/quote-public";
 
 const DEBOUNCE_MS = 500;
 const MAX_CACHE = 48;
 
-function trimCache(map: Map<string, QuoteResponse>) {
+function trimCache(map: Map<string, PublicQuoteResponse>) {
   while (map.size > MAX_CACHE) {
     const first = map.keys().next().value;
     if (first === undefined) break;
@@ -16,24 +14,23 @@ function trimCache(map: Map<string, QuoteResponse>) {
 }
 
 export function useDebouncedQuote(state: {
-  payload: BookingPayload | null;
-  vehicleType: string;
+  request: QuoteRequestDto | null;
   enabled: boolean;
-}): { quote: QuoteResponse | null; loading: boolean; error: string | null } {
-  const [quote, setQuote] = useState<QuoteResponse | null>(null);
+}): { quote: PublicQuoteResponse | null; loading: boolean; error: string | null } {
+  const [quote, setQuote] = useState<PublicQuoteResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const cacheRef = useRef(new Map<string, QuoteResponse>());
+  const cacheRef = useRef(new Map<string, PublicQuoteResponse>());
 
   useEffect(() => {
-    if (!state.enabled || !state.payload || !state.vehicleType.trim()) {
+    if (!state.enabled || !state.request || !(state.request.vehicleType ?? "").trim()) {
       setQuote(null);
       setLoading(false);
       setError(null);
       return;
     }
 
-    const key = quoteCacheKey(state.payload, state.vehicleType);
+    const key = quotePublicRequestCacheKey(state.request);
     const cached = cacheRef.current.get(key);
     if (cached) {
       setQuote(cached);
@@ -49,14 +46,14 @@ export function useDebouncedQuote(state: {
     const ac = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
-        const res = await fetch("/api/booking/quote", {
+        const res = await fetch("/api/public/quote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payload: state.payload, vehicleType: state.vehicleType }),
+          body: JSON.stringify(state.request),
           signal: ac.signal,
         });
         const body = (await res.json().catch(() => null)) as
-          | { success?: boolean; data?: QuoteResponse; message?: string }
+          | { success?: boolean; data?: PublicQuoteResponse; message?: string }
           | null;
 
         if (!res.ok || !body || body.success !== true || !body.data) {
@@ -82,7 +79,7 @@ export function useDebouncedQuote(state: {
       window.clearTimeout(timer);
       ac.abort();
     };
-  }, [state.enabled, state.payload, state.vehicleType]);
+  }, [state.enabled, state.request]);
 
   return { quote, loading, error };
 }

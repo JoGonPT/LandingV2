@@ -54,7 +54,7 @@ export function AddressAutocompleteInput({
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [value]);
+  }, [value, locale]);
 
   useEffect(() => {
     function onClickOutside(event: MouseEvent) {

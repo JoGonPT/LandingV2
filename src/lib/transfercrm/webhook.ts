@@ -12,7 +12,7 @@ export interface TransferCrmWebhookEvent {
 
 export function isSupportedTransferCrmEvent(event: TransferCrmWebhookEvent): boolean {
   const name = event.event ?? event.type;
-  return name === "order.status_changed" || name === "order.driver_assigned";
+  return typeof name === "string" && name.trim().length > 0;
 }
 
 function normalizeSignature(value: string): string {
