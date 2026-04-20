@@ -18,7 +18,7 @@ export async function GET() {
     throw e;
   }
 
-  const partners = getAllPartners();
+  const partners = await getAllPartners();
   const store = getPartnerCreditStore();
   const defaultLimit = getPartnerDefaultCreditLimit();
 

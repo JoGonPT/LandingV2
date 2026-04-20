@@ -4,11 +4,11 @@ import { PartnerBookingClient } from "@/components/partner/PartnerBookingClient"
 import { getPartnerBySlug, isPartnerPortalConfigured } from "@/lib/partner/config";
 
 export default async function PartnerBookPage({ params }: { params: Promise<{ slug: string }> }) {
-  if (!isPartnerPortalConfigured()) {
+  if (!(await isPartnerPortalConfigured())) {
     redirect("/partner/book/");
   }
   const { slug } = await params;
-  const partner = getPartnerBySlug(slug);
+  const partner = await getPartnerBySlug(slug);
   if (!partner) {
     notFound();
   }

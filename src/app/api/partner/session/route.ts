@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true as const, authenticated: false });
   }
 
-  const partner = getPartnerBySlug(sessionSlug);
+  const partner = await getPartnerBySlug(sessionSlug);
   if (!partner) {
     return NextResponse.json({ ok: true as const, authenticated: false });
   }

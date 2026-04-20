@@ -1,14 +1,64 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-import { proxyDriverApiToNest } from "@/lib/drivers/driver-nest-proxy";
+import { requireDriverSessionCookie } from "@/lib/drivers/require-session";
+import { postDriverStatusWebhook } from "@/lib/drivers/status-webhook";
+import { TransferCrmHttpError } from "@/lib/transfercrm/http-core";
+import { getBookingEngineService } from "@/modules/booking-engine/booking-engine.service";
+
+const Body = z.object({
+  travel_status: z.string().trim().min(1).max(64),
+});
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireDriverSessionCookie();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
-  if (!id) {
+  if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
     return NextResponse.json({ error: "Invalid booking id." }, { status: 400 });
   }
-  return proxyDriverApiToNest(
-    request,
-    `/api/drivers/bookings/${encodeURIComponent(id)}/travel-status`,
-  );
+
+  let body: z.infer<typeof Body>;
+  try {
+    body = Body.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid body." }, { status: 400 });
+  }
+
+  try {
+    const engine = getBookingEngineService();
+    await engine.updateStatus(id, body.travel_status, "driver");
+    await engine.recordStatusEvent({
+      providerBookingId: id,
+      status: "STATUS_UPDATED",
+      travelStatus: body.travel_status,
+      actor: "driver",
+      payload: { source: "driver_api" },
+    });
+
+    try {
+      await postDriverStatusWebhook({
+        booking_id: id,
+        travel_status: body.travel_status,
+        source: "driver_app",
+      });
+    } catch (whError) {
+      console.error("Driver status webhook error:", whError);
+      return NextResponse.json(
+        { ok: true, warning: "Updated in TransferCRM but central webhook failed." },
+        { status: 200 },
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    if (e instanceof TransferCrmHttpError) {
+      return NextResponse.json({ error: e.message, details: e.body }, { status: e.status });
+    }
+    throw e;
+  }
 }

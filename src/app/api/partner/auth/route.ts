@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Invalid body." }, { status: 400 });
   }
 
-  const partner = getPartnerBySlug(body.slug);
+  const partner = await getPartnerBySlug(body.slug);
   if (!partner) {
     return NextResponse.json({ ok: false, message: "Unknown partner." }, { status: 401 });
   }
