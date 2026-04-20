@@ -66,7 +66,10 @@ async function getPartnersFromSupabase(): Promise<PartnerRecord[] | null> {
     },
   });
   if (!res.ok) {
-    throw new Error(`Failed to load partners from Supabase (${res.status}).`);
+    // Production-safe fallback: if table/schema is missing or temporarily unavailable,
+    // do not break the portal rendering flow; return empty and let env fallback apply.
+    console.warn(`[partner-config] Supabase partners lookup failed with HTTP ${res.status}; falling back.`);
+    return [];
   }
   const rows = (await res.json()) as Array<Record<string, unknown>>;
   const mapped = rows
