@@ -1,5 +1,5 @@
 -- Baseline for databases that never ran legacy migrations creating `public.profiles`.
--- Required before 20260417120000_profiles_transfercrm_driver_id_rls.sql and later profile FK/RLS migrations.
+-- Required before 20260417120100_profiles_transfercrm_driver_id_rls.sql and later profile FK/RLS migrations.
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
