@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { pickNestProxyForwardHeaders } from "@/lib/http/nest-proxy-extra-headers";
+import { getDriverNestApiBaseUrl, nestProxyFetchSignal } from "@/lib/nest-api-base-url";
 
 /**
  * Driver PWA BFF → NestJS
@@ -8,26 +9,28 @@ import { pickNestProxyForwardHeaders } from "@/lib/http/nest-proxy-extra-headers
  * Forward the same `Cookie` and `Authorization` headers the browser sent. On `drivers.*` subdomains,
  * Next rewrites still hit this App Router handler with the original request headers, so the Supabase
  * session cookies remain valid when proxied to `NEST_API_BASE_URL` (server-side fetch).
+ *
+ * Usa só `NEST_API_BASE_URL` (ver `getDriverNestApiBaseUrl`); não faz fallback a `NEXT_PUBLIC_SITE_URL` para evitar recursão no mesmo path.
  */
 const LOG_PREFIX = "[nest-driver-proxy]";
 
-function nestBaseUrl(): string | null {
-  const u = process.env.NEST_API_BASE_URL?.trim();
-  return u && u.length > 0 ? u.replace(/\/+$/, "") : null;
+function isTimeoutLike(e: unknown): boolean {
+  if (!(e instanceof Error)) return false;
+  return e.name === "TimeoutError" || e.name === "AbortError" || e.message.toLowerCase().includes("timeout");
 }
 
 /**
  * @param pathWithQuery - Path beginning with `/api/drivers/...`, including `?date=` when present.
  */
 export async function proxyDriverApiToNest(request: Request, pathWithQuery: string): Promise<NextResponse> {
-  const base = nestBaseUrl();
+  const base = getDriverNestApiBaseUrl();
   const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
   if (!base) {
-    console.error(LOG_PREFIX, "NEST_API_BASE_URL not set", { requestId });
     return NextResponse.json(
       {
-        error: "Nest API is not configured (NEST_API_BASE_URL).",
+        error:
+          "Driver API requires NEST_API_BASE_URL pointing to the Nest host (same-origin driver paths cannot be proxied to this app).",
         code: "PROXY_CONFIG",
         requestId,
       },
@@ -56,9 +59,16 @@ export async function proxyDriverApiToNest(request: Request, pathWithQuery: stri
         ...(hasBody ? { "Content-Type": request.headers.get("content-type") ?? "application/json" } : {}),
       },
       body: bodyText,
+      signal: nestProxyFetchSignal(),
     });
   } catch (e) {
     console.error(LOG_PREFIX, "upstream failed", { requestId, error: String(e) });
+    if (isTimeoutLike(e)) {
+      return NextResponse.json(
+        { error: "Nest API request timed out.", code: "PROXY_TIMEOUT", requestId },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       { error: "Nest API unreachable.", code: "PROXY_UPSTREAM", requestId },
       { status: 502 },

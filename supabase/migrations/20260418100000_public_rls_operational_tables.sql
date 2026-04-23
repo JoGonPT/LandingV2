@@ -1,6 +1,19 @@
 -- RLS por tabela (critério alinhado a policies existentes: get_my_role(), profiles.tenant_id).
 -- Cada bloco só corre se a tabela existir (remotes sem Prisma / sem catálogo legado).
 
+-- Lean remotes may have pricing/catalog tables without this helper (legacy migrations never ran).
+create or replace function public.get_my_role()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select p.role from public.profiles p where p.id = auth.uid() limit 1;
+$$;
+
+grant execute on function public.get_my_role() to authenticated, anon, service_role;
+
 -- ---------------------------------------------------------------------------
 -- _prisma_migrations
 -- ---------------------------------------------------------------------------
@@ -134,15 +147,23 @@ begin
       using (get_my_role() = 'ADMIN')
       with check (get_my_role() = 'ADMIN');
 
-    create policy pricing_rules_tenant_select
-      on public.pricing_rules
-      for select
-      to authenticated
-      using (
-        tenant_id is not distinct from (
-          select p.tenant_id::text from public.profiles p where p.id = auth.uid()
-        )
-      );
+    if exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'pricing_rules'
+        and column_name = 'tenant_id'
+    ) then
+      create policy pricing_rules_tenant_select
+        on public.pricing_rules
+        for select
+        to authenticated
+        using (
+          tenant_id is not distinct from (
+            select p.tenant_id::text from public.profiles p where p.id = auth.uid()
+          )
+        );
+    end if;
   end if;
 end $w2g_rls_pricing_rules$;
 
@@ -177,20 +198,35 @@ begin
       using (get_my_role() = 'ADMIN')
       with check (get_my_role() = 'ADMIN');
 
-    create policy vehicle_type_configs_tenant_select
-      on public.vehicle_type_configs
-      for select
-      to authenticated
-      using (
-        exists (
-          select 1
-          from public.pricing_rules pr
-          where pr.id = vehicle_type_configs.pricing_rule_id
-            and pr.tenant_id is not distinct from (
-              select p.tenant_id::text from public.profiles p where p.id = auth.uid()
-            )
-        )
-      );
+    if exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'vehicle_type_configs'
+        and column_name = 'pricing_rule_id'
+    )
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'pricing_rules'
+        and column_name = 'tenant_id'
+    ) then
+      create policy vehicle_type_configs_tenant_select
+        on public.vehicle_type_configs
+        for select
+        to authenticated
+        using (
+          exists (
+            select 1
+            from public.pricing_rules pr
+            where pr.id = vehicle_type_configs.pricing_rule_id
+              and pr.tenant_id is not distinct from (
+                select p.tenant_id::text from public.profiles p where p.id = auth.uid()
+              )
+          )
+        );
+    end if;
   end if;
 end $w2g_rls_vehicle_type_configs$;
 

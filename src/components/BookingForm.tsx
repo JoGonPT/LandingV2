@@ -49,7 +49,7 @@ interface BookingFormProps {
     gdpr?: { text?: string };
     submit?: string;
     success?: { title?: string; message?: string; close?: string; orderLabel?: string; referenceHint?: string };
-    errors?: { generic?: string; gdpr?: string };
+    errors?: { generic?: string; gdpr?: string; distanceRequired?: string; distancePending?: string };
     checkout?: {
       chooseVehicle?: string;
       vehicleStepTitle?: string;
@@ -207,6 +207,10 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     passengers: formData.passengers,
     enabled: phase === "form" || phase === "vehicles",
   });
+  const previewDistanceReady =
+    routePreviewData?.distanceKm != null &&
+    Number.isFinite(Number(routePreviewData.distanceKm)) &&
+    Number(routePreviewData.distanceKm) > 0;
 
   const summaryLabels = useMemo(
     () => ({
@@ -253,6 +257,11 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
       if (!gdprAccepted) return null;
     }
 
+    const previewDistanceKm =
+      routePreviewData?.distanceKm != null && Number.isFinite(Number(routePreviewData.distanceKm))
+        ? Number(routePreviewData.distanceKm)
+        : undefined;
+
     return {
       locale: bookingLocale,
       route: {
@@ -267,6 +276,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
         passengers: Number(formData.passengers),
         luggage: Number(formData.luggage),
         notes: formData.notes.trim() || undefined,
+        ...(previewDistanceKm !== undefined && previewDistanceKm > 0 ? { distanceKm: previewDistanceKm } : {}),
       },
       contact: {
         fullName: formData.name.trim(),
@@ -420,20 +430,38 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
       );
       return;
     }
+    if (!previewDistanceReady) {
+      setError(
+        dict.errors?.distancePending ||
+          (bookingLocale === "pt"
+            ? "A calcular distância… aguarde 1-2s."
+            : "Calculating distance… please wait 1-2 seconds."),
+      );
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/booking/vehicles", {
+      const response = await fetch("/api/booking/vehicles/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ payload }),
       });
       const body = (await response.json().catch(() => null)) as
-        | { success?: boolean; vehicles?: TransferCrmVehicleOption[]; message?: string }
+        | { success?: boolean; vehicles?: TransferCrmVehicleOption[]; message?: string; code?: string }
         | null;
 
       if (!response.ok || !body || body.success !== true || !Array.isArray(body.vehicles)) {
-        setError(body?.message || dict.errors?.generic || "Could not load vehicles.");
+        if (body?.code === "DISTANCE_REQUIRED") {
+          setError(
+            dict.errors?.distanceRequired ||
+              (bookingLocale === "pt"
+                ? "Não foi possível calcular a distância do trajeto. Ajuste origem/destino e tente novamente."
+                : "Could not calculate route distance. Please adjust pickup/dropoff and try again."),
+          );
+        } else {
+          setError(body?.message || dict.errors?.generic || "Could not load vehicles.");
+        }
         return;
       }
 
@@ -476,7 +504,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     setIsLoading(true);
     try {
       const idempotencyKey = ensureB2CCheckoutIdempotencyKey();
-      const response = await fetch("/api/checkout/intent", {
+      const response = await fetch("/api/checkout/intent/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -683,21 +711,17 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
               )}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Input
+                <SelectInput
                   label={dict.passengers || "Passengers"}
-                  type="number"
-                  min="1"
                   value={String(formData.passengers)}
                   onChange={(value) => setFormData((s) => ({ ...s, passengers: Number(value || 1) }))}
-                  required
+                  options={Array.from({ length: 14 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
                 />
-                <Input
+                <SelectInput
                   label={dict.luggage || "Luggage"}
-                  type="number"
-                  min="0"
                   value={String(formData.luggage)}
                   onChange={(value) => setFormData((s) => ({ ...s, luggage: Number(value || 0) }))}
-                  required
+                  options={Array.from({ length: 15 }, (_, i) => ({ value: String(i), label: String(i) }))}
                 />
               </div>
 
@@ -705,10 +729,12 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || routePreviewLoading || !previewDistanceReady}
                 className="w-full min-h-[52px] rounded-xl bg-black text-sm font-semibold tracking-wide text-white disabled:opacity-50"
               >
-                {isLoading ? ck?.loadingVehicles || "Loading…" : ck?.continueFromForm ?? ck?.chooseVehicle ?? "Continue"}
+                {isLoading || routePreviewLoading
+                  ? ck?.loadingVehicles || "Loading…"
+                  : ck?.continueFromForm ?? ck?.chooseVehicle ?? "Continue"}
               </button>
             </form>
           ) : null}
@@ -1031,6 +1057,35 @@ function Input({
         step={step}
         placeholder={placeholder?.trim() ? placeholder : undefined}
       />
+    </label>
+  );
+}
+
+function SelectInput({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-neutral-500">{label}</span>
+      <select
+        className="min-h-[44px] w-full border border-neutral-300 bg-white px-3 text-sm text-black outline-none transition-colors focus:border-black"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

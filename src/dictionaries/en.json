@@ -103,7 +103,9 @@
         },
         "errors": {
             "generic": "Could not submit your booking. Please try again.",
-            "gdpr": "You must accept the privacy policy."
+            "gdpr": "You must accept the privacy policy.",
+            "distanceRequired": "Could not calculate route distance. Please adjust pickup/dropoff and try again.",
+            "distancePending": "Calculating distance… please wait 1-2 seconds."
         }
     },
     "faq": {

@@ -46,7 +46,7 @@ export function useDebouncedRoutePreview(state: {
     const ac = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
-        const res = await fetch("/api/booking/route-preview", {
+        const res = await fetch("/api/booking/route-preview/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -119,7 +119,19 @@ create unique index if not exists partners_slug_uidx on public.partners (slug);
 alter table public.partners
   add constraint partners_slug_key unique using index partners_slug_uidx;
 
--- 5) FK restore (partner_id remains the slug text column)
-alter table public.bookings
-  add constraint bookings_partner_id_fkey
-  foreign key (partner_id) references public.partners (slug) on delete set null;
+-- 5) FK restore when legacy `public.bookings` has `partner_id` (slug → partners.slug)
+do $bookings_partner_fk$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'bookings'
+      and column_name = 'partner_id'
+  ) then
+    alter table public.bookings drop constraint if exists bookings_partner_id_fkey;
+    alter table public.bookings
+      add constraint bookings_partner_id_fkey
+      foreign key (partner_id) references public.partners (slug) on delete set null;
+  end if;
+end $bookings_partner_fk$;

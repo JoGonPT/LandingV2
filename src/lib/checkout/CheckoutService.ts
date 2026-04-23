@@ -48,7 +48,7 @@ export interface FinalizePaidBookingResult {
 
 /**
  * Coordinates TransferCRM quoting, Stripe PaymentIntents, and paid booking creation.
- * - B2C create-intent is implemented in Nest; this class remains for partner Stripe checkout on Next.js.
+ * - B2C create-intent is implemented in Next (`/api/payments/create-intent`); this class remains for partner Stripe checkout.
  */
 export class CheckoutService {
   constructor(private readonly deps: CheckoutServiceDeps) {}

@@ -12,39 +12,85 @@ function parseCountriesFromEnv(): string[] {
     .slice(0, 5);
 }
 
+function normalizeAddressVariant(raw: string): string {
+  return raw
+    .replace(/\s+/g, " ")
+    .replace(/\(([^)]{2,6})\)/g, "$1")
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+}
+
+function buildAddressVariants(address: string): string[] {
+  const out = new Set<string>();
+  const a = address.trim();
+  if (!a) return [];
+  out.add(a);
+  out.add(normalizeAddressVariant(a));
+
+  // Try first segment only (often enough for airport names with long suffixes).
+  const firstSeg = a.split(",")[0]?.trim();
+  if (firstSeg) {
+    out.add(firstSeg);
+    out.add(normalizeAddressVariant(firstSeg));
+  }
+
+  // OPO-specific resilience: explicit airport aliases.
+  if (/\bOPO\b/i.test(a) || /Francisco S[aá] Carneiro/i.test(a)) {
+    out.add("Aeroporto Francisco Sá Carneiro");
+    out.add("Porto Airport OPO");
+    out.add("OPO Airport");
+  }
+
+  return [...out].filter(Boolean);
+}
+
+function knownAirportCoords(address: string): { lat: number; lon: number } | null {
+  const a = address.toLowerCase();
+  // Porto / OPO
+  if (a.includes("francisco sá carneiro") || /\bopo\b/.test(a)) {
+    return { lat: 41.2421, lon: -8.6781 };
+  }
+  return null;
+}
+
 async function geocodeNominatim(address: string): Promise<{ lat: number; lon: number } | null> {
   const q = address.trim();
   if (!q) return null;
+  const known = knownAirportCoords(q);
+  if (known) return known;
   const countries = parseCountriesFromEnv();
   const trySearch = async (countrycodes: string | undefined) => {
-    const params = new URLSearchParams({
-      q,
-      format: "jsonv2",
-      limit: "1",
-      "accept-language": "en-GB",
-    });
-    if (countrycodes) params.set("countrycodes", countrycodes);
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 8000);
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": "Way2GoLanding/1.0 (way2go.pt; route-distance estimate)",
-        },
-        signal: controller.signal,
+    for (const candidate of buildAddressVariants(q)) {
+      const params = new URLSearchParams({
+        q: candidate,
+        format: "jsonv2",
+        limit: "1",
+        "accept-language": "en-GB",
       });
-      if (!response.ok) return null;
-      const rows = (await response.json()) as Array<{ lat?: string; lon?: string }>;
-      const row = rows[0];
-      if (!row?.lat || !row?.lon) return null;
-      const lat = Number(row.lat);
-      const lon = Number(row.lon);
-      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-      return { lat, lon };
-    } finally {
-      clearTimeout(t);
+      if (countrycodes) params.set("countrycodes", countrycodes);
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "Way2GoLanding/1.0 (way2go.pt; route-distance estimate)",
+          },
+          signal: controller.signal,
+        });
+        if (!response.ok) continue;
+        const rows = (await response.json()) as Array<{ lat?: string; lon?: string }>;
+        const row = rows[0];
+        if (!row?.lat || !row?.lon) continue;
+        const lat = Number(row.lat);
+        const lon = Number(row.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        return { lat, lon };
+      } finally {
+        clearTimeout(t);
+      }
     }
+    return null;
   };
 
   const withCountries = countries.length > 0 ? countries.join(",") : undefined;

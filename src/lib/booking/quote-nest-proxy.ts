@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { pickNestProxyForwardHeaders } from "@/lib/http/nest-proxy-extra-headers";
+import { getNestApiBaseUrl, isRecursiveNestProxy, nestProxyFetchSignal } from "@/lib/nest-api-base-url";
 
 const LOG_PREFIX = "[nest-public-proxy]";
 
@@ -11,25 +12,38 @@ function nestUpstreamHeaders(request: Request, extra: Record<string, string>): R
   };
 }
 
-function nestBaseUrl(): string | null {
-  const u = process.env.NEST_API_BASE_URL?.trim();
-  return u && u.length > 0 ? u.replace(/\/+$/, "") : null;
+function isTimeoutLike(e: unknown): boolean {
+  if (!(e instanceof Error)) return false;
+  return e.name === "TimeoutError" || e.name === "AbortError" || e.message.toLowerCase().includes("timeout");
+}
+
+function recursiveProxyResponse(requestId: string): NextResponse {
+  return NextResponse.json(
+    {
+      success: false,
+      code: "PROXY_RECURSION",
+      message:
+        "Nest proxy would call the same URL as this request. Set NEST_API_BASE_URL to a separate API host, or use a BFF route whose path differs from the upstream (e.g. /api/booking/quote → /api/public/quote).",
+      requestId,
+    },
+    { status: 503 },
+  );
 }
 
 async function proxyPublicPostToNest(
   request: Request,
-  nestPath: "/api/public/quote" | "/api/public/book" | "/api/payments/create-intent",
+  nestPath: "/api/public/quote" | "/api/public/book",
 ): Promise<NextResponse> {
-  const base = nestBaseUrl();
+  const base = getNestApiBaseUrl();
   const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
   if (!base) {
-    console.error(LOG_PREFIX, "NEST_API_BASE_URL not set", { requestId });
     return NextResponse.json(
       {
         success: false,
         code: "PROXY_CONFIG",
-        message: "Nest API is not configured (NEST_API_BASE_URL).",
+        message:
+          "Nest API is not configured. Set NEST_API_BASE_URL and/or NEXT_PUBLIC_SITE_URL (production / Vercel).",
         requestId,
       },
       { status: 503 },
@@ -40,6 +54,9 @@ async function proxyPublicPostToNest(
   console.info(LOG_PREFIX, "request received", { requestId, nestPath, bodyBytes: bodyText.length });
 
   const target = `${base}${nestPath}`;
+  if (isRecursiveNestProxy(request, target)) {
+    return recursiveProxyResponse(requestId);
+  }
   console.info(LOG_PREFIX, "forwarding", { requestId, target });
 
   let upstream: Response;
@@ -48,9 +65,21 @@ async function proxyPublicPostToNest(
       method: "POST",
       headers: nestUpstreamHeaders(request, { "Content-Type": "application/json" }),
       body: bodyText,
+      signal: nestProxyFetchSignal(),
     });
   } catch (e) {
     console.error(LOG_PREFIX, "forward failed", { requestId, error: String(e) });
+    if (isTimeoutLike(e)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "PROXY_TIMEOUT",
+          message: "Nest API request timed out.",
+          requestId,
+        },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       {
         success: false,
@@ -80,16 +109,16 @@ export async function proxyQuoteToNest(request: Request): Promise<NextResponse> 
 type PartnerNestPath = "/api/partner/quote" | "/api/partner/book-account";
 
 async function proxyPartnerPostToNest(request: Request, nestPath: PartnerNestPath): Promise<NextResponse> {
-  const base = nestBaseUrl();
+  const base = getNestApiBaseUrl();
   const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
   if (!base) {
-    console.error(LOG_PREFIX, "NEST_API_BASE_URL not set", { requestId });
     return NextResponse.json(
       {
         success: false,
         code: "PROXY_CONFIG",
-        message: "Nest API is not configured (NEST_API_BASE_URL).",
+        message:
+          "Nest API is not configured. Set NEST_API_BASE_URL and/or NEXT_PUBLIC_SITE_URL (production / Vercel).",
         requestId,
       },
       { status: 503 },
@@ -101,6 +130,9 @@ async function proxyPartnerPostToNest(request: Request, nestPath: PartnerNestPat
   console.info(LOG_PREFIX, "partner request received", { requestId, nestPath, bodyBytes: bodyText.length });
 
   const target = `${base}${nestPath}`;
+  if (isRecursiveNestProxy(request, target)) {
+    return recursiveProxyResponse(requestId);
+  }
   let upstream: Response;
   try {
     upstream = await fetch(target, {
@@ -110,9 +142,21 @@ async function proxyPartnerPostToNest(request: Request, nestPath: PartnerNestPat
         ...(cookie ? { Cookie: cookie } : {}),
       }),
       body: bodyText,
+      signal: nestProxyFetchSignal(),
     });
   } catch (e) {
     console.error(LOG_PREFIX, "partner forward failed", { requestId, error: String(e) });
+    if (isTimeoutLike(e)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "PROXY_TIMEOUT",
+          message: "Nest API request timed out.",
+          requestId,
+        },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       {
         success: false,
@@ -145,95 +189,4 @@ export async function proxyPartnerBookAccountToNest(request: Request): Promise<N
 
 export async function proxyBookToNest(request: Request): Promise<NextResponse> {
   return proxyPublicPostToNest(request, "/api/public/book");
-}
-
-export async function proxyPaymentsCreateIntentToNest(request: Request): Promise<NextResponse> {
-  return proxyPublicPostToNest(request, "/api/payments/create-intent");
-}
-
-export async function proxyPaymentsCheckoutStatus(request: Request): Promise<NextResponse> {
-  const base = nestBaseUrl();
-  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-  if (!base) {
-    console.error(LOG_PREFIX, "NEST_API_BASE_URL not set", { requestId });
-    return NextResponse.json(
-      {
-        success: false,
-        code: "PROXY_CONFIG",
-        message: "Nest API is not configured (NEST_API_BASE_URL).",
-        requestId,
-      },
-      { status: 503 },
-    );
-  }
-
-  const url = new URL(request.url);
-  const pi = url.searchParams.get("payment_intent")?.trim();
-  if (!pi) {
-    return NextResponse.json(
-      { success: false, code: "BAD_REQUEST", message: "payment_intent required.", requestId },
-      { status: 400 },
-    );
-  }
-
-  const target = `${base}/api/payments/checkout-status?payment_intent=${encodeURIComponent(pi)}`;
-  let upstream: Response;
-  try {
-    upstream = await fetch(target, {
-      method: "GET",
-      headers: nestUpstreamHeaders(request, {}),
-    });
-  } catch (e) {
-    console.error(LOG_PREFIX, "checkout-status forward failed", { requestId, error: String(e) });
-    return NextResponse.json(
-      { success: false, code: "PROXY_UPSTREAM", message: "Nest API unreachable.", requestId },
-      { status: 502 },
-    );
-  }
-
-  const text = await upstream.text();
-  return new NextResponse(text, {
-    status: upstream.status,
-    headers: {
-      "Content-Type": upstream.headers.get("content-type") ?? "application/json",
-    },
-  });
-}
-
-export async function proxyStripeWebhookToNest(request: Request): Promise<NextResponse> {
-  const base = nestBaseUrl();
-  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-  if (!base) {
-    console.error(LOG_PREFIX, "NEST_API_BASE_URL not set", { requestId });
-    return NextResponse.json({ received: false, message: "Nest not configured." }, { status: 503 });
-  }
-
-  const sig = request.headers.get("stripe-signature") ?? "";
-  const raw = await request.text();
-  const target = `${base}/api/webhooks/stripe`;
-
-  let upstream: Response;
-  try {
-    upstream = await fetch(target, {
-      method: "POST",
-      headers: nestUpstreamHeaders(request, {
-        "Content-Type": request.headers.get("content-type") ?? "application/json",
-        "stripe-signature": sig,
-      }),
-      body: raw,
-    });
-  } catch (e) {
-    console.error(LOG_PREFIX, "stripe webhook forward failed", { requestId, error: String(e) });
-    return NextResponse.json({ received: false }, { status: 502 });
-  }
-
-  const text = await upstream.text();
-  return new NextResponse(text, {
-    status: upstream.status,
-    headers: {
-      "Content-Type": upstream.headers.get("content-type") ?? "application/json",
-    },
-  });
 }

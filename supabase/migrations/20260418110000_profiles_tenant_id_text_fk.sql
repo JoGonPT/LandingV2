@@ -53,6 +53,13 @@ begin
     from information_schema.tables
     where table_schema = 'public'
       and table_name = 'pricing_rules'
+  )
+  and exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'pricing_rules'
+      and column_name = 'tenant_id'
   ) then
     create policy pricing_rules_tenant_select
       on public.pricing_rules
@@ -76,6 +83,20 @@ begin
     from information_schema.tables
     where table_schema = 'public'
       and table_name = 'pricing_rules'
+  )
+  and exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'vehicle_type_configs'
+      and column_name = 'pricing_rule_id'
+  )
+  and exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'pricing_rules'
+      and column_name = 'tenant_id'
   ) then
     create policy vehicle_type_configs_tenant_select
       on public.vehicle_type_configs

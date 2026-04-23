@@ -29,6 +29,24 @@ create table if not exists public.drivers (
   updated_at timestamptz not null default now()
 );
 
+-- Lean/legacy `public.drivers` may already exist without native-dispatch columns; CREATE TABLE IF NOT EXISTS is a no-op.
+alter table public.drivers add column if not exists full_name text;
+alter table public.drivers add column if not exists phone text;
+alter table public.drivers add column if not exists email text;
+alter table public.drivers add column if not exists status text;
+alter table public.drivers add column if not exists vehicle_class text;
+alter table public.drivers add column if not exists fleet_vehicle_id text;
+alter table public.drivers add column if not exists current_lat double precision;
+alter table public.drivers add column if not exists current_lng double precision;
+alter table public.drivers add column if not exists active boolean;
+alter table public.drivers add column if not exists created_at timestamptz;
+alter table public.drivers add column if not exists updated_at timestamptz;
+
+update public.drivers set status = coalesce(status, 'ACTIVE');
+update public.drivers set active = coalesce(active, true);
+update public.drivers set created_at = coalesce(created_at, now());
+update public.drivers set updated_at = coalesce(updated_at, now());
+
 create table if not exists public.native_driver_booking_assignments (
   id text primary key,
   booking_id text not null references public.booking_orders(id) on delete cascade,
@@ -120,6 +138,23 @@ left join public.fleet_availability fa on fa.vehicle_class = coalesce(fv.vehicle
 
 grant select on public.driver_vehicle_live to service_role;
 grant select on public.driver_vehicle_live to authenticated;
+
+-- Legacy CRM `public.drivers` may enforce NOT NULL on columns the native seed does not fill.
+do $legacy_drivers_drop_not_null_for_seed$
+begin
+  if exists (
+    select 1 from pg_attribute a join pg_class c on a.attrelid = c.oid join pg_namespace n on c.relnamespace = n.oid
+    where n.nspname = 'public' and c.relname = 'drivers' and a.attname = 'userId' and not a.attisdropped and a.attnotnull
+  ) then execute 'alter table public.drivers alter column "userId" drop not null'; end if;
+  if exists (
+    select 1 from pg_attribute a join pg_class c on a.attrelid = c.oid join pg_namespace n on c.relnamespace = n.oid
+    where n.nspname = 'public' and c.relname = 'drivers' and a.attname = 'updatedAt' and not a.attisdropped and a.attnotnull
+  ) then execute 'alter table public.drivers alter column "updatedAt" drop not null'; end if;
+  if exists (
+    select 1 from pg_attribute a join pg_class c on a.attrelid = c.oid join pg_namespace n on c.relnamespace = n.oid
+    where n.nspname = 'public' and c.relname = 'drivers' and a.attname = 'createdAt' and not a.attisdropped and a.attnotnull
+  ) then execute 'alter table public.drivers alter column "createdAt" drop not null'; end if;
+end $legacy_drivers_drop_not_null_for_seed$;
 
 -- Baseline seed for PT market dispatch testing.
 insert into public.fleet_vehicles (id, vehicle_class, plate, brand, model, year, active)

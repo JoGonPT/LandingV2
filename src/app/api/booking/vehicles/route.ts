@@ -22,6 +22,18 @@ export async function POST(request: Request) {
 
     const crm = getTransferCrmApiClient();
     const ready = await resolveBookingPayloadDistance(validated.data, crm);
+    const distanceKm = ready.details.distanceKm;
+    if (!(typeof distanceKm === "number" && Number.isFinite(distanceKm) && distanceKm > 0)) {
+      return NextResponse.json(
+        {
+          success: false as const,
+          code: "DISTANCE_REQUIRED",
+          message: "Could not resolve trip distance (distance_km). Please adjust route details and try again.",
+          requestId,
+        },
+        { status: 422 },
+      );
+    }
     const result = await getVehicleOptions(ready);
 
     // Strict: only keep vehicles successfully quoted by TransferCRM pricing rules.
@@ -39,7 +51,17 @@ export async function POST(request: Request) {
             };
           }
           return null;
-        } catch {
+        } catch (error) {
+          console.warn("[booking-vehicles][quote-failed]", {
+            requestId,
+            vehicleType: v.vehicleType,
+            seatsAvailable: v.seatsAvailable,
+            pickup: ready.route.pickup,
+            dropoff: ready.route.dropoff,
+            date: ready.route.date,
+            time: ready.route.time,
+            error: error instanceof Error ? error.message : String(error),
+          });
           return null;
         }
       }),

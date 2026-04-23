@@ -97,7 +97,8 @@ async function getPartnersFromSupabase(): Promise<PartnerRecord[] | null> {
 
 export async function getAllPartners(): Promise<PartnerRecord[]> {
   const fromDb = await getPartnersFromSupabase();
-  if (fromDb) return fromDb;
+  // `[]` from Supabase must not skip env: empty DB / failed REST would otherwise hide PARTNERS_JSON / PARTNER_BOOKING_*.
+  if (fromDb !== null && fromDb.length > 0) return fromDb;
   return getAllPartnersFromEnv();
 }
 

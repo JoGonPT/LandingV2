@@ -103,7 +103,9 @@
         },
         "errors": {
             "generic": "Não foi possível enviar a reserva. Tente novamente.",
-            "gdpr": "É necessário aceitar a política de privacidade."
+            "gdpr": "É necessário aceitar a política de privacidade.",
+            "distanceRequired": "Não foi possível calcular a distância do trajeto. Ajuste origem/destino e tente novamente.",
+            "distancePending": "A calcular distância… aguarde 1-2s."
         }
     },
     "faq": {
