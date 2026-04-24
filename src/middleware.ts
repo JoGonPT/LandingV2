@@ -32,8 +32,20 @@ function copyCookies(from: NextResponse, to: NextResponse) {
   });
 }
 
+function isApiPath(pathname: string): boolean {
+  return pathname === "/api" || pathname.startsWith("/api/");
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  /** API: nunca aplicar locale /pt|/en (webhooks Stripe, REST interno). Opcional: MIDDLEWARE_DEBUG_API=1 nos logs Vercel. */
+  if (isApiPath(pathname)) {
+    if (process.env.MIDDLEWARE_DEBUG_API === "1") {
+      console.log("[middleware] API passthrough (i18n skipped)", request.method, pathname);
+    }
+    return NextResponse.next();
+  }
 
   if (
     pathname.startsWith("/drivers-pwa") ||
@@ -87,6 +99,12 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+/**
+ * Inclui `/api` para o bypass explícito acima (sem prefixo de idioma).
+ * Exclui `_next/*`, ficheiros com extensão, favicon, service worker e robots.
+ */
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/|favicon\\.ico|service-worker\\.js|robots\\.txt|.*\\..*).*)",
+  ],
 };

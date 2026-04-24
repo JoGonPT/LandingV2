@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   images: { unoptimized: true },
   trailingSlash: true,
+  /** Evita 308 de `/api/...` → `/api/.../` (Stripe e outros clientes POST podem não seguir redirect ou invalidar o corpo). */
+  skipTrailingSlashRedirect: true,
   async headers() {
     return [
       {
