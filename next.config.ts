@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' blob: https://js.stripe.com https://m.stripe.network",
-  "script-src-elem 'self' 'unsafe-inline' blob: https://js.stripe.com https://m.stripe.network",
+  "script-src 'self' 'unsafe-inline' blob: https://js.stripe.com https://m.stripe.network https://transfercrm.com https://*.transfercrm.com",
+  "script-src-elem 'self' 'unsafe-inline' blob: https://js.stripe.com https://m.stripe.network https://transfercrm.com https://*.transfercrm.com",
   "worker-src 'self' blob:",
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://m.stripe.network https://www.google.com https://maps.google.com",
-  "child-src 'self' blob: https://js.stripe.com https://hooks.stripe.com https://m.stripe.network https://www.google.com https://maps.google.com",
-  "connect-src 'self' https://api.stripe.com https://m.stripe.network",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://m.stripe.network https://www.google.com https://maps.google.com https://transfercrm.com https://*.transfercrm.com",
+  "child-src 'self' blob: https://js.stripe.com https://hooks.stripe.com https://m.stripe.network https://www.google.com https://maps.google.com https://transfercrm.com https://*.transfercrm.com",
+  "connect-src 'self' https://api.stripe.com https://m.stripe.network https://transfercrm.com https://*.transfercrm.com",
   "img-src 'self' data: https:",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
