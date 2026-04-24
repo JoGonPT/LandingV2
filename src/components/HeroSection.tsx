@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import BookingForm from "./BookingForm";
+import TransferCrmWidget from "@/components/booking/TransferCrmWidget";
 
 interface HeroSectionProps {
     dict: {
@@ -19,8 +18,8 @@ interface HeroSectionProps {
 
 export default function HeroSection({ dict, bookingDict, locale }: HeroSectionProps) {
     const isPT = locale === "pt";
-    const [formPhase, setFormPhase] = useState<"form" | "vehicles" | "payment">("form");
-    const bookingOnlyMode = formPhase !== "form";
+    const bookingOnlyMode = false;
+    void bookingDict;
     const mainTitle = isPT 
         ? "Transfers Privados Portugal — Conforto e Pontualidade"
         : dict.title;
@@ -64,7 +63,7 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
 
                             {/* Booking Form Container */}
                             <div className={`relative w-full min-h-[550px] overflow-hidden bg-white ${bookingOnlyMode ? "lg:min-h-[520px]" : "lg:min-h-[600px]"}`}>
-                                <BookingForm dict={bookingDict} locale={locale} onPhaseChange={setFormPhase} />
+                                <TransferCrmWidget />
                             </div>
                         </div>
 
