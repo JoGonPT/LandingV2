@@ -25,7 +25,7 @@ async function pollCheckoutStatus(paymentIntentId: string): Promise<CheckoutComp
   const maxAttempts = 60;
   for (let i = 0; i < maxAttempts; i++) {
     const res = await fetch(
-      `/api/checkout/status?payment_intent=${encodeURIComponent(paymentIntentId)}`,
+      `/api/checkout/status/?payment_intent=${encodeURIComponent(paymentIntentId)}`,
       { method: "GET" },
     );
     const data = (await res.json().catch(() => null)) as
