@@ -68,7 +68,9 @@ export function CheckoutPaymentStep({
     setBusy(true);
 
     const returnUrl =
-      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}${window.location.search}` : "";
+      typeof window !== "undefined"
+        ? `${window.location.origin}${window.location.pathname}?checkout=success`
+        : "";
 
     const { error } = await stripe.confirmPayment({
       elements,
