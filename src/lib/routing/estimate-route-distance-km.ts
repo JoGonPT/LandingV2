@@ -20,6 +20,15 @@ function normalizeAddressVariant(raw: string): string {
     .trim();
 }
 
+function normalizeForMatch(raw: string): string {
+  return raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function buildAddressVariants(address: string): string[] {
   const out = new Set<string>();
   const a = address.trim();
@@ -35,19 +44,35 @@ function buildAddressVariants(address: string): string[] {
   }
 
   // OPO-specific resilience: explicit airport aliases.
-  if (/\bOPO\b/i.test(a) || /Francisco S[aá] Carneiro/i.test(a)) {
+  const am = normalizeForMatch(a);
+  if (
+    /\bOPO\b/i.test(a) ||
+    /Francisco S[aá] Carneiro/i.test(a) ||
+    am.includes("aeroporto do porto") ||
+    am.includes("porto airport") ||
+    am.includes("sa carneiro") ||
+    am.includes("francisco sa carneiro")
+  ) {
     out.add("Aeroporto Francisco Sá Carneiro");
     out.add("Porto Airport OPO");
     out.add("OPO Airport");
+    out.add("Aeroporto do Porto");
+    out.add("Francisco Sa Carneiro Airport");
   }
 
   return [...out].filter(Boolean);
 }
 
 function knownAirportCoords(address: string): { lat: number; lon: number } | null {
-  const a = address.toLowerCase();
+  const a = normalizeForMatch(address);
   // Porto / OPO
-  if (a.includes("francisco sá carneiro") || /\bopo\b/.test(a)) {
+  if (
+    a.includes("francisco sa carneiro") ||
+    /\bopo\b/.test(a) ||
+    a.includes("aeroporto do porto") ||
+    a.includes("porto airport") ||
+    a.includes("sa carneiro")
+  ) {
     return { lat: 41.2421, lon: -8.6781 };
   }
   return null;

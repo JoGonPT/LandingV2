@@ -369,6 +369,8 @@ export async function paymentsHandleStripeWebhook(
       const invoice = await fiscalService.issueInvoiceForCompletedBooking(fiscalRow);
       if (invoice) {
         console.info(LOG_PREFIX, `fiscal invoice issued booking=${publicBookingDbId} invoice=${invoice.invoiceNumber}`);
+      } else {
+        console.warn(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} err=no_invoice_result`);
       }
     } catch (fiscalError) {
       const msg = fiscalError instanceof Error ? fiscalError.message : String(fiscalError);

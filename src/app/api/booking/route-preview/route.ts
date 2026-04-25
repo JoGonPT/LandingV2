@@ -18,6 +18,19 @@ function createRequestId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function isDistanceRequiredError(error: unknown): boolean {
+  const pub = toPublicError(error);
+  if (pub.code !== "CRM_VALIDATION_ERROR") return false;
+  const message = `${pub.message ?? ""}`.toLowerCase();
+  const detailsText = JSON.stringify(pub.details ?? {}).toLowerCase();
+  return (
+    message.includes("distance") ||
+    message.includes("distance_km") ||
+    detailsText.includes("distance") ||
+    detailsText.includes("distance_km")
+  );
+}
+
 export async function POST(request: Request) {
   const requestId = createRequestId();
   try {
@@ -55,6 +68,17 @@ export async function POST(request: Request) {
     }
 
     const estKm = await estimateRouteDistanceKm(pickup.trim(), dropoff.trim());
+    if ((estKm == null || estKm <= 0) && isDistanceRequiredError(quoteErr)) {
+      return NextResponse.json(
+        {
+          success: false as const,
+          code: "DISTANCE_REQUIRED",
+          message: "Could not resolve trip distance (distance_km). Please refine pickup/dropoff and try again.",
+          requestId,
+        },
+        { status: 422 },
+      );
+    }
     if (estKm != null && estKm > 0) {
       try {
         const quote = await crm.postQuote({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { mkdir, appendFile } from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import {
   isSupportedTransferCrmEvent,
   TransferCrmWebhookEvent,
@@ -50,8 +51,9 @@ export async function POST(request: Request) {
   const eventName = String(event.event ?? event.type ?? "");
 
   // Persist raw webhook for audit / replay while internal DB timeline is not finalized.
+  // In serverless (e.g. Vercel), process.cwd() is read-only (/var/task), so we must write to os.tmpdir().
   try {
-    const dir = path.join(process.cwd(), ".data");
+    const dir = path.join(os.tmpdir(), "way2go", "webhooks");
     await mkdir(dir, { recursive: true });
     await appendFile(
       path.join(dir, "transfercrm-webhooks.ndjson"),
