@@ -19,6 +19,8 @@ export interface BookingRequestDto {
     email: string;
     phone: string;
   };
+  fiscalName?: string;
+  fiscalVat?: string;
   locale?: BookingLocale;
   flightNumber?: string;
   childSeat?: boolean;
@@ -72,6 +74,8 @@ export function parseBookingRequestDto(body: unknown): { ok: true; data: Booking
   const luggage =
     typeof b.luggage === "number" && Number.isInteger(b.luggage) && b.luggage >= 0 ? b.luggage : undefined;
   const notes = typeof b.notes === "string" && b.notes.trim() ? b.notes.trim() : undefined;
+  const fiscalName = typeof b.fiscalName === "string" && b.fiscalName.trim() ? b.fiscalName.trim() : undefined;
+  const fiscalVat = typeof b.fiscalVat === "string" && b.fiscalVat.trim() ? b.fiscalVat.trim() : undefined;
 
   return {
     ok: true,
@@ -91,6 +95,8 @@ export function parseBookingRequestDto(body: unknown): { ok: true; data: Booking
       ...(childSeat !== undefined ? { childSeat } : {}),
       ...(luggage !== undefined ? { luggage } : {}),
       ...(notes !== undefined ? { notes } : {}),
+      ...(fiscalName !== undefined ? { fiscalName } : {}),
+      ...(fiscalVat !== undefined ? { fiscalVat } : {}),
     },
   };
 }

@@ -12,6 +12,8 @@ export interface CheckoutPaymentLabels {
 
 interface CheckoutPaymentStepProps {
   paymentIntentId: string;
+  fiscalName?: string;
+  fiscalVat?: string;
   labels: CheckoutPaymentLabels;
   onSuccess: (data: CheckoutCompleteSuccess) => void;
   onBack: () => void;
@@ -52,6 +54,8 @@ async function pollCheckoutStatus(paymentIntentId: string): Promise<CheckoutComp
 
 export function CheckoutPaymentStep({
   paymentIntentId,
+  fiscalName,
+  fiscalVat,
   labels,
   onSuccess,
   onBack,
@@ -106,6 +110,26 @@ export function CheckoutPaymentStep({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <label className="space-y-1">
+          <span className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">Fiscal Name</span>
+          <input
+            type="text"
+            value={fiscalName ?? ""}
+            readOnly
+            className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-700"
+          />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">NIF / VAT</span>
+          <input
+            type="text"
+            value={fiscalVat ?? ""}
+            readOnly
+            className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-700"
+          />
+        </label>
+      </div>
       <PaymentElement options={{ layout: "tabs" }} />
       {msg ? <p className="text-sm text-red-600">{msg}</p> : null}
       <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between">

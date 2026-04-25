@@ -56,7 +56,7 @@ function buildWebhookCompletedRowForFiscal(args: {
   publicBookingDbId: string;
   intent: Stripe.PaymentIntent;
   payload: {
-    contact: { fullName: string; email: string };
+    contact: { fullName: string; email: string; taxId?: string };
     route: { pickup: string; dropoff: string };
   };
   booking: { bookingId: string; orderNumber?: string; price?: string; currency?: string };
@@ -133,6 +133,8 @@ export async function paymentsCreateIntent(
     throwHttp(400, asError(parsed.message, requestId));
   }
   const dto = parsed.data;
+  const fiscalName = dto.fiscalName?.trim();
+  const fiscalVat = dto.fiscalVat?.trim();
 
   const sessionStore = createStripeCheckoutSessionStoreFromEnv();
   if (!sessionStore) {
@@ -161,6 +163,8 @@ export async function paymentsCreateIntent(
     dto.vehicleType,
     {
       way2go_session_id: sessionId,
+      ...(fiscalName ? { fiscal_name: fiscalName.slice(0, 200) } : {}),
+      ...(fiscalVat ? { fiscal_vat: fiscalVat.slice(0, 64) } : {}),
       ...(idem ? { way2go_idempotency_key: idem.slice(0, 200) } : {}),
     },
     idem ? { idempotencyKey: idem } : undefined,
@@ -233,6 +237,8 @@ export async function paymentsHandleStripeWebhook(
   }
 
   const intent = event.data.object as Stripe.PaymentIntent;
+  const fiscalName = intent.metadata?.fiscal_name?.trim() || undefined;
+  const fiscalVat = intent.metadata?.fiscal_vat?.trim() || undefined;
   const sessionId = intent.metadata?.way2go_session_id?.trim();
   if (!sessionId) {
     return { received: true };
@@ -356,8 +362,9 @@ export async function paymentsHandleStripeWebhook(
         intent,
         payload: {
           contact: {
-            fullName: validated.data.contact.fullName,
+            fullName: fiscalName ?? validated.data.contact.fullName,
             email: validated.data.contact.email,
+            ...(fiscalVat ? { taxId: fiscalVat } : {}),
           },
           route: {
             pickup: validated.data.route.pickup,

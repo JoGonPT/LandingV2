@@ -150,6 +150,8 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     name: "",
     email: "",
     phone: "",
+    fiscalName: "",
+    fiscalVat: "",
     notes: "",
   });
 
@@ -307,6 +309,8 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
         email: formData.email.trim(),
         phone: formData.phone.trim(),
       },
+      ...(formData.fiscalName.trim() ? { fiscalName: formData.fiscalName.trim() } : {}),
+      ...(formData.fiscalVat.trim() ? { fiscalVat: formData.fiscalVat.trim() } : {}),
       locale: bookingLocale,
       ...(formData.flight.trim() ? { flightNumber: formData.flight.trim() } : {}),
       childSeat: formData.childSeat,
@@ -328,6 +332,8 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
       name: "",
       email: "",
       phone: "",
+      fiscalName: "",
+      fiscalVat: "",
       notes: "",
     });
     setGdprAccepted(false);
@@ -763,6 +769,18 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                   />
                 </div>
                 <Input label={dict.whatsapp || "Phone"} value={formData.phone} onChange={(phone) => setFormData((s) => ({ ...s, phone }))} required />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Input
+                    label={bookingLocale === "pt" ? "Nome Fiscal (fatura)" : "Fiscal Name (invoice)"}
+                    value={formData.fiscalName}
+                    onChange={(fiscalName) => setFormData((s) => ({ ...s, fiscalName }))}
+                  />
+                  <Input
+                    label={bookingLocale === "pt" ? "NIF / VAT" : "VAT / Tax ID"}
+                    value={formData.fiscalVat}
+                    onChange={(fiscalVat) => setFormData((s) => ({ ...s, fiscalVat }))}
+                  />
+                </div>
                 <Input label={dict.flight || "Flight number"} value={formData.flight} onChange={(flight) => setFormData((s) => ({ ...s, flight }))} />
                 <label className="flex items-center gap-3 text-sm text-neutral-800">
                   <input
@@ -839,6 +857,8 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
               >
                 <CheckoutPaymentStep
                   paymentIntentId={checkoutSession.paymentIntentId}
+                  fiscalName={formData.fiscalName}
+                  fiscalVat={formData.fiscalVat}
                   labels={{
                     pay: ck?.confirmPay || "Confirm and pay",
                     processing: ck?.processing || "Processing…",
