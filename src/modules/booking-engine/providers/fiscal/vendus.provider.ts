@@ -1,6 +1,7 @@
 import type { FiscalIssueInvoiceInput, FiscalIssueInvoiceResult, IFiscalProvider } from "@/modules/booking-engine/services/fiscal.service";
 
 type VendusMode = "PRODUCTION" | "MOCK";
+type VendusDocumentType = "FR" | "FT";
 
 interface VendusDocumentItem {
   reference: string;
@@ -12,14 +13,20 @@ interface VendusDocumentItem {
 
 interface VendusDocumentPayload {
   external_id: string;
-  type: "FT";
+  type: VendusDocumentType;
   date: string;
   due_date?: string;
-  customer: {
+  client: {
     name: string;
     email: string;
+    fiscal_id?: string;
   };
   items: VendusDocumentItem[];
+  payments: Array<{
+    date: string;
+    value: number;
+    method: string;
+  }>;
   currency: string;
   observations?: string;
 }
@@ -37,7 +44,35 @@ function getApiKey(): string {
 
 function getBaseUrl(): string {
   const custom = String(process.env.VENDUS_BASE_URL ?? "").trim();
-  return custom || "https://www.vendus.pt/ws/v1.1";
+  return custom || "https://www.vendus.pt/ws/v1.2";
+}
+
+function getDocumentType(): VendusDocumentType {
+  const raw = String(process.env.VENDUS_DOCUMENT_TYPE ?? "FR").trim().toUpperCase();
+  return raw === "FT" ? "FT" : "FR";
+}
+
+function mapPaymentMethod(method: FiscalIssueInvoiceInput["paymentMethod"]): string {
+  switch ((method ?? "STRIPE").toUpperCase()) {
+    case "CARD":
+      return "Cartao Bancario";
+    case "BANK_TRANSFER":
+      return "Transferencia Bancaria";
+    case "CASH":
+      return "Numerario";
+    default:
+      return "Stripe";
+  }
+}
+
+function normalizeTaxId(input: FiscalIssueInvoiceInput): string | undefined {
+  if (!input.customerTaxId) return undefined;
+  const digits = input.customerTaxId.replace(/\D/g, "");
+  if (digits.length !== 9) {
+    console.warn(`[Vendus] Ignoring invalid customerTaxId for booking ${input.bookingId}: "${input.customerTaxId}"`);
+    return undefined;
+  }
+  return digits;
 }
 
 function buildServiceDescription(input: FiscalIssueInvoiceInput): string {
@@ -46,13 +81,16 @@ function buildServiceDescription(input: FiscalIssueInvoiceInput): string {
 
 function buildPayload(input: FiscalIssueInvoiceInput): VendusDocumentPayload {
   const serviceDescription = buildServiceDescription(input);
+  const taxId = normalizeTaxId(input);
+  const date = input.issuedAtIso.slice(0, 10);
   return {
     external_id: input.externalReference,
-    type: "FT",
-    date: input.issuedAtIso.slice(0, 10),
-    customer: {
+    type: getDocumentType(),
+    date,
+    client: {
       name: input.customerName,
       email: input.customerEmail,
+      ...(taxId ? { fiscal_id: taxId } : {}),
     },
     currency: input.currency,
     observations: `Booking ${input.bookingId} via ${input.provider}`,
@@ -64,7 +102,26 @@ function buildPayload(input: FiscalIssueInvoiceInput): VendusDocumentPayload {
         gross_price: Number(input.amount.toFixed(2)),
       },
     ],
+    payments: [
+      {
+        date,
+        value: Number(input.amount.toFixed(2)),
+        method: mapPaymentMethod(input.paymentMethod),
+      },
+    ],
   };
+}
+
+class VendusFiscalProviderError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly body: string,
+    public readonly code: "VENDUS_INVALID_NIF" | "VENDUS_REQUEST_FAILED",
+  ) {
+    super(message);
+    this.name = "VendusFiscalProviderError";
+  }
 }
 
 function extractInvoiceNumber(data: unknown): string | null {
@@ -121,17 +178,24 @@ export class VendusFiscalProvider implements IFiscalProvider {
     }
 
     const payload = buildPayload(input);
-    const response = await fetch(`${getBaseUrl()}/documents/`, {
+    const response = await fetch(`${getBaseUrl().replace(/\/+$/, "")}/documents`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        api_key: apiKey,
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`Vendus invoice request failed with HTTP ${response.status}: ${body}`);
+      const code = /nif|fiscal/i.test(body) ? "VENDUS_INVALID_NIF" : "VENDUS_REQUEST_FAILED";
+      throw new VendusFiscalProviderError(
+        `Vendus invoice request failed with HTTP ${response.status}: ${body}`,
+        response.status,
+        body,
+        code,
+      );
     }
     const data = (await response.json()) as unknown;
     const invoiceNumber = extractInvoiceNumber(data);

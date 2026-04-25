@@ -23,9 +23,12 @@ import { getTransferCrmApiClient, postQuoteForBooking } from "@/lib/transfercrm/
 import { validateBookingPayload } from "@/lib/transfercrm/validation";
 import type { BookingApiError } from "@/lib/transfercrm/types";
 import type { CheckoutCompleteSuccess } from "@/lib/transfercrm/types";
+import type { BookingOrderRow } from "@/modules/booking-engine/repositories/bookings.repo";
+import { FiscalService } from "@/modules/booking-engine/services/fiscal.service";
 import type Stripe from "stripe";
 
 const LOG_PREFIX = "[payments-app]";
+const fiscalService = new FiscalService();
 
 function createRequestId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -47,6 +50,42 @@ export class PaymentsAppHttpError extends Error {
 
 function throwHttp(status: number, body: BookingApiError): never {
   throw new PaymentsAppHttpError(status, body);
+}
+
+function buildWebhookCompletedRowForFiscal(args: {
+  publicBookingDbId: string;
+  intent: Stripe.PaymentIntent;
+  payload: {
+    contact: { fullName: string; email: string };
+    route: { pickup: string; dropoff: string };
+  };
+  booking: { bookingId: string; orderNumber?: string; price?: string; currency?: string };
+}): BookingOrderRow {
+  const { publicBookingDbId, intent, payload, booking } = args;
+  return {
+    id: publicBookingDbId,
+    public_reference: booking.orderNumber ?? intent.id,
+    provider: "TRANSFER_CRM",
+    provider_booking_id: booking.bookingId ?? null,
+    status: "COMPLETED",
+    idempotency_key: intent.id,
+    failover_reason: null,
+    request_payload: {
+      contact: payload.contact,
+      route: payload.route,
+      payment: { method: "STRIPE" },
+    },
+    provider_response: {
+      price: booking.price ?? null,
+      currency: booking.currency ?? "EUR",
+      bookingId: booking.bookingId,
+      orderNumber: booking.orderNumber ?? null,
+    },
+    last_error_code: null,
+    last_error_message: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 }
 
 async function assignDispatchCandidates(crmBookingId: string): Promise<void> {
@@ -309,6 +348,32 @@ export async function paymentsHandleStripeWebhook(
 
     await sessionStore.markCompleted(sessionId, { result: success, public_booking_id: publicBookingDbId });
     console.info(LOG_PREFIX, `webhook completed session=${sessionId} crm=${booking.bookingId}`);
+
+    // Best-effort fiscal automation: log failures but do not fail customer flow/webhook ACK.
+    try {
+      const fiscalRow = buildWebhookCompletedRowForFiscal({
+        publicBookingDbId,
+        intent,
+        payload: {
+          contact: {
+            fullName: validated.data.contact.fullName,
+            email: validated.data.contact.email,
+          },
+          route: {
+            pickup: validated.data.route.pickup,
+            dropoff: validated.data.route.dropoff,
+          },
+        },
+        booking,
+      });
+      const invoice = await fiscalService.issueInvoiceForCompletedBooking(fiscalRow);
+      if (invoice) {
+        console.info(LOG_PREFIX, `fiscal invoice issued booking=${publicBookingDbId} invoice=${invoice.invoiceNumber}`);
+      }
+    } catch (fiscalError) {
+      const msg = fiscalError instanceof Error ? fiscalError.message : String(fiscalError);
+      console.warn(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} err=${msg}`);
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error(LOG_PREFIX, `webhook finalize failed session=${sessionId} ${msg}`);

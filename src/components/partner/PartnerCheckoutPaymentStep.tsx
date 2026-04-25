@@ -75,7 +75,7 @@ export function PartnerCheckoutPaymentStep({
 
     const returnUrl =
       typeof window !== "undefined"
-        ? `${window.location.origin}/?checkout=success`
+        ? `${window.location.origin}/${payload.locale || "pt"}/checkout/success/`
         : "";
 
     const { error } = await stripe.confirmPayment({

@@ -69,7 +69,11 @@ export function CheckoutPaymentStep({
 
     const returnUrl =
       typeof window !== "undefined"
-        ? `${window.location.origin}/?checkout=success`
+        ? (() => {
+            const first = window.location.pathname.split("/").filter(Boolean)[0];
+            const locale = first === "pt" || first === "en" ? first : "pt";
+            return `${window.location.origin}/${locale}/checkout/success/`;
+          })()
         : "";
 
     const { error } = await stripe.confirmPayment({

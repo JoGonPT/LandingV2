@@ -7,6 +7,7 @@ describe("VendusFiscalProvider", () => {
     delete process.env.VENDUS_MODE;
     delete process.env.VENDUS_API_KEY;
     delete process.env.VENDUS_BASE_URL;
+    delete process.env.VENDUS_DOCUMENT_TYPE;
     vi.restoreAllMocks();
   });
 
@@ -40,7 +41,8 @@ describe("VendusFiscalProvider", () => {
   it("maps invoice item and external_id in production payload", async () => {
     process.env.VENDUS_MODE = "PRODUCTION";
     process.env.VENDUS_API_KEY = "vendus_test_key";
-    process.env.VENDUS_BASE_URL = "https://vendus.test/ws/v1.1";
+    process.env.VENDUS_BASE_URL = "https://vendus.test/ws/v1.2";
+    process.env.VENDUS_DOCUMENT_TYPE = "FR";
 
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
@@ -70,12 +72,15 @@ describe("VendusFiscalProvider", () => {
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://vendus.test/ws/v1.1/documents/");
+    expect(url).toBe("https://vendus.test/ws/v1.2/documents");
     expect(init.method).toBe("POST");
     const body = JSON.parse(String(init.body));
     expect(body.external_id).toBe("BOOK-EXT-1");
+    expect(body.type).toBe("FR");
+    expect(body.client.name).toBe("Empresa XPTO");
     expect(body.items[0].title).toBe("Servico de Transporte: Aeroporto Lisboa -> Cascais");
     expect(body.items[0].gross_price).toBe(99.99);
+    expect(body.payments[0].method).toBe("Stripe");
     expect(result.invoiceNumber).toBe("FT 2026/123");
     expect(result.invoiceUrl).toBe("https://vendus.test/doc/123");
   });

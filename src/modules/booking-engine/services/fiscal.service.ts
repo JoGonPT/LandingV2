@@ -7,11 +7,13 @@ export interface FiscalIssueInvoiceInput {
   externalReference: string;
   customerName: string;
   customerEmail: string;
+  customerTaxId?: string;
   amount: number;
   currency: string;
   pickup: string;
   dropoff: string;
   issuedAtIso: string;
+  paymentMethod?: "STRIPE" | "CARD" | "BANK_TRANSFER" | "CASH";
 }
 
 export interface FiscalIssueInvoiceResult {
@@ -77,6 +79,29 @@ function readCustomerEmail(row: BookingOrderRow): string {
   return typeof raw === "string" && raw.trim() ? raw.trim() : "no-reply@way2go.pt";
 }
 
+function readCustomerTaxId(row: BookingOrderRow): string | undefined {
+  const requestPayload = asRecord(row.request_payload);
+  const contact = asRecord(requestPayload?.contact);
+  const raw = contact?.nif ?? contact?.vat ?? contact?.taxId;
+  if (typeof raw !== "string") return undefined;
+  const normalized = raw.replace(/\D/g, "");
+  return normalized.length >= 9 ? normalized : undefined;
+}
+
+function readPaymentMethod(row: BookingOrderRow): FiscalIssueInvoiceInput["paymentMethod"] {
+  const requestPayload = asRecord(row.request_payload);
+  const payment = asRecord(requestPayload?.payment);
+  const raw = String(payment?.method ?? "STRIPE").trim().toUpperCase();
+  switch (raw) {
+    case "CARD":
+    case "BANK_TRANSFER":
+    case "CASH":
+      return raw;
+    default:
+      return "STRIPE";
+  }
+}
+
 function readExternalReference(row: BookingOrderRow): string {
   return row.public_reference?.trim() || row.idempotency_key;
 }
@@ -111,11 +136,13 @@ export class FiscalService {
       externalReference: readExternalReference(row),
       customerName: readCustomerName(row),
       customerEmail: readCustomerEmail(row),
+      customerTaxId: readCustomerTaxId(row),
       amount,
       currency,
       pickup: readPickup(row),
       dropoff: readDropoff(row),
       issuedAtIso,
+      paymentMethod: readPaymentMethod(row),
     });
   }
 }
