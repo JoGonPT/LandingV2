@@ -69,6 +69,12 @@ export async function POST(request: Request) {
 
     const estKm = await estimateRouteDistanceKm(pickup.trim(), dropoff.trim());
     if ((estKm == null || estKm <= 0) && isDistanceRequiredError(quoteErr)) {
+      console.warn("[booking-route-preview][distance-required]", {
+        requestId,
+        pickup: pickup.trim(),
+        dropoff: dropoff.trim(),
+        quoteError: quoteErr instanceof Error ? quoteErr.message : String(quoteErr),
+      });
       return NextResponse.json(
         {
           success: false as const,

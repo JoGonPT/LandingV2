@@ -1,6 +1,7 @@
 /**
  * Road distance estimate (km) when TransferCRM quote requires `distance_km` but cannot derive it alone.
- * Uses Nominatim (geocode) + public OSRM demo router. Suitable as B2B pricing input; not navigation-grade.
+ * Uses Google Directions API (optional), then Nominatim (geocode) + OSRM demo router.
+ * Suitable as B2B pricing input; not navigation-grade.
  */
 
 function parseCountriesFromEnv(): string[] {
@@ -27,6 +28,76 @@ function normalizeForMatch(raw: string): string {
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
+}
+
+type LatLon = { lat: number; lon: number };
+
+const KNOWN_PLACE_COORDS: Array<{ aliases: string[]; coords: LatLon }> = [
+  { aliases: ["aeroporto do porto", "aeroporto francisco sa carneiro", "porto airport", "opo airport", " opo "], coords: { lat: 41.2421, lon: -8.6781 } },
+  { aliases: ["aeroporto de lisboa", "aeroporto humberto delgado", "lis airport", " lis "], coords: { lat: 38.7742, lon: -9.1342 } },
+  { aliases: ["aeroporto de faro", "faro airport", " fao "], coords: { lat: 37.0144, lon: -7.9659 } },
+  { aliases: ["aveiro"], coords: { lat: 40.6405, lon: -8.6538 } },
+  { aliases: ["porto"], coords: { lat: 41.1579, lon: -8.6291 } },
+  { aliases: ["gaia", "vila nova de gaia"], coords: { lat: 41.124, lon: -8.612 } },
+  { aliases: ["braga"], coords: { lat: 41.5454, lon: -8.4265 } },
+  { aliases: ["coimbra"], coords: { lat: 40.2033, lon: -8.4103 } },
+  { aliases: ["leiria"], coords: { lat: 39.7436, lon: -8.8071 } },
+  { aliases: ["viseu"], coords: { lat: 40.661, lon: -7.9097 } },
+  { aliases: ["guimaraes"], coords: { lat: 41.4425, lon: -8.2918 } },
+  { aliases: ["lisboa", "lisbon"], coords: { lat: 38.7223, lon: -9.1393 } },
+  { aliases: ["setubal"], coords: { lat: 38.5244, lon: -8.8882 } },
+  { aliases: ["faro"], coords: { lat: 37.0194, lon: -7.9304 } },
+  { aliases: ["madrid"], coords: { lat: 40.4168, lon: -3.7038 } },
+  { aliases: ["barcelona"], coords: { lat: 41.3874, lon: 2.1686 } },
+  { aliases: ["vigo"], coords: { lat: 42.2406, lon: -8.7207 } },
+];
+
+function knownPlaceCoords(address: string): LatLon | null {
+  const n = ` ${normalizeForMatch(address)} `;
+  for (const entry of KNOWN_PLACE_COORDS) {
+    if (entry.aliases.some((alias) => n.includes(` ${normalizeForMatch(alias)} `) || n.includes(normalizeForMatch(alias)))) {
+      return entry.coords;
+    }
+  }
+  return null;
+}
+
+function getGoogleMapsApiKey(): string | null {
+  const raw = process.env.GOOGLE_MAPS_API_KEY?.trim();
+  return raw ? raw : null;
+}
+
+async function googleDrivingDistanceKm(pickup: string, dropoff: string): Promise<number | null> {
+  const apiKey = getGoogleMapsApiKey();
+  if (!apiKey) return null;
+  const params = new URLSearchParams({
+    origin: pickup.trim(),
+    destination: dropoff.trim(),
+    mode: "driving",
+    key: apiKey,
+  });
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 7000);
+  try {
+    const response = await fetch(`https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    const json = (await response.json()) as {
+      status?: string;
+      routes?: Array<{ legs?: Array<{ distance?: { value?: number } }> }>;
+    };
+    if (json.status !== "OK") return null;
+    const legs = json.routes?.[0]?.legs ?? [];
+    const meters = legs.reduce((sum, leg) => sum + (typeof leg.distance?.value === "number" ? leg.distance.value : 0), 0);
+    if (!Number.isFinite(meters) || meters <= 0) return null;
+    return meters / 1000;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 function buildAddressVariants(address: string): string[] {
@@ -63,25 +134,10 @@ function buildAddressVariants(address: string): string[] {
   return [...out].filter(Boolean);
 }
 
-function knownAirportCoords(address: string): { lat: number; lon: number } | null {
-  const a = normalizeForMatch(address);
-  // Porto / OPO
-  if (
-    a.includes("francisco sa carneiro") ||
-    /\bopo\b/.test(a) ||
-    a.includes("aeroporto do porto") ||
-    a.includes("porto airport") ||
-    a.includes("sa carneiro")
-  ) {
-    return { lat: 41.2421, lon: -8.6781 };
-  }
-  return null;
-}
-
 async function geocodeNominatim(address: string): Promise<{ lat: number; lon: number } | null> {
   const q = address.trim();
   if (!q) return null;
-  const known = knownAirportCoords(q);
+  const known = knownPlaceCoords(q);
   if (known) return known;
   const countries = parseCountriesFromEnv();
   const trySearch = async (countrycodes: string | undefined) => {
@@ -165,6 +221,10 @@ function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: num
  * Returns a positive distance in km, or null if geocoding/routing could not produce one.
  */
 export async function estimateRouteDistanceKm(pickup: string, dropoff: string): Promise<number | null> {
+  const googleKm = await googleDrivingDistanceKm(pickup, dropoff);
+  if (googleKm != null && googleKm > 0) {
+    return Math.min(10000, Math.round(googleKm * 1000) / 1000);
+  }
   const [from, to] = await Promise.all([geocodeNominatim(pickup), geocodeNominatim(dropoff)]);
   if (!from || !to) return null;
   const road = await osrmDrivingDistanceKm(from, to);
