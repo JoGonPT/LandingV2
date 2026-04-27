@@ -8,13 +8,16 @@ export default function TransferCrmWidget() {
 
   const widgetScriptSrc =
     process.env.NEXT_PUBLIC_TRANSFERCRM_WIDGET_SCRIPT_URL?.trim() ||
-    "https://transfercrm.com/widget/booking.js";
+    "https://transfercrm.com/api/widget-js/booking-v2.js";
+  const widgetApi =
+    process.env.NEXT_PUBLIC_TRANSFERCRM_WIDGET_API?.trim() ||
+    "https://transfercrm.com/api";
   const widgetTenant =
     process.env.NEXT_PUBLIC_TRANSFERCRM_WIDGET_TENANT?.trim() || "way2go";
   const widgetLang =
-    process.env.NEXT_PUBLIC_TRANSFERCRM_WIDGET_LANG?.trim() || "pt-PT";
+    process.env.NEXT_PUBLIC_TRANSFERCRM_WIDGET_LANG?.trim() || "pt";
   const widgetColor =
-    process.env.NEXT_PUBLIC_TRANSFERCRM_WIDGET_COLOR?.trim() || "indigo-500";
+    process.env.NEXT_PUBLIC_TRANSFERCRM_WIDGET_COLOR?.trim() || "#000000";
 
   const fallbackHref = useMemo(() => {
     const tenant = encodeURIComponent(widgetTenant);
@@ -47,9 +50,10 @@ export default function TransferCrmWidget() {
       const script = document.createElement("script");
       script.src = widgetScriptSrc;
       script.dataset.tenant = widgetTenant;
+      script.dataset.api = widgetApi;
       script.dataset.lang = widgetLang;
       script.dataset.color = widgetColor;
-      script.async = true;
+      script.defer = true;
       script.addEventListener("load", () => {
         script.dataset.loaded = "true";
         markLoaded();
@@ -71,7 +75,7 @@ export default function TransferCrmWidget() {
       existing?.removeEventListener("load", markLoaded);
       existing?.removeEventListener("error", markFailed);
     };
-  }, [scriptReady, widgetColor, widgetLang, widgetScriptSrc, widgetTenant]);
+  }, [scriptReady, widgetApi, widgetColor, widgetLang, widgetScriptSrc, widgetTenant]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">

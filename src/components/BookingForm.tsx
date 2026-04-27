@@ -298,6 +298,10 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) return null;
     if (!gdprAccepted) return null;
     if (!selectedVehicle.trim()) return null;
+    const previewDistanceKm =
+      routePreviewData?.distanceKm != null && Number.isFinite(Number(routePreviewData.distanceKm))
+        ? Number(routePreviewData.distanceKm)
+        : undefined;
     return {
       pickup,
       dropoff,
@@ -311,6 +315,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
       },
       ...(formData.fiscalName.trim() ? { fiscalName: formData.fiscalName.trim() } : {}),
       ...(formData.fiscalVat.trim() ? { fiscalVat: formData.fiscalVat.trim() } : {}),
+      ...(previewDistanceKm !== undefined && previewDistanceKm > 0 ? { distanceKm: previewDistanceKm } : {}),
       locale: bookingLocale,
       ...(formData.flight.trim() ? { flightNumber: formData.flight.trim() } : {}),
       childSeat: formData.childSeat,

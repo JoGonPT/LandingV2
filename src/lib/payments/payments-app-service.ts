@@ -19,8 +19,9 @@ import {
   PublicBookingInsertDuplicateError,
   type PublicBookingInsertRow,
 } from "@/lib/booking/public-bookings-store";
-import { getTransferCrmApiClient, postQuoteForBooking } from "@/lib/transfercrm/client";
+import { getTransferCrmApiClient, postQuoteForBooking, toPublicError } from "@/lib/transfercrm/client";
 import { validateBookingPayload } from "@/lib/transfercrm/validation";
+import { firstTransferCrmValidationMessage } from "@/lib/transfercrm/validation-errors";
 import type { BookingApiError } from "@/lib/transfercrm/types";
 import type { CheckoutCompleteSuccess } from "@/lib/transfercrm/types";
 import type { BookingOrderRow } from "@/modules/booking-engine/repositories/bookings.repo";
@@ -50,6 +51,11 @@ export class PaymentsAppHttpError extends Error {
 
 function throwHttp(status: number, body: BookingApiError): never {
   throw new PaymentsAppHttpError(status, body);
+}
+
+function isDistanceRequiredMessage(value: string | undefined): boolean {
+  const v = value?.toLowerCase() ?? "";
+  return v.includes("distance") && (v.includes("required") || v.includes("must") || v.includes("obrigat"));
 }
 
 function buildWebhookCompletedRowForFiscal(args: {
@@ -150,7 +156,30 @@ export async function paymentsCreateIntent(
     throwHttp(400, asError(validated.message, requestId));
   }
 
-  const quote = await postQuoteForBooking(validated.data, dto.vehicleType);
+  let quote;
+  try {
+    quote = await postQuoteForBooking(validated.data, dto.vehicleType);
+  } catch (error) {
+    const pub = toPublicError(error);
+    const details = pub.details as Record<string, string[]> | undefined;
+    const friendly =
+      pub.code === "CRM_VALIDATION_ERROR" ? firstTransferCrmValidationMessage(details) || pub.message : pub.message;
+    if (pub.code === "CRM_VALIDATION_ERROR") {
+      const validationText = [friendly, JSON.stringify(details ?? {})].join(" ").toLowerCase();
+      const distanceRequired = isDistanceRequiredMessage(validationText);
+      throwHttp(
+        422,
+        asError(
+          distanceRequired
+            ? "Could not resolve trip distance (distance_km). Please adjust route details and try again."
+            : friendly,
+          requestId,
+          distanceRequired ? "DISTANCE_REQUIRED" : "CRM_VALIDATION_ERROR",
+        ),
+      );
+    }
+    throwHttp(502, asError(friendly, requestId, pub.code));
+  }
   const sessionId = randomUUID();
   await sessionStore.insert(sessionId, dto);
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import BookingForm from "./BookingForm";
+import TransferCrmWidget from "./booking/TransferCrmWidget";
 
 interface HeroSectionProps {
     dict: {
@@ -20,6 +21,11 @@ interface HeroSectionProps {
 export default function HeroSection({ dict, bookingDict, locale }: HeroSectionProps) {
     const isPT = locale === "pt";
     const [formPhase, setFormPhase] = useState<"form" | "vehicles" | "payment">("form");
+    type BookingUiMode = "way2go" | "transfercrm";
+    const initialBookingUiMode: BookingUiMode =
+        process.env.NEXT_PUBLIC_BOOKING_UI_MODE?.trim().toLowerCase() === "transfercrm" ? "transfercrm" : "way2go";
+    const allowBookingUiToggle = process.env.NEXT_PUBLIC_BOOKING_UI_TOGGLE === "1";
+    const [bookingUiMode, setBookingUiMode] = useState<BookingUiMode>(initialBookingUiMode);
     const bookingOnlyMode = formPhase !== "form";
     const mainTitle = isPT 
         ? "Transfers Privados Portugal — Conforto e Pontualidade"
@@ -64,7 +70,29 @@ export default function HeroSection({ dict, bookingDict, locale }: HeroSectionPr
 
                             {/* Booking Form Container */}
                             <div className={`relative w-full min-h-[550px] overflow-hidden bg-white ${bookingOnlyMode ? "lg:min-h-[520px]" : "lg:min-h-[600px]"}`}>
-                                <BookingForm dict={bookingDict} locale={locale} onPhaseChange={setFormPhase} />
+                                {allowBookingUiToggle ? (
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setBookingUiMode("way2go")}
+                                            className={`rounded-md border px-3 py-1 text-xs font-medium ${bookingUiMode === "way2go" ? "border-black bg-black text-white" : "border-neutral-300 bg-white text-neutral-700"}`}
+                                        >
+                                            Way2Go Form
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setBookingUiMode("transfercrm")}
+                                            className={`rounded-md border px-3 py-1 text-xs font-medium ${bookingUiMode === "transfercrm" ? "border-black bg-black text-white" : "border-neutral-300 bg-white text-neutral-700"}`}
+                                        >
+                                            TransferCRM Widget
+                                        </button>
+                                    </div>
+                                ) : null}
+                                {bookingUiMode === "transfercrm" ? (
+                                    <TransferCrmWidget />
+                                ) : (
+                                    <BookingForm dict={bookingDict} locale={locale} onPhaseChange={setFormPhase} />
+                                )}
                             </div>
                         </div>
 

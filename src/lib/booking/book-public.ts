@@ -21,6 +21,7 @@ export interface BookingRequestDto {
   };
   fiscalName?: string;
   fiscalVat?: string;
+  distanceKm?: number;
   locale?: BookingLocale;
   flightNumber?: string;
   childSeat?: boolean;
@@ -76,6 +77,8 @@ export function parseBookingRequestDto(body: unknown): { ok: true; data: Booking
   const notes = typeof b.notes === "string" && b.notes.trim() ? b.notes.trim() : undefined;
   const fiscalName = typeof b.fiscalName === "string" && b.fiscalName.trim() ? b.fiscalName.trim() : undefined;
   const fiscalVat = typeof b.fiscalVat === "string" && b.fiscalVat.trim() ? b.fiscalVat.trim() : undefined;
+  const distanceKm =
+    typeof b.distanceKm === "number" && Number.isFinite(b.distanceKm) && b.distanceKm > 0 ? b.distanceKm : undefined;
 
   return {
     ok: true,
@@ -97,6 +100,7 @@ export function parseBookingRequestDto(body: unknown): { ok: true; data: Booking
       ...(notes !== undefined ? { notes } : {}),
       ...(fiscalName !== undefined ? { fiscalName } : {}),
       ...(fiscalVat !== undefined ? { fiscalVat } : {}),
+      ...(distanceKm !== undefined ? { distanceKm } : {}),
     },
   };
 }
@@ -121,6 +125,9 @@ export function buildBookingPayloadFromBookingRequestDto(dto: BookingRequestDto)
     details: {
       passengers: dto.passengers,
       luggage: typeof dto.luggage === "number" && dto.luggage >= 0 ? dto.luggage : 0,
+      ...(typeof dto.distanceKm === "number" && Number.isFinite(dto.distanceKm) && dto.distanceKm > 0
+        ? { distanceKm: dto.distanceKm }
+        : {}),
       ...(dto.notes?.trim() ? { notes: dto.notes.trim() } : {}),
     },
     vehicleType: dto.vehicleType.trim(),
