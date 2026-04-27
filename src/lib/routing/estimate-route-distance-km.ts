@@ -54,6 +54,29 @@ const KNOWN_PLACE_COORDS: Array<{ aliases: string[]; coords: LatLon }> = [
 
 function knownPlaceCoords(address: string): LatLon | null {
   const n = ` ${normalizeForMatch(address)} `;
+  if (
+    n.includes(" aeroporto do porto ") ||
+    n.includes(" francisco sa carneiro ") ||
+    n.includes(" porto airport ") ||
+    /\bopo\b/.test(n)
+  ) {
+    return { lat: 41.2421, lon: -8.6781 };
+  }
+  if (
+    n.includes(" aeroporto de lisboa ") ||
+    n.includes(" aeroporto humberto delgado ") ||
+    n.includes(" lis airport ") ||
+    /\blis\b/.test(n)
+  ) {
+    return { lat: 38.7742, lon: -9.1342 };
+  }
+  if (
+    n.includes(" aeroporto de faro ") ||
+    n.includes(" faro airport ") ||
+    /\bfao\b/.test(n)
+  ) {
+    return { lat: 37.0144, lon: -7.9659 };
+  }
   for (const entry of KNOWN_PLACE_COORDS) {
     if (entry.aliases.some((alias) => n.includes(` ${normalizeForMatch(alias)} `) || n.includes(normalizeForMatch(alias)))) {
       return entry.coords;

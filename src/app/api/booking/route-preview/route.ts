@@ -18,6 +18,56 @@ function createRequestId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+async function quoteMinAvailableVehiclePrice(args: {
+  crm: ReturnType<typeof getTransferCrmApiClient>;
+  pickup: string;
+  dropoff: string;
+  pickupDate: string;
+  passengers: number;
+  distanceKm?: number;
+}): Promise<{ price: number; currency: string; vehicleType: string } | null> {
+  const avail = await args.crm.getAvailability({
+    pickup_location: args.pickup,
+    dropoff_location: args.dropoff,
+    pickup_date: args.pickupDate,
+    passengers: args.passengers,
+    ...(typeof args.distanceKm === "number" && Number.isFinite(args.distanceKm) && args.distanceKm > 0
+      ? { distance_km: args.distanceKm }
+      : {}),
+  });
+  const vehicleTypes = (avail.vehicle_types ?? [])
+    .map((v) => v.vehicle_type?.trim() ?? "")
+    .filter((v): v is string => Boolean(v));
+  if (!vehicleTypes.length) return null;
+
+  const quoted = await Promise.all(
+    vehicleTypes.map(async (vehicleType) => {
+      try {
+        const q = await args.crm.postQuote({
+          pickup_location: args.pickup,
+          dropoff_location: args.dropoff,
+          pickup_date: args.pickupDate,
+          passengers: args.passengers,
+          vehicle_type: vehicleType,
+          ...(typeof args.distanceKm === "number" && Number.isFinite(args.distanceKm) && args.distanceKm > 0
+            ? { distance_km: args.distanceKm }
+            : {}),
+        });
+        const price = Number(q.price);
+        const currency = q.currency?.trim() ?? "";
+        if (!Number.isFinite(price) || !currency) return null;
+        return { price, currency, vehicleType };
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const valid = quoted.filter((q): q is NonNullable<typeof q> => q !== null);
+  if (!valid.length) return null;
+  valid.sort((a, b) => a.price - b.price);
+  return valid[0];
+}
+
 function isDistanceRequiredError(error: unknown): boolean {
   const pub = toPublicError(error);
   if (pub.code !== "CRM_VALIDATION_ERROR") return false;
@@ -54,6 +104,27 @@ export async function POST(request: Request) {
         pickup_date,
         passengers,
       });
+      if (quote.vehicle_type == null) {
+        const minQuoted = await quoteMinAvailableVehiclePrice({
+          crm,
+          pickup: pickup.trim(),
+          dropoff: dropoff.trim(),
+          pickupDate: pickup_date,
+          passengers,
+          distanceKm: quote.distance_km != null && Number.isFinite(Number(quote.distance_km)) ? Number(quote.distance_km) : undefined,
+        });
+        if (minQuoted) {
+          return NextResponse.json({
+            success: true as const,
+            requestId,
+            source: "availability" as const,
+            distanceKm: quote.distance_km ?? null,
+            price: minQuoted.price,
+            currency: minQuoted.currency.toUpperCase(),
+            vehicleType: minQuoted.vehicleType,
+          });
+        }
+      }
       return NextResponse.json({
         success: true as const,
         requestId,
@@ -87,6 +158,25 @@ export async function POST(request: Request) {
     }
     if (estKm != null && estKm > 0) {
       try {
+        const minQuoted = await quoteMinAvailableVehiclePrice({
+          crm,
+          pickup: pickup.trim(),
+          dropoff: dropoff.trim(),
+          pickupDate: pickup_date,
+          passengers,
+          distanceKm: estKm,
+        });
+        if (minQuoted) {
+          return NextResponse.json({
+            success: true as const,
+            requestId,
+            source: "availability" as const,
+            distanceKm: estKm,
+            price: minQuoted.price,
+            currency: minQuoted.currency.toUpperCase(),
+            vehicleType: minQuoted.vehicleType,
+          });
+        }
         const quote = await crm.postQuote({
           pickup_location: pickup.trim(),
           dropoff_location: dropoff.trim(),
