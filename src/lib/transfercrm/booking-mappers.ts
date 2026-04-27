@@ -138,6 +138,10 @@ export interface PaidBookingOverrides {
   externalReference: string;
   price: number;
   currency: string;
+  paymentStatus?: "paid" | "pending" | "failed";
+  paymentMethod?: "stripe" | "cash" | "card" | "bank_transfer";
+  amountPaid?: number;
+  externalPaymentId?: string;
   vehicleType?: string;
 }
 
@@ -184,6 +188,12 @@ export function mapBookingPayloadToBookingRequest(
   if (paid) {
     request.price = paid.price;
     request.currency = paid.currency;
+    request.payment_status = paid.paymentStatus ?? "paid";
+    request.payment_method = paid.paymentMethod ?? "stripe";
+    request.amount_paid = Number.isFinite(Number(paid.amountPaid)) ? Number(paid.amountPaid) : paid.price;
+    if (paid.externalPaymentId?.trim()) {
+      request.external_payment_id = paid.externalPaymentId.trim();
+    }
   } else if (payload.quotedPrice) {
     request.price = payload.quotedPrice.amount;
     request.currency = payload.quotedPrice.currency;

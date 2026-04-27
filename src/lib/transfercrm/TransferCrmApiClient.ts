@@ -86,8 +86,9 @@ export class TransferCrmApiClient {
   }
 
   /**
-   * Create booking after Stripe payment: `external_reference` must be the PaymentIntent id (`pi_…`)
-   * so retries are idempotent and aligned with the charged amount.
+   * Create booking after Stripe payment:
+   * - `payment_*` fields are sent directly to TransferCRM `/v2/book`.
+   * - `external_reference` links booking to invoice/session (fallback to PI id).
    */
   async postBookForPaidCheckout(payload: BookingPayload, paid: PaidBookingOverrides): Promise<TransferCrmBookingResult> {
     const body = mapBookingPayloadToBookingRequest(payload, paid);

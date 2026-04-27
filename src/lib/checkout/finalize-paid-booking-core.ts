@@ -67,29 +67,17 @@ export async function finalizePaidBookingCore(
   const currency = meta.way2go_currency!.trim();
 
   const paid = {
-    externalReference: paymentIntentId,
+    externalReference: meta.way2go_session_id?.trim() || paymentIntentId,
     price: crmPrice,
     currency,
+    paymentStatus: "paid" as const,
+    paymentMethod: "stripe" as const,
+    amountPaid: crmPrice,
+    externalPaymentId: paymentIntentId,
     vehicleType,
   };
 
   let bookingPayload = payload;
-  const fiscalName = meta.fiscal_name?.trim();
-  const fiscalVat = meta.fiscal_vat?.trim();
-  if (fiscalName || fiscalVat) {
-    const fiscalBits = [
-      fiscalName ? `Fiscal name: ${fiscalName}` : "",
-      fiscalVat ? `Fiscal VAT: ${fiscalVat}` : "",
-    ].filter(Boolean);
-    const fiscalText = fiscalBits.join(" | ");
-    bookingPayload = {
-      ...bookingPayload,
-      details: {
-        ...bookingPayload.details,
-        notes: [bookingPayload.details.notes?.trim() || "", fiscalText].filter(Boolean).join(" | ").slice(0, 2000),
-      },
-    };
-  }
   if (payload.details.distanceKm === undefined) {
     const distRaw = meta.way2go_distance_km?.trim();
     if (distRaw) {

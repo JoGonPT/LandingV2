@@ -81,6 +81,10 @@ export interface BookingRequest {
   meet_board_name?: string | null;
   notes?: string | null;
   external_reference?: string | null;
+  payment_status?: "paid" | "pending" | "failed" | string;
+  payment_method?: "stripe" | "cash" | "card" | "bank_transfer" | string;
+  amount_paid?: number | null;
+  external_payment_id?: string | null;
 }
 
 export interface BookingResponse {
