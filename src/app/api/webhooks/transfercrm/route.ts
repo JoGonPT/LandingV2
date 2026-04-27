@@ -10,6 +10,7 @@ import {
 import { getBookingEngineService } from "@/modules/booking-engine/booking-engine.service";
 
 export async function POST(request: Request) {
+  const eventHeader = request.headers.get("X-Webhook-Event")?.trim() ?? "";
   const secret = process.env.TRANSFERCRM_WEBHOOK_SECRET?.trim();
   if (!secret) {
     return NextResponse.json(
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ignored: true }, { status: 202 });
   }
 
-  const eventName = String(event.event ?? event.type ?? "");
+  const eventName = String(event.event ?? event.type ?? eventHeader ?? "");
 
   // Persist raw webhook for audit / replay while internal DB timeline is not finalized.
   // In serverless (e.g. Vercel), process.cwd() is read-only (/var/task), so we must write to os.tmpdir().
@@ -69,10 +70,13 @@ export async function POST(request: Request) {
     console.error("[transfercrm-webhook] persist_failed", persistErr);
   }
 
+  const dataObj = event?.data && typeof event.data === "object" ? (event.data as Record<string, unknown>) : null;
   const bookingIdCandidate =
-    event?.data && typeof event.data === "object" && "booking_id" in event.data
-      ? (event.data as { booking_id?: string | number }).booking_id
-      : event.id;
+    (dataObj?.booking_id as string | number | undefined) ??
+    (dataObj?.id as string | number | undefined) ??
+    (dataObj?.order_number as string | number | undefined) ??
+    (dataObj?.external_reference as string | number | undefined) ??
+    event.id;
 
   if (bookingIdCandidate !== undefined && bookingIdCandidate !== null) {
     const providerBookingId = String(bookingIdCandidate);
@@ -100,6 +104,8 @@ export async function POST(request: Request) {
   console.info("[transfercrm-webhook]", {
     event: eventName,
     id: event.id,
+    bookingId: bookingIdCandidate != null ? String(bookingIdCandidate) : undefined,
+    driverId: dataObj?.driver_id ?? undefined,
   });
 
   return NextResponse.json({ ok: true }, { status: 200 });
