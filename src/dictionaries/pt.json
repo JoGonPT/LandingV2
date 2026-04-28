@@ -32,6 +32,7 @@
         "contactInfo": "Dados de Contacto",
         "name": "Nome Completo",
         "email": "E-mail",
+        "confirmEmail": "Confirmar e-mail",
         "whatsapp": "WhatsApp / Telemóvel",
         "gdpr": {
             "text": "Aceito a política de privacidade e os termos de serviço.",
@@ -95,15 +96,16 @@
             }
         },
         "success": {
-            "title": "Reserva confirmada",
-            "message": "Obrigado — o seu transfer Way2Go está reservado.",
-            "orderLabel": "Número de encomenda Way2Go",
-            "referenceHint": "Guarde esta referência para o seu arquivo.",
+            "title": "Reserva agendada (a aguardar pagamento)",
+            "message": "Obrigado — o seu transfer Way2Go está pré-reservado. Os dados e link de pagamento serão enviados por email para o cliente.",
+            "orderLabel": "Número de reserva Way2Go",
+            "referenceHint": "Guarde esta referência para acompanhamento até confirmação do pagamento.",
             "close": "Fechar"
         },
         "errors": {
             "generic": "Não foi possível enviar a reserva. Tente novamente.",
             "gdpr": "É necessário aceitar a política de privacidade.",
+            "emailMismatch": "Os campos de e-mail não coincidem.",
             "distanceRequired": "Não foi possível calcular a distância do trajeto. Ajuste origem/destino e tente novamente.",
             "distancePending": "A calcular distância… aguarde 1-2s."
         }

@@ -46,11 +46,12 @@ interface BookingFormProps {
     childSeat?: string;
     name?: string;
     email?: string;
+    confirmEmail?: string;
     whatsapp?: string;
     gdpr?: { text?: string };
     submit?: string;
     success?: { title?: string; message?: string; close?: string; orderLabel?: string; referenceHint?: string };
-    errors?: { generic?: string; gdpr?: string; distanceRequired?: string; distancePending?: string };
+    errors?: { generic?: string; gdpr?: string; distanceRequired?: string; distancePending?: string; emailMismatch?: string };
     checkout?: {
       chooseVehicle?: string;
       vehicleStepTitle?: string;
@@ -151,11 +152,18 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     childSeat: false,
     name: "",
     email: "",
+    confirmEmail: "",
     phone: "",
     fiscalName: "",
     fiscalVat: "",
     notes: "",
   });
+  const emailMatch =
+    formData.email.trim().length > 0 &&
+    formData.confirmEmail.trim().length > 0 &&
+    formData.email.trim().toLowerCase() === formData.confirmEmail.trim().toLowerCase();
+  const hasEmailMismatch =
+    formData.email.trim().length > 0 && formData.confirmEmail.trim().length > 0 && !emailMatch;
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -257,7 +265,8 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     const time = formData.time.trim();
     if (!pickup || !dropoff || !date || !time) return null;
     if (mode === "checkout") {
-      if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) return null;
+      if (!formData.name.trim() || !formData.email.trim() || !formData.confirmEmail.trim() || !formData.phone.trim()) return null;
+      if (formData.email.trim().toLowerCase() !== formData.confirmEmail.trim().toLowerCase()) return null;
       if (!gdprAccepted) return null;
     }
 
@@ -297,7 +306,8 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     const date = formData.date.trim();
     const time = formData.time.trim();
     if (!pickup || !dropoff || !date || !time) return null;
-    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) return null;
+    if (!formData.name.trim() || !formData.email.trim() || !formData.confirmEmail.trim() || !formData.phone.trim()) return null;
+    if (formData.email.trim().toLowerCase() !== formData.confirmEmail.trim().toLowerCase()) return null;
     if (!gdprAccepted) return null;
     if (!selectedVehicle.trim()) return null;
     const previewDistanceKm =
@@ -338,6 +348,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
       childSeat: false,
       name: "",
       email: "",
+      confirmEmail: "",
       phone: "",
       fiscalName: "",
       fiscalVat: "",
@@ -499,6 +510,15 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     setError("");
     if (!selectedVehicle) {
       setError(ck?.vehicleStepTitle || "Please choose a vehicle.");
+      return;
+    }
+    if (hasEmailMismatch) {
+      setError(
+        dict.errors?.emailMismatch ||
+          (bookingLocale === "pt"
+            ? "Os campos de e-mail não coincidem."
+            : "Email fields do not match."),
+      );
       return;
     }
     const dto = buildBookingRequestDto();
@@ -825,6 +845,19 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                     required
                   />
                 </div>
+                <Input
+                  label={dict.confirmEmail || (bookingLocale === "pt" ? "Confirmar e-mail" : "Confirm email")}
+                  type="email"
+                  value={formData.confirmEmail}
+                  onChange={(confirmEmail) => setFormData((s) => ({ ...s, confirmEmail }))}
+                  required
+                />
+                {hasEmailMismatch ? (
+                  <p className="text-sm text-red-600">
+                    {dict.errors?.emailMismatch ||
+                      (bookingLocale === "pt" ? "Os campos de e-mail não coincidem." : "Email fields do not match.")}
+                  </p>
+                ) : null}
                 <Input label={dict.whatsapp || "Phone"} value={formData.phone} onChange={(phone) => setFormData((s) => ({ ...s, phone }))} required />
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <Input
@@ -872,7 +905,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                   </button>
                   <button
                     type="button"
-                    disabled={isLoading || !selectedVehicle}
+                    disabled={isLoading || !selectedVehicle || hasEmailMismatch}
                     className="min-h-[52px] flex-1 rounded-xl bg-black text-sm font-semibold tracking-wide text-white disabled:opacity-50"
                     onClick={() => void startPaymentIntent()}
                   >

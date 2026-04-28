@@ -32,6 +32,7 @@
         "contactInfo": "Contact Information",
         "name": "Full Name",
         "email": "E-mail",
+        "confirmEmail": "Confirm email",
         "whatsapp": "WhatsApp / Mobile",
         "gdpr": {
             "text": "I accept the privacy policy and terms of service.",
@@ -95,15 +96,16 @@
             }
         },
         "success": {
-            "title": "Booking confirmed",
-            "message": "Thank you — your Way2Go transfer is booked.",
-            "orderLabel": "Way2Go order number",
-            "referenceHint": "Save this reference for your records.",
+            "title": "Booking scheduled (awaiting payment)",
+            "message": "Thank you — your Way2Go transfer is pre-booked. Payment details and link will be sent to the client's email.",
+            "orderLabel": "Way2Go booking number",
+            "referenceHint": "Keep this reference until payment is confirmed.",
             "close": "Close"
         },
         "errors": {
             "generic": "Could not submit your booking. Please try again.",
             "gdpr": "You must accept the privacy policy.",
+            "emailMismatch": "Email fields do not match.",
             "distanceRequired": "Could not calculate route distance. Please adjust pickup/dropoff and try again.",
             "distancePending": "Calculating distance… please wait 1-2 seconds."
         }
