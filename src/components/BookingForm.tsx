@@ -7,7 +7,7 @@ import { AddressAutocompleteInput } from "@/components/AddressAutocompleteInput"
 import { BookingRoutePreview } from "@/components/booking/BookingRoutePreview";
 import { BookingStickySummary } from "@/components/booking/BookingStickySummary";
 import { VehicleClassSelector } from "@/components/booking/VehicleClassSelector";
-import { CheckoutPaymentStep } from "@/components/CheckoutPaymentStep";
+import { CheckoutPaymentStep, ManualCheckoutPaymentStep } from "@/components/CheckoutPaymentStep";
 import { useDebouncedQuote } from "@/hooks/useDebouncedQuote";
 import { useDebouncedRoutePreview } from "@/hooks/useDebouncedRoutePreview";
 import { estimateDriveMinutesFromKm } from "@/lib/booking/drive-time-estimate";
@@ -904,7 +904,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                 <p className="text-3xl font-light tracking-tight text-black tabular-nums">{quotePrice}</p>
               </div>
 
-              {!IS_MANUAL_PAYMENT && stripePromise && checkoutSession.clientSecret ? (
+              {!IS_MANUAL_PAYMENT && stripePromise && checkoutSession.clientSecret && checkoutSession.paymentIntentId ? (
                 <Elements
                   stripe={stripePromise}
                   options={{
@@ -937,8 +937,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                   />
                 </Elements>
               ) : (
-                <CheckoutPaymentStep
-                  paymentIntentId={checkoutSession.paymentIntentId}
+                <ManualCheckoutPaymentStep
                   fiscalName={formData.fiscalName}
                   fiscalVat={formData.fiscalVat}
                   labels={{
@@ -946,7 +945,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                     processing: ck?.processing || "Processing…",
                     back: ck?.back || "Back",
                   }}
-                  onManualConfirm={confirmManualBooking}
+                  onConfirm={confirmManualBooking}
                   onSuccess={handlePaidSuccess}
                   onBack={() => {
                     setPhase("vehicles");

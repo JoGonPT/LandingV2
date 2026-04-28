@@ -3,7 +3,6 @@
 import { FormEvent, useState } from "react";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import type { CheckoutCompleteSuccess } from "@/lib/transfercrm/types";
-import { IS_MANUAL_PAYMENT } from "@/lib/payments/payment-flags";
 
 export interface CheckoutPaymentLabels {
   pay: string;
@@ -12,11 +11,10 @@ export interface CheckoutPaymentLabels {
 }
 
 interface CheckoutPaymentStepProps {
-  paymentIntentId?: string;
+  paymentIntentId: string;
   fiscalName?: string;
   fiscalVat?: string;
   labels: CheckoutPaymentLabels;
-  onManualConfirm?: () => Promise<CheckoutCompleteSuccess | null>;
   onSuccess: (data: CheckoutCompleteSuccess) => void;
   onBack: () => void;
 }
@@ -59,7 +57,6 @@ export function CheckoutPaymentStep({
   fiscalName,
   fiscalVat,
   labels,
-  onManualConfirm,
   onSuccess,
   onBack,
 }: CheckoutPaymentStepProps) {
@@ -72,18 +69,6 @@ export function CheckoutPaymentStep({
     e.preventDefault();
     setMsg("");
     setBusy(true);
-
-    if (IS_MANUAL_PAYMENT && onManualConfirm) {
-      const result = await onManualConfirm();
-      if (!result) {
-        setMsg("Nao foi possivel confirmar a reserva pendente.");
-        setBusy(false);
-        return;
-      }
-      onSuccess(result);
-      setBusy(false);
-      return;
-    }
 
     if (!stripe || !elements || !paymentIntentId) {
       setMsg("Stripe checkout nao esta disponivel.");
@@ -151,7 +136,7 @@ export function CheckoutPaymentStep({
         </label>
       </div>
       {/* <PaymentElement options={{ layout: "tabs" }} /> */}
-      {!IS_MANUAL_PAYMENT ? <PaymentElement options={{ layout: "tabs" }} /> : null}
+      <PaymentElement options={{ layout: "tabs" }} />
       {msg ? <p className="text-sm text-red-600">{msg}</p> : null}
       <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between">
         <button
@@ -164,10 +149,88 @@ export function CheckoutPaymentStep({
         </button>
         <button
           type="submit"
-          disabled={(!IS_MANUAL_PAYMENT && !stripe) || busy}
+          disabled={!stripe || busy}
           className="sm:min-w-[200px] bg-black text-white rounded-lg py-3 font-semibold text-sm disabled:opacity-60"
         >
-          {busy ? labels.processing : IS_MANUAL_PAYMENT ? "Confirmar Reserva" : labels.pay}
+          {busy ? labels.processing : labels.pay}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+interface ManualCheckoutPaymentStepProps {
+  fiscalName?: string;
+  fiscalVat?: string;
+  labels: CheckoutPaymentLabels;
+  onConfirm: () => Promise<CheckoutCompleteSuccess | null>;
+  onSuccess: (data: CheckoutCompleteSuccess) => void;
+  onBack: () => void;
+}
+
+export function ManualCheckoutPaymentStep({
+  fiscalName,
+  fiscalVat,
+  labels,
+  onConfirm,
+  onSuccess,
+  onBack,
+}: ManualCheckoutPaymentStepProps) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setMsg("");
+    setBusy(true);
+    const result = await onConfirm();
+    if (!result) {
+      setMsg("Nao foi possivel confirmar a reserva pendente.");
+      setBusy(false);
+      return;
+    }
+    onSuccess(result);
+    setBusy(false);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <label className="space-y-1">
+          <span className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">Fiscal Name</span>
+          <input
+            type="text"
+            value={fiscalName ?? ""}
+            readOnly
+            className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-700"
+          />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">NIF / VAT</span>
+          <input
+            type="text"
+            value={fiscalVat ?? ""}
+            readOnly
+            className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-700"
+          />
+        </label>
+      </div>
+      {msg ? <p className="text-sm text-red-600">{msg}</p> : null}
+      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-800 hover:bg-gray-50"
+          disabled={busy}
+        >
+          {labels.back}
+        </button>
+        <button
+          type="submit"
+          disabled={busy}
+          className="sm:min-w-[200px] bg-black text-white rounded-lg py-3 font-semibold text-sm disabled:opacity-60"
+        >
+          {busy ? labels.processing : "Confirmar Reserva"}
         </button>
       </div>
     </form>
