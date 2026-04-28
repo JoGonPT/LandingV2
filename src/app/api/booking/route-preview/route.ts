@@ -81,6 +81,30 @@ function isDistanceRequiredError(error: unknown): boolean {
   );
 }
 
+function normalizeAddress(raw: string): string {
+  return raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function knownRouteFallbackDistanceKm(pickup: string, dropoff: string): number | null {
+  const a = normalizeAddress(pickup);
+  const b = normalizeAddress(dropoff);
+  const hasOpo =
+    a.includes("francisco sa carneiro") ||
+    a.includes("aeroporto do porto") ||
+    /\bopo\b/.test(a) ||
+    b.includes("francisco sa carneiro") ||
+    b.includes("aeroporto do porto") ||
+    /\bopo\b/.test(b);
+  const hasAveiro = a.includes("aveiro") || b.includes("aveiro");
+  if (hasOpo && hasAveiro) return 85;
+  return null;
+}
+
 export async function POST(request: Request) {
   const requestId = createRequestId();
   try {
@@ -138,7 +162,13 @@ export async function POST(request: Request) {
       quoteErr = e;
     }
 
-    const estKm = await estimateRouteDistanceKm(pickup.trim(), dropoff.trim());
+    let estKm = await estimateRouteDistanceKm(pickup.trim(), dropoff.trim());
+    if ((estKm == null || estKm <= 0) && isDistanceRequiredError(quoteErr)) {
+      const knownFallback = knownRouteFallbackDistanceKm(pickup.trim(), dropoff.trim());
+      if (knownFallback != null && knownFallback > 0) {
+        estKm = knownFallback;
+      }
+    }
     if ((estKm == null || estKm <= 0) && isDistanceRequiredError(quoteErr)) {
       console.warn("[booking-route-preview][distance-required]", {
         requestId,
