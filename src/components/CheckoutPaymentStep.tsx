@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import type { CheckoutCompleteSuccess } from "@/lib/transfercrm/types";
+import { IS_MANUAL_PAYMENT } from "@/lib/payments/payment-flags";
 
 export interface CheckoutPaymentLabels {
   pay: string;
@@ -11,10 +12,11 @@ export interface CheckoutPaymentLabels {
 }
 
 interface CheckoutPaymentStepProps {
-  paymentIntentId: string;
+  paymentIntentId?: string;
   fiscalName?: string;
   fiscalVat?: string;
   labels: CheckoutPaymentLabels;
+  onManualConfirm?: () => Promise<CheckoutCompleteSuccess | null>;
   onSuccess: (data: CheckoutCompleteSuccess) => void;
   onBack: () => void;
 }
@@ -57,6 +59,7 @@ export function CheckoutPaymentStep({
   fiscalName,
   fiscalVat,
   labels,
+  onManualConfirm,
   onSuccess,
   onBack,
 }: CheckoutPaymentStepProps) {
@@ -67,9 +70,26 @@ export function CheckoutPaymentStep({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!stripe || !elements) return;
     setMsg("");
     setBusy(true);
+
+    if (IS_MANUAL_PAYMENT && onManualConfirm) {
+      const result = await onManualConfirm();
+      if (!result) {
+        setMsg("Nao foi possivel confirmar a reserva pendente.");
+        setBusy(false);
+        return;
+      }
+      onSuccess(result);
+      setBusy(false);
+      return;
+    }
+
+    if (!stripe || !elements || !paymentIntentId) {
+      setMsg("Stripe checkout nao esta disponivel.");
+      setBusy(false);
+      return;
+    }
 
     const returnUrl =
       typeof window !== "undefined"
@@ -130,7 +150,8 @@ export function CheckoutPaymentStep({
           />
         </label>
       </div>
-      <PaymentElement options={{ layout: "tabs" }} />
+      {/* <PaymentElement options={{ layout: "tabs" }} /> */}
+      {!IS_MANUAL_PAYMENT ? <PaymentElement options={{ layout: "tabs" }} /> : null}
       {msg ? <p className="text-sm text-red-600">{msg}</p> : null}
       <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between">
         <button
@@ -143,10 +164,10 @@ export function CheckoutPaymentStep({
         </button>
         <button
           type="submit"
-          disabled={!stripe || busy}
+          disabled={(!IS_MANUAL_PAYMENT && !stripe) || busy}
           className="sm:min-w-[200px] bg-black text-white rounded-lg py-3 font-semibold text-sm disabled:opacity-60"
         >
-          {busy ? labels.processing : labels.pay}
+          {busy ? labels.processing : IS_MANUAL_PAYMENT ? "Confirmar Reserva" : labels.pay}
         </button>
       </div>
     </form>

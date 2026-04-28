@@ -42,6 +42,9 @@ export interface PublicBookingInsertRow {
   currency: string | null;
   distance_km: number | null;
   estimated_time_min: number | null;
+  crm_booking_id?: string | null;
+  crm_order_number?: string | null;
+  crm_status?: string | null;
   stripe_payment_intent_id?: string | null;
   payment_method?: string | null;
   partner_slug?: string | null;
@@ -78,6 +81,8 @@ export function createPublicBookingsStoreFromEnv():
       insert: (row: PublicBookingInsertRow) => Promise<void>;
       patch: (id: string, patch: PublicBookingPatch) => Promise<void>;
       patchByCrmBookingId: (crmBookingId: string, patch: PublicBookingPatch) => Promise<void>;
+      getById: (id: string) => Promise<PublicBookingFetchedRow | null>;
+      getByCrmBookingId: (crmBookingId: string) => Promise<PublicBookingFetchedRow | null>;
       getByStripePaymentIntentId: (paymentIntentId: string) => Promise<PublicBookingFetchedRow | null>;
       getByIdempotencyKey: (key: string) => Promise<PublicBookingFetchedRow | null>;
     }
@@ -106,6 +111,9 @@ export function createPublicBookingsStoreFromEnv():
           currency: row.currency,
           distance_km: row.distance_km,
           estimated_time_min: row.estimated_time_min,
+          ...(row.crm_booking_id ? { crm_booking_id: row.crm_booking_id } : {}),
+          ...(row.crm_order_number ? { crm_order_number: row.crm_order_number } : {}),
+          ...(row.crm_status ? { crm_status: row.crm_status } : {}),
           ...(row.stripe_payment_intent_id ? { stripe_payment_intent_id: row.stripe_payment_intent_id } : {}),
           ...(row.payment_method != null && row.payment_method !== "" ? { payment_method: row.payment_method } : {}),
           ...(row.partner_slug != null && row.partner_slug !== "" ? { partner_slug: row.partner_slug } : {}),
@@ -126,6 +134,31 @@ export function createPublicBookingsStoreFromEnv():
     async getByStripePaymentIntentId(paymentIntentId: string) {
       const res = await fetch(
         `${baseUrl}/rest/v1/public_bookings?stripe_payment_intent_id=eq.${encodeURIComponent(paymentIntentId)}&select=*`,
+        { headers: headers(serviceKey) },
+      );
+      if (!res.ok) return null;
+      const rows = (await res.json()) as PublicBookingFetchedRow[];
+      if (!rows?.length) return null;
+      return rows[0];
+    },
+
+    async getById(id: string) {
+      const key = id.trim();
+      if (!key) return null;
+      const res = await fetch(`${baseUrl}/rest/v1/public_bookings?id=eq.${encodeURIComponent(key)}&select=*`, {
+        headers: headers(serviceKey),
+      });
+      if (!res.ok) return null;
+      const rows = (await res.json()) as PublicBookingFetchedRow[];
+      if (!rows?.length) return null;
+      return rows[0];
+    },
+
+    async getByCrmBookingId(crmBookingId: string) {
+      const key = crmBookingId.trim();
+      if (!key) return null;
+      const res = await fetch(
+        `${baseUrl}/rest/v1/public_bookings?crm_booking_id=eq.${encodeURIComponent(key)}&select=*`,
         { headers: headers(serviceKey) },
       );
       if (!res.ok) return null;

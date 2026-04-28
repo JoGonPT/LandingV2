@@ -12,11 +12,11 @@ export default async function CheckoutSuccessPage({
     <main className="min-h-screen bg-white px-4 py-16">
       <div className="mx-auto max-w-xl space-y-4 rounded-xl border border-neutral-200 p-6 text-center">
         <h1 className="text-2xl font-semibold text-black">
-          Payment is being confirmed
+          Reserva Registada com Sucesso!
         </h1>
         <p className="text-sm text-neutral-600">
-          We are finalizing your booking. If you were redirected from Stripe, you can return to the booking page and
-          the status will be updated automatically.
+          O seu transfer esta pre-reservado. Verifique o seu email nos proximos minutos para receber o link de
+          pagamento oficial e garantir a sua viagem.
         </p>
         <Link
           href={`/${safeLocale}/`}

@@ -13,6 +13,7 @@ import {
   assertPaymentIntentAmountMatchesMetadata,
   finalizePaidBookingCore,
 } from "@/lib/checkout/finalize-paid-booking-core";
+import { MANUAL_PAYMENT_PENDING_NOTE, IS_MANUAL_PAYMENT } from "@/lib/payments/payment-flags";
 import {
   createDriverAssignmentUpsertFromEnv,
   createPublicBookingsStoreFromEnv,
@@ -212,6 +213,118 @@ export async function paymentsCreateIntent(
   };
 }
 
+export async function paymentsCreatePendingBooking(
+  body: unknown,
+  idempotencyKey?: string,
+): Promise<{ success: true; requestId: string; booking: CheckoutCompleteSuccess }> {
+  const requestId = createRequestId();
+  const parsed = parseBookingRequestDto(body);
+  if (!parsed.ok) {
+    throwHttp(400, asError(parsed.message, requestId));
+  }
+  const dto = parsed.data;
+  const basePayload = buildBookingPayloadFromBookingRequestDto(dto);
+  const validated = validateBookingPayload(basePayload);
+  if (!validated.ok) {
+    throwHttp(400, asError(validated.message, requestId));
+  }
+
+  let quote;
+  try {
+    quote = await postQuoteForBooking(validated.data, dto.vehicleType);
+  } catch (error) {
+    const pub = toPublicError(error);
+    const details = pub.details as Record<string, string[]> | undefined;
+    const friendly =
+      pub.code === "CRM_VALIDATION_ERROR" ? firstTransferCrmValidationMessage(details) || pub.message : pub.message;
+    throwHttp(pub.code === "CRM_VALIDATION_ERROR" ? 422 : 502, asError(friendly, requestId, pub.code));
+  }
+
+  const crm = getTransferCrmApiClient();
+  const payloadWithPendingNote = {
+    ...validated.data,
+    quotedPrice:
+      Number.isFinite(Number(quote.price)) && quote.currency?.trim()
+        ? { amount: Number(quote.price), currency: quote.currency.trim() }
+        : undefined,
+    details: {
+      ...validated.data.details,
+      notes: [validated.data.details.notes?.trim() ?? "", MANUAL_PAYMENT_PENDING_NOTE]
+        .filter(Boolean)
+        .join(" | ")
+        .slice(0, 2000),
+      ...(Number.isFinite(Number(quote.distance_km)) && Number(quote.distance_km) > 0
+        ? { distanceKm: Number(quote.distance_km) }
+        : {}),
+    },
+  };
+
+  const booking = await crm.postBookForPayload(payloadWithPendingNote);
+  const publicStore = createPublicBookingsStoreFromEnv();
+  if (publicStore) {
+    const split = payloadWithPendingNote.route;
+    const priceNum = booking.price !== undefined ? Number(booking.price) : Number(quote.price);
+    const cur = (booking.currency ?? quote.currency ?? "").trim().toUpperCase() || "EUR";
+    const dist = payloadWithPendingNote.details.distanceKm ?? null;
+    const insertRow: PublicBookingInsertRow = {
+      id: randomUUID(),
+      status: "PENDING",
+      pickup: split.pickup,
+      dropoff: split.dropoff,
+      trip_date: split.date,
+      trip_time: split.time,
+      datetime_raw: dto.datetime,
+      passengers: payloadWithPendingNote.details.passengers,
+      vehicle_type: dto.vehicleType,
+      customer: {
+        name: payloadWithPendingNote.contact.fullName,
+        email: payloadWithPendingNote.contact.email,
+        phone: payloadWithPendingNote.contact.phone,
+      },
+      price: Number.isFinite(priceNum) ? priceNum : null,
+      currency: cur || null,
+      distance_km: dist,
+      estimated_time_min: dist != null ? estimateDriveMinutesFromKm(dist) : null,
+      payment_method: "MANUAL_LINK",
+      idempotency_key: idempotencyKey?.trim() || null,
+      crm_booking_id: booking.bookingId,
+      crm_order_number: booking.orderNumber ?? null,
+      crm_status: booking.status ?? "PENDING_PAYMENT",
+    };
+    try {
+      await publicStore.insert(insertRow);
+    } catch (insertErr) {
+      if (!(insertErr instanceof PublicBookingInsertDuplicateError)) {
+        console.warn(LOG_PREFIX, `public_bookings pending insert failed: ${String(insertErr)}`);
+      }
+    }
+  }
+
+  const totalPendingFormatted =
+    Number.isFinite(Number(quote.price)) && quote.currency
+      ? formatMoneyAmount(Number(quote.price), quote.currency, payloadWithPendingNote.locale)
+      : "";
+
+  return {
+    success: true,
+    requestId,
+    booking: {
+      success: true,
+      orderId: booking.bookingId,
+      orderReference: booking.orderNumber,
+      trackingUrl: booking.trackingUrl,
+      status: booking.status ?? "PENDING_PAYMENT",
+      trip: {
+        pickup: payloadWithPendingNote.route.pickup,
+        dropoff: payloadWithPendingNote.route.dropoff,
+        date: payloadWithPendingNote.route.date,
+        time: payloadWithPendingNote.route.time,
+      },
+      totalPaidFormatted: totalPendingFormatted,
+    },
+  };
+}
+
 export async function paymentsGetCheckoutStatus(paymentIntentId: string): Promise<
   | { state: "pending"; requestId: string }
   | { state: "failed"; requestId: string; message: string }
@@ -385,32 +498,36 @@ export async function paymentsHandleStripeWebhook(
     console.info(LOG_PREFIX, `webhook completed session=${sessionId} crm=${booking.bookingId}`);
 
     // Best-effort fiscal automation: log failures but do not fail customer flow/webhook ACK.
-    try {
-      const fiscalRow = buildWebhookCompletedRowForFiscal({
-        publicBookingDbId,
-        intent,
-        payload: {
-          contact: {
-            fullName: fiscalName ?? validated.data.contact.fullName,
-            email: validated.data.contact.email,
-            ...(fiscalVat ? { taxId: fiscalVat } : {}),
+    if (IS_MANUAL_PAYMENT) {
+      console.info(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} reason=manual_payment_mode`);
+    } else {
+      try {
+        const fiscalRow = buildWebhookCompletedRowForFiscal({
+          publicBookingDbId,
+          intent,
+          payload: {
+            contact: {
+              fullName: fiscalName ?? validated.data.contact.fullName,
+              email: validated.data.contact.email,
+              ...(fiscalVat ? { taxId: fiscalVat } : {}),
+            },
+            route: {
+              pickup: validated.data.route.pickup,
+              dropoff: validated.data.route.dropoff,
+            },
           },
-          route: {
-            pickup: validated.data.route.pickup,
-            dropoff: validated.data.route.dropoff,
-          },
-        },
-        booking,
-      });
-      const invoice = await fiscalService.issueInvoiceForCompletedBooking(fiscalRow);
-      if (invoice) {
-        console.info(LOG_PREFIX, `fiscal invoice issued booking=${publicBookingDbId} invoice=${invoice.invoiceNumber}`);
-      } else {
-        console.warn(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} err=no_invoice_result`);
+          booking,
+        });
+        const invoice = await fiscalService.issueInvoiceForCompletedBooking(fiscalRow);
+        if (invoice) {
+          console.info(LOG_PREFIX, `fiscal invoice issued booking=${publicBookingDbId} invoice=${invoice.invoiceNumber}`);
+        } else {
+          console.warn(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} err=no_invoice_result`);
+        }
+      } catch (fiscalError) {
+        const msg = fiscalError instanceof Error ? fiscalError.message : String(fiscalError);
+        console.warn(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} err=${msg}`);
       }
-    } catch (fiscalError) {
-      const msg = fiscalError instanceof Error ? fiscalError.message : String(fiscalError);
-      console.warn(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} err=${msg}`);
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

@@ -16,6 +16,7 @@ import type { QuoteRequestDto } from "@/lib/booking/quote-public";
 import type { BookingPayload, BookingLocale, CheckoutCompleteSuccess, TransferCrmVehicleOption } from "@/lib/transfercrm/types";
 import { clearB2CCheckoutIdempotencyKey, ensureB2CCheckoutIdempotencyKey } from "@/lib/checkout/b2c-checkout-idempotency";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
+import { IS_MANUAL_PAYMENT } from "@/lib/payments/payment-flags";
 import { stripeMinorToMajorUnits } from "@/lib/checkout/stripe-money";
 import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
 
@@ -26,7 +27,7 @@ const BOOKING_STICKY_SUMMARY_ENABLED = false;
 
 type CheckoutSessionStored = {
   dto: BookingRequestDto;
-  paymentIntentId: string;
+  paymentIntentId?: string;
 };
 
 interface BookingFormProps {
@@ -127,10 +128,11 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
   const [vehicleOptions, setVehicleOptions] = useState<TransferCrmVehicleOption[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [checkoutSession, setCheckoutSession] = useState<{
-    clientSecret: string;
-    paymentIntentId: string;
+    clientSecret?: string;
+    paymentIntentId?: string;
     currency: string;
     amountMinor: number;
+    dto: BookingRequestDto;
   } | null>(null);
   const [pendingPayload, setPendingPayload] = useState<BookingPayload | null>(null);
 
@@ -380,10 +382,11 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     } catch {
       stored = null;
     }
-    if (!stored || stored.paymentIntentId !== pi) {
+    if (!stored?.paymentIntentId || stored.paymentIntentId !== pi) {
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
+    const storedPaymentIntentId = stored.paymentIntentId;
 
     (async () => {
       setIsLoading(true);
@@ -393,7 +396,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
         let failed = false;
         for (let i = 0; i < 60; i++) {
           const res = await fetch(
-            `/api/checkout/status?payment_intent=${encodeURIComponent(stored!.paymentIntentId)}`,
+            `/api/checkout/status?payment_intent=${encodeURIComponent(storedPaymentIntentId)}`,
           );
           const data = (await res.json().catch(() => null)) as
             | { state?: string; message?: string; booking?: CheckoutCompleteSuccess }
@@ -507,7 +510,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
       );
       return;
     }
-    if (!publishableKey) {
+    if (!IS_MANUAL_PAYMENT && !publishableKey) {
       setError(ck?.stripeMissing || "Online payment is not configured.");
       return;
     }
@@ -515,6 +518,28 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
     setIsLoading(true);
     try {
       const idempotencyKey = ensureB2CCheckoutIdempotencyKey();
+      if (IS_MANUAL_PAYMENT) {
+        const checkoutPayload = buildPayload("checkout");
+        const amountMinor = Math.round(
+          ((vehicleOptions.find((v) => v.vehicleType === selectedVehicle)?.estimatedPrice ?? 0) + Number.EPSILON) * 100,
+        );
+        setCheckoutSession({
+          currency: "EUR",
+          amountMinor: Number.isFinite(amountMinor) ? amountMinor : 0,
+          dto,
+        });
+        if (checkoutPayload) {
+          setPendingPayload(checkoutPayload);
+        }
+        try {
+          sessionStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify({ dto } satisfies CheckoutSessionStored));
+        } catch {
+          /* ignore */
+        }
+        setPhase("payment");
+        setIsLoading(false);
+        return;
+      }
       const response = await fetch("/api/checkout/intent/", {
         method: "POST",
         headers: {
@@ -553,6 +578,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
         paymentIntentId: body.paymentIntentId,
         currency: body.currency,
         amountMinor: body.amountMinor,
+        dto,
       });
       if (checkoutPayload) {
         setPendingPayload(checkoutPayload);
@@ -604,6 +630,32 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
           bookingLocale,
         )
       : null;
+
+  async function confirmManualBooking(): Promise<CheckoutCompleteSuccess | null> {
+    if (!checkoutSession?.dto) return null;
+    const idempotencyKey = ensureB2CCheckoutIdempotencyKey();
+    try {
+      const response = await fetch("/api/checkout/complete/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify(checkoutSession.dto),
+      });
+      const body = (await response.json().catch(() => null)) as
+        | { success?: boolean; booking?: CheckoutCompleteSuccess; message?: string }
+        | null;
+      if (!response.ok || !body?.success || !body.booking) {
+        setError(body?.message || dict.errors?.generic || "Could not register booking.");
+        return null;
+      }
+      return body.booking;
+    } catch {
+      setError(dict.errors?.generic || "Could not register booking.");
+      return null;
+    }
+  }
 
   const paymentQuoteSticky: QuoteResponse | null = checkoutSession
     ? ({
@@ -843,7 +895,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
             </div>
           ) : null}
 
-          {phase === "payment" && checkoutSession && pendingPayload && stripePromise ? (
+          {phase === "payment" && checkoutSession && pendingPayload ? (
             <div className="min-h-[560px] space-y-6 bg-white p-5 md:p-6">
               <div className="space-y-1 border-b border-neutral-200 pb-4">
                 <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500">
@@ -852,14 +904,39 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                 <p className="text-3xl font-light tracking-tight text-black tabular-nums">{quotePrice}</p>
               </div>
 
-              <Elements
-                stripe={stripePromise}
-                options={{
-                  clientSecret: checkoutSession.clientSecret,
-                  appearance: elementsAppearance,
-                }}
-                key={checkoutSession.clientSecret}
-              >
+              {!IS_MANUAL_PAYMENT && stripePromise && checkoutSession.clientSecret ? (
+                <Elements
+                  stripe={stripePromise}
+                  options={{
+                    clientSecret: checkoutSession.clientSecret,
+                    appearance: elementsAppearance,
+                  }}
+                  key={checkoutSession.clientSecret}
+                >
+                  <CheckoutPaymentStep
+                    paymentIntentId={checkoutSession.paymentIntentId}
+                    fiscalName={formData.fiscalName}
+                    fiscalVat={formData.fiscalVat}
+                    labels={{
+                      pay: ck?.confirmPay || "Confirm and pay",
+                      processing: ck?.processing || "Processing…",
+                      back: ck?.back || "Back",
+                    }}
+                    onSuccess={handlePaidSuccess}
+                    onBack={() => {
+                      setPhase("vehicles");
+                      setCheckoutSession(null);
+                      setError("");
+                      try {
+                        sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
+                      } catch {
+                        /* ignore */
+                      }
+                      clearB2CCheckoutIdempotencyKey();
+                    }}
+                  />
+                </Elements>
+              ) : (
                 <CheckoutPaymentStep
                   paymentIntentId={checkoutSession.paymentIntentId}
                   fiscalName={formData.fiscalName}
@@ -869,6 +946,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                     processing: ck?.processing || "Processing…",
                     back: ck?.back || "Back",
                   }}
+                  onManualConfirm={confirmManualBooking}
                   onSuccess={handlePaidSuccess}
                   onBack={() => {
                     setPhase("vehicles");
@@ -882,7 +960,7 @@ export default function BookingForm({ dict, locale, onPhaseChange }: BookingForm
                     clearB2CCheckoutIdempotencyKey();
                   }}
                 />
-              </Elements>
+              )}
             </div>
           ) : null}
         </div>
