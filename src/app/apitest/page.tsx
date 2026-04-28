@@ -120,6 +120,8 @@ export default function ApiTestPage() {
   const [baseUrl, setBaseUrl] = useState("");
   const [resourceId, setResourceId] = useState("1");
   const [flightQuery, setFlightQuery] = useState("tp1923");
+  const [bearerToken, setBearerToken] = useState("");
+  const [extraHeaders, setExtraHeaders] = useState('{\n  "Accept": "application/json"\n}');
   const [bodies, setBodies] = useState<Record<string, string>>(() =>
     ENDPOINTS.reduce<Record<string, string>>((acc, endpoint) => {
       if (endpoint.defaultBody) acc[endpoint.key] = endpoint.defaultBody;
@@ -153,13 +155,37 @@ export default function ApiTestPage() {
     }));
 
     try {
+      let parsedExtraHeaders: Record<string, string> = {};
+      try {
+        const parsed = JSON.parse(extraHeaders || "{}");
+        if (parsed && typeof parsed === "object") {
+          parsedExtraHeaders = Object.entries(parsed).reduce<Record<string, string>>((acc, [key, value]) => {
+            if (typeof value === "string") acc[key] = value;
+            return acc;
+          }, {});
+        }
+      } catch {
+        setResults((prev) => ({
+          ...prev,
+          [endpoint.key]: {
+            loading: false,
+            error: "Invalid extra headers JSON.",
+          },
+        }));
+        return;
+      }
+
+      const headers: Record<string, string> = { ...parsedExtraHeaders };
+      if (hasJsonBody) {
+        headers["Content-Type"] = "application/json";
+      }
+      if (bearerToken.trim()) {
+        headers["Authorization"] = `Bearer ${bearerToken.trim()}`;
+      }
+
       const response = await fetch(url, {
         method: endpoint.method,
-        headers: hasJsonBody
-          ? {
-              "Content-Type": "application/json",
-            }
-          : undefined,
+        headers: Object.keys(headers).length ? headers : undefined,
         body: hasJsonBody ? (bodies[endpoint.key] || "{}") : undefined,
       });
 
@@ -218,6 +244,26 @@ export default function ApiTestPage() {
             className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
             value={flightQuery}
             onChange={(e) => setFlightQuery(e.target.value)}
+          />
+        </label>
+      </section>
+      <section className="mt-4 grid gap-4 rounded-xl border border-neutral-200 bg-white p-4 md:grid-cols-2">
+        <label className="space-y-1">
+          <span className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">Bearer Token</span>
+          <input
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+            type="password"
+            placeholder="TransferCRM API token"
+            value={bearerToken}
+            onChange={(e) => setBearerToken(e.target.value)}
+          />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">Extra Headers (JSON)</span>
+          <textarea
+            className="h-24 w-full rounded-lg border border-neutral-300 p-2 font-mono text-xs"
+            value={extraHeaders}
+            onChange={(e) => setExtraHeaders(e.target.value)}
           />
         </label>
       </section>
