@@ -21,7 +21,7 @@ export default async function Home({
         <main className="min-h-screen bg-white">
             <Navbar dict={dict.common} locale={locale} />
             <div id="booking">
-                <HeroSection dict={dict.hero} bookingDict={dict.booking} locale={locale} />
+                <HeroSection dict={dict.hero} locale={locale} />
             </div>
             <FAQSection dict={dict.faq} />
             <Footer dict={dict.footer} locale={locale} />
