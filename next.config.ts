@@ -7,7 +7,7 @@ const csp = [
   "worker-src 'self' blob:",
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://m.stripe.network https://www.google.com https://maps.google.com https://transfercrm.com https://*.transfercrm.com",
   "child-src 'self' blob: https://js.stripe.com https://hooks.stripe.com https://m.stripe.network https://www.google.com https://maps.google.com https://transfercrm.com https://*.transfercrm.com",
-  "connect-src 'self' https://api.stripe.com https://m.stripe.network https://transfercrm.com https://*.transfercrm.com",
+  "connect-src 'self' https://api.stripe.com https://m.stripe.network https://transfercrm.com https://*.transfercrm.com https://wp.way2go.pt https://*.supabase.co",
   "img-src 'self' data: https:",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
@@ -17,6 +17,7 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   outputFileTracingRoot: process.cwd(),
   images: { unoptimized: true },
   trailingSlash: true,
