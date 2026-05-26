@@ -142,7 +142,11 @@
         "terms": "Termos e Condições",
         "cookies": "Gestão de Cookies",
         "about": "Sobre Nós",
-        "aboutText": "Serviço de transfer profissional com mais de 10 anos de experiência. Conforto, pontualidade e discrição garantidos."
+        "aboutText": "Serviço de transfer profissional com uma vasta experiência no setor. Conforto, pontualidade e discrição garantidos.",
+        "explore": "Explore",
+        "airportTransfers": "Transferes de Aeroporto",
+        "byTheHour": "Ao Serviço / À Hora",
+        "copyright": "© {year} Way2Go. Todos os direitos reservados."
     },
     "cookies": {
         "text": "Utilizamos cookies para melhorar a sua experiência. Ao continuar a navegar, concorda com a nossa ",

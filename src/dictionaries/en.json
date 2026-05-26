@@ -139,10 +139,14 @@
         "contacts": "Contact",
         "legal": "Legal Information",
         "privacy": "Privacy Policy",
-        "terms": "Terms and Conditions",
+        "terms": "Terms & Conditions",
         "cookies": "Cookie Management",
         "about": "About Us",
-        "aboutText": "Professional transfer service with more than 10 years of experience. Comfort, punctuality and discretion guaranteed."
+        "aboutText": "Professional transfer service with extensive experience in the sector. Comfort, punctuality, and discretion guaranteed.",
+        "explore": "Explore",
+        "airportTransfers": "Airport Transfers",
+        "byTheHour": "By the Hour",
+        "copyright": "© {year} Way2Go. All rights reserved."
     },
     "cookies": {
         "text": "We use cookies to improve your experience. By continuing to browse, you agree to our ",
