@@ -58,13 +58,21 @@ async function getPartnersFromSupabase(): Promise<PartnerRecord[] | null> {
   if (!baseUrl || !serviceKey) return null;
   const clean = baseUrl.replace(/\/+$/, "");
   const url = `${clean}/rest/v1/partners?is_active=eq.true&select=*&order=name.asc`;
-  const res = await fetch(url, {
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (err) {
+    // Falha de rede ou DNS (ex: build time sem acesso ao Supabase). Retorna null
+    // para que o chamador caia no fallback de variáveis de ambiente.
+    console.warn("[partner-config] Supabase unreachable, falling back to env config.", err);
+    return null;
+  }
   if (!res.ok) {
     // Production-safe fallback: if table/schema is missing or temporarily unavailable,
     // do not break the portal rendering flow; return empty and let env fallback apply.

@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 
 import { getAllPartners, isPartnerPortalConfigured } from "@/lib/partner/config";
 
+// Esta página faz fetch ao Supabase em runtime — nunca deve ser pré-renderizada estaticamente.
+export const dynamic = "force-dynamic";
+
 export default async function PartnerBookIndexPage() {
   if (!(await isPartnerPortalConfigured())) {
     return (
