@@ -7,7 +7,7 @@ import { useState, useMemo } from "react";
 // ============================================================================
 
 type Lang = "pt" | "en";
-type VehicleType = "berlina" | "minivan" | "onRequest";
+type VehicleType = "berlina" | "van" | "doubleVan" | "onRequest";
 
 interface FormState {
   pickup: string;
@@ -21,81 +21,84 @@ interface FormState {
   phone: string;
 }
 
+interface ExtrasState {
+  cadeiraBebe: number;
+  cadeiraCrianca: number;
+  assentoBooster: number;
+}
+
 // ============================================================================
-// DICTIONARY — 100% bilingual, executive chauffeur & transfer market register
+// DICTIONARY — 100% bilingue, mercado de chauffeur e transferes executivos
 // ============================================================================
 
 const DICT = {
   pt: {
-    // Language switcher aria
     switchLang: "Mudar para inglês",
 
-    // Section header
-    sectionEyebrow: "Transferes Executivos",
-    sectionHeading: "Peça o seu Orçamento",
-    sectionSubheading:
-      "Serviço de chauffeur privado para aeroportos, hotéis e eventos corporativos em todo o território nacional.",
-
-    // Form groups
-    routeGroup: "Rota",
-    dateGroup: "Data e Hora",
+    routeGroup:    "Rota",
+    dateGroup:     "Data e Hora",
     capacityGroup: "Capacidade",
-    contactGroup: "Dados de Contacto",
+    extrasGroup:   "Extras",
+    contactGroup:  "Dados de Contacto",
 
-    // Fields — labels
-    pickup: "Local de Recolha",
-    dropoff: "Local de Destino",
-    date: "Data de Recolha",
-    time: "Hora de Recolha",
+    pickup:   "Local de Recolha",
+    dropoff:  "Local de Destino",
+    date:     "Data de Recolha",
+    time:     "Hora de Recolha",
     passengers: "Passageiros",
-    luggage: "Bagagem",
-    name: "Nome Completo",
-    phone: "Telefone / WhatsApp",
-    email: "Endereço de E-mail",
+    luggage:    "Bagagem",
+    name:     "Nome Completo",
+    phone:    "Telefone / WhatsApp",
+    email:    "Endereço de E-mail",
 
-    // Fields — placeholders
-    pickupPlaceholder: "Ex: Aeroporto de Lisboa (LIS)",
+    pickupPlaceholder:  "Ex: Aeroporto de Lisboa (LIS)",
     dropoffPlaceholder: "Ex: Four Seasons Hotel, Lisboa",
-    namePlaceholder: "O seu nome completo",
-    phonePlaceholder: "+351 9XX XXX XXX",
-    emailPlaceholder: "o.seu@email.com",
+    namePlaceholder:    "O seu nome completo",
+    phonePlaceholder:   "+351 9XX XXX XXX",
+    emailPlaceholder:   "o.seu@email.com",
 
-    // Counter aria
+    cadeiraBebe:       "Cadeira de Bebé",
+    cadeiraBebeSub:    "0 – 9 kg",
+    cadeiraCrianca:    "Cadeira de Criança",
+    cadeiraCriancaSub: "9 – 18 kg",
+    assentoBooster:    "Assento Elevatório",
+    assentoBoosterSub: "Booster Seat · máx. 2",
+
     decrement: (label: string) => `Diminuir ${label}`,
     increment: (label: string) => `Aumentar ${label}`,
 
-    // Vehicle card
     vehicleLabel: "Veículo Sugerido",
     vehicles: {
       berlina: {
         name: "Berlina Executiva",
-        example: "Tesla Model S · Mercedes-Benz Classe E · BMW Série 5",
+        capacity: "Até 4 passageiros · 3 malas",
       },
-      minivan: {
-        name: "Minivan Executiva",
-        example: "Mercedes-Benz Classe V · Vito · Volkswagen Caravelle",
+      van: {
+        name: "Van Executiva",
+        capacity: "Até 7 passageiros · 7 malas",
+      },
+      doubleVan: {
+        name: "Duas Vans Executivas",
+        note: "Em substituição de Minibus",
+        capacity: "Até 14 passageiros · 14 malas",
       },
       onRequest: {
         name: "Sob Consulta",
         headline: "Grupo Grande ou Necessidades Especiais",
-        body: "Para mais de 8 passageiros ou 8 volumes de bagagem, contacte-nos para uma proposta à medida.",
+        body: "Para mais de 14 passageiros ou 14 volumes de bagagem, contacte-nos para uma proposta à medida.",
       },
     },
 
-    // CTA
-    submit: "Solicitar Orçamento",
+    submit:    "Solicitar Orçamento",
     submitting: "A enviar…",
 
-    // On-request contact nudge
     onRequestContact: "Para grupos ou serviços especiais, fale connosco:",
-    onRequestEmail: "geral@way2go.pt",
+    onRequestEmail:   "geral@way2go.pt",
 
-    // Success state
     successHeading: "Pedido Recebido",
     successBody:
       "Recebemos o seu pedido de orçamento. A nossa equipa entrará em contacto brevemente.",
 
-    // Estados de erro
     errorNetwork:
       "Sem ligação ao servidor. Verifique a sua rede e tente novamente.",
     errorServer:
@@ -103,75 +106,72 @@ const DICT = {
   },
 
   en: {
-    // Language switcher aria
     switchLang: "Switch to Portuguese",
 
-    // Section header
-    sectionEyebrow: "Executive Transfers",
-    sectionHeading: "Request a Quote",
-    sectionSubheading:
-      "Private chauffeur service to airports, hotels and corporate events across Portugal.",
-
-    // Form groups
-    routeGroup: "Route",
-    dateGroup: "Date & Time",
+    routeGroup:    "Route",
+    dateGroup:     "Date & Time",
     capacityGroup: "Capacity",
-    contactGroup: "Contact Details",
+    extrasGroup:   "Extras",
+    contactGroup:  "Contact Details",
 
-    // Fields — labels
-    pickup: "Pick-up Location",
-    dropoff: "Drop-off Location",
-    date: "Pick-up Date",
-    time: "Pick-up Time",
+    pickup:   "Pick-up Location",
+    dropoff:  "Drop-off Location",
+    date:     "Pick-up Date",
+    time:     "Pick-up Time",
     passengers: "Passengers",
-    luggage: "Luggage",
-    name: "Full Name",
-    phone: "Phone / WhatsApp",
-    email: "Email Address",
+    luggage:    "Luggage",
+    name:     "Full Name",
+    phone:    "Phone / WhatsApp",
+    email:    "Email Address",
 
-    // Fields — placeholders
-    pickupPlaceholder: "e.g. Lisbon Airport (LIS)",
+    pickupPlaceholder:  "e.g. Lisbon Airport (LIS)",
     dropoffPlaceholder: "e.g. Four Seasons Hotel, Lisbon",
-    namePlaceholder: "Your full name",
-    phonePlaceholder: "+351 9XX XXX XXX",
-    emailPlaceholder: "your@email.com",
+    namePlaceholder:    "Your full name",
+    phonePlaceholder:   "+351 9XX XXX XXX",
+    emailPlaceholder:   "your@email.com",
 
-    // Counter aria
+    cadeiraBebe:       "Baby Seat",
+    cadeiraBebeSub:    "0 – 9 kg",
+    cadeiraCrianca:    "Child Seat",
+    cadeiraCriancaSub: "9 – 18 kg",
+    assentoBooster:    "Booster Seat",
+    assentoBoosterSub: "Max. 2 per booking",
+
     decrement: (label: string) => `Decrease ${label}`,
     increment: (label: string) => `Increase ${label}`,
 
-    // Vehicle card
     vehicleLabel: "Suggested Vehicle",
     vehicles: {
       berlina: {
         name: "Executive Sedan",
-        example: "Tesla Model S · Mercedes-Benz E-Class · BMW 5 Series",
+        capacity: "Up to 4 passengers · 3 bags",
       },
-      minivan: {
-        name: "Executive Minivan",
-        example: "Mercedes-Benz V-Class · Vito · Volkswagen Caravelle",
+      van: {
+        name: "Executive Van",
+        capacity: "Up to 7 passengers · 7 bags",
+      },
+      doubleVan: {
+        name: "Two Executive Vans",
+        note: "Instead of Minibus",
+        capacity: "Up to 14 passengers · 14 bags",
       },
       onRequest: {
         name: "On Request",
-        headline: "Large Group or Special Requirements",
-        body: "For more than 8 passengers or 8 pieces of luggage, please contact us for a tailored proposal.",
+        headline: "Large Group or Special Needs",
+        body: "For more than 14 passengers or 14 pieces of luggage, please contact us for a tailored proposal.",
       },
     },
 
-    // CTA
-    submit: "Request a Quote",
+    submit:    "Request a Quote",
     submitting: "Sending…",
 
-    // On-request contact nudge
     onRequestContact: "For groups or special services, reach us at:",
-    onRequestEmail: "geral@way2go.pt",
+    onRequestEmail:   "geral@way2go.pt",
 
-    // Success state
     successHeading: "Request Received",
     successBody:
       "We've received your quote request. Our team will be in touch shortly.",
 
-    // Error states
     errorNetwork:
       "Unable to reach the server. Please check your connection and try again.",
     errorServer:
@@ -181,12 +181,34 @@ const DICT = {
 
 // ============================================================================
 // VEHICLE LOGIC
+// Limites revistos: Berlina ≤4pax/3 malas · Van ≤7/7 · 2 Vans ≤14/14 · Consulta >14
 // ============================================================================
 
 function inferVehicle(passengers: number, luggage: number): VehicleType {
-  if (passengers > 8 || luggage > 8) return "onRequest";
-  if (passengers > 4 || luggage > 3) return "minivan";
+  if (passengers > 14 || luggage > 14) return "onRequest";
+  if (passengers > 7  || luggage > 7)  return "doubleVan";
+  if (passengers > 4  || luggage > 3)  return "van";
   return "berlina";
+}
+
+// Lookup seguro sem indexação por tipo union — evita erros de TS com `as const`
+function resolveVehicleDisplay(
+  type: VehicleType,
+  t: (typeof DICT)[Lang],
+): { name: string; secondary: string | null } {
+  switch (type) {
+    case "berlina":
+      return { name: t.vehicles.berlina.name, secondary: t.vehicles.berlina.capacity };
+    case "van":
+      return { name: t.vehicles.van.name, secondary: t.vehicles.van.capacity };
+    case "doubleVan":
+      return {
+        name: t.vehicles.doubleVan.name,
+        secondary: `${t.vehicles.doubleVan.note} · ${t.vehicles.doubleVan.capacity}`,
+      };
+    case "onRequest":
+      return { name: t.vehicles.onRequest.name, secondary: null };
+  }
 }
 
 // ============================================================================
@@ -195,13 +217,15 @@ function inferVehicle(passengers: number, luggage: number): VehicleType {
 
 // ── Language switcher ────────────────────────────────────────────────────────
 
-interface LangSwitcherProps {
+function LangSwitcher({
+  lang,
+  onSwitch,
+  ariaLabel,
+}: {
   lang: Lang;
   onSwitch: (l: Lang) => void;
   ariaLabel: string;
-}
-
-function LangSwitcher({ lang, onSwitch, ariaLabel }: LangSwitcherProps) {
+}) {
   return (
     <div
       role="group"
@@ -217,9 +241,7 @@ function LangSwitcher({ lang, onSwitch, ariaLabel }: LangSwitcherProps) {
           className={[
             "min-w-[2.5rem] rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all duration-200",
             i === 0 ? "mr-0.5" : "",
-            lang === l
-              ? "bg-black text-white shadow-sm"
-              : "text-neutral-500 hover:text-black",
+            lang === l ? "bg-black text-white shadow-sm" : "text-neutral-500 hover:text-black",
           ].join(" ")}
         >
           {l.toUpperCase()}
@@ -239,7 +261,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Text input ───────────────────────────────────────────────────────────────
+// ── Text input class ─────────────────────────────────────────────────────────
 
 const inputCls =
   "min-h-[44px] w-full rounded-lg border border-neutral-300 bg-white px-3 text-sm text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black";
@@ -248,6 +270,7 @@ const inputCls =
 
 interface CounterProps {
   label: string;
+  subLabel?: string;
   value: number;
   min?: number;
   max?: number;
@@ -258,6 +281,7 @@ interface CounterProps {
 
 function Counter({
   label,
+  subLabel,
   value,
   min = 0,
   max = 12,
@@ -270,7 +294,14 @@ function Counter({
 
   return (
     <div className="flex flex-col gap-2">
-      <FieldLabel>{label}</FieldLabel>
+      <div>
+        <FieldLabel>{label}</FieldLabel>
+        {subLabel && (
+          <span className="-mt-1 mb-1 block text-[10px] leading-none text-neutral-400">
+            {subLabel}
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -298,27 +329,10 @@ function Counter({
   );
 }
 
-// ── Vehicle icon ─────────────────────────────────────────────────────────────
+// ── Vehicle icons ─────────────────────────────────────────────────────────────
+// berlina → sedan · van + doubleVan → minivan (o texto diferencia os casos)
 
-function VehicleIcon({ type }: { type: Exclude<VehicleType, "onRequest"> }) {
-  if (type === "minivan") {
-    return (
-      <svg
-        className="h-5 w-5 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        aria-hidden
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M3 17h18M5 17V9l2-4h10l2 4v8M7 17a2 2 0 104 0M13 17a2 2 0 104 0M7 9h10"
-        />
-      </svg>
-    );
-  }
+function IconSedan() {
   return (
     <svg
       className="h-5 w-5 text-white"
@@ -337,15 +351,28 @@ function VehicleIcon({ type }: { type: Exclude<VehicleType, "onRequest"> }) {
   );
 }
 
+function IconVan() {
+  return (
+    <svg
+      className="h-5 w-5 text-white"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 17h18M5 17V9l2-4h10l2 4v8M7 17a2 2 0 104 0M13 17a2 2 0 104 0M7 9h10"
+      />
+    </svg>
+  );
+}
+
 // ── Success ──────────────────────────────────────────────────────────────────
 
-function SuccessMessage({
-  heading,
-  body,
-}: {
-  heading: string;
-  body: string;
-}) {
+function SuccessMessage({ heading, body }: { heading: string; body: string }) {
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black">
@@ -367,17 +394,20 @@ function SuccessMessage({
 }
 
 // ============================================================================
+// ENDPOINT
+// ============================================================================
+
+// Define NEXT_PUBLIC_WP_API_URL=https://wp.way2go.pt em .env.local / Vercel env vars
+const WP_ENDPOINT =
+  (process.env.NEXT_PUBLIC_WP_API_URL ?? "") + "/wp-json/way2go/v1/orcamento";
+
+// ============================================================================
 // MAIN EXPORT
 // ============================================================================
 
-// URL base do WordPress — define NEXT_PUBLIC_WP_API_URL no ficheiro .env.local
-// Exemplo: NEXT_PUBLIC_WP_API_URL=https://wp.way2go.pt
-const WP_ENDPOINT =
-  (process.env.NEXT_PUBLIC_WP_API_URL ?? "") +
-  "/wp-json/way2go/v1/orcamento";
-
 export function QuickQuoteForm() {
   const [lang, setLang] = useState<Lang>("pt");
+
   const [form, setForm] = useState<FormState>({
     pickup: "",
     dropoff: "",
@@ -389,20 +419,31 @@ export function QuickQuoteForm() {
     email: "",
     phone: "",
   });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const t = DICT[lang];
-  const vehicleType = useMemo(
-    () => inferVehicle(form.passengers, form.luggage),
-    [form.passengers, form.luggage],
-  );
+  const [extras, setExtras] = useState<ExtrasState>({
+    cadeiraBebe: 0,
+    cadeiraCrianca: 0,
+    assentoBooster: 0,
+  });
+
+  const [submitting, setSubmitting]     = useState(false);
+  const [submitted, setSubmitted]       = useState(false);
+  const [submitError, setSubmitError]   = useState<string | null>(null);
+
+  const t           = DICT[lang];
+  const vehicleType = useMemo(() => inferVehicle(form.passengers, form.luggage), [form.passengers, form.luggage]);
   const isOnRequest = vehicleType === "onRequest";
-  const todayISO = new Date().toISOString().split("T")[0];
+  const todayISO    = new Date().toISOString().split("T")[0];
 
-  function set<K extends keyof FormState>(key: K, value: FormState[K]) {
+  // Informação de display calculada de forma type-safe
+  const vehicleDisplay = useMemo(() => resolveVehicleDisplay(vehicleType, t), [vehicleType, t]);
+
+  function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setExtra<K extends keyof ExtrasState>(key: K, value: number) {
+    setExtras((prev) => ({ ...prev, [key]: value }));
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -412,18 +453,27 @@ export function QuickQuoteForm() {
     setSubmitting(true);
     setSubmitError(null);
 
-    // Payload enviado para o endpoint REST do WordPress
     const payload = {
-      name:        form.name,
-      email:       form.email,
-      phone:       form.phone,
-      pickup:      form.pickup,
-      dropoff:     form.dropoff,
-      dateTime:    `${form.date}T${form.time}`, // ISO-like: "2025-06-15T14:30"
-      veiculo:     vehicleType,                  // "berlina" | "minivan"
-      idioma:      lang,                         // "pt" | "en"
+      // Rota e timing
+      pickup:   form.pickup,
+      dropoff:  form.dropoff,
+      dateTime: `${form.date}T${form.time}`,   // "2025-06-15T14:30"
+      // Capacidade
       passageiros: form.passengers,
       bagagem:     form.luggage,
+      // Extras
+      cadeiraBebe:    extras.cadeiraBebe,
+      cadeiraCrianca: extras.cadeiraCrianca,
+      assentoBooster: extras.assentoBooster,
+      // Veículo sugerido — chave interna + label localizado
+      veiculo:      vehicleType,
+      veiculoLabel: vehicleDisplay.name,
+      // Contacto
+      name:  form.name,
+      email: form.email,
+      phone: form.phone,
+      // Meta
+      idioma: lang,
     };
 
     try {
@@ -434,15 +484,12 @@ export function QuickQuoteForm() {
       });
 
       if (!res.ok) {
-        // Tenta extrair a mensagem de erro devolvida pelo WordPress
         const data = await res.json().catch(() => ({})) as { message?: string };
         throw new Error(data?.message ?? `HTTP ${res.status}`);
       }
 
-      // Sucesso: muda para o estado de confirmação visual
       setSubmitted(true);
     } catch (err) {
-      // TypeError indica falha de rede (sem internet, DNS, etc.)
       const isNetworkFailure = err instanceof TypeError;
       setSubmitError(isNetworkFailure ? t.errorNetwork : t.errorServer);
     } finally {
@@ -451,9 +498,7 @@ export function QuickQuoteForm() {
   }
 
   if (submitted) {
-    return (
-      <SuccessMessage heading={t.successHeading} body={t.successBody} />
-    );
+    return <SuccessMessage heading={t.successHeading} body={t.successBody} />;
   }
 
   return (
@@ -461,14 +506,10 @@ export function QuickQuoteForm() {
 
       {/* ── Language switcher ──────────────────────────────────────────── */}
       <div className="flex justify-end">
-        <LangSwitcher
-          lang={lang}
-          onSwitch={setLang}
-          ariaLabel={t.switchLang}
-        />
+        <LangSwitcher lang={lang} onSwitch={setLang} ariaLabel={t.switchLang} />
       </div>
 
-      {/* ── Route ─────────────────────────────────────────────────────── */}
+      {/* ── Rota ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="block">
           <FieldLabel>{t.pickup}</FieldLabel>
@@ -477,7 +518,7 @@ export function QuickQuoteForm() {
             required
             placeholder={t.pickupPlaceholder}
             value={form.pickup}
-            onChange={(e) => set("pickup", e.target.value)}
+            onChange={(e) => setField("pickup", e.target.value)}
             className={inputCls}
           />
         </label>
@@ -488,13 +529,13 @@ export function QuickQuoteForm() {
             required
             placeholder={t.dropoffPlaceholder}
             value={form.dropoff}
-            onChange={(e) => set("dropoff", e.target.value)}
+            onChange={(e) => setField("dropoff", e.target.value)}
             className={inputCls}
           />
         </label>
       </div>
 
-      {/* ── Date & Time ───────────────────────────────────────────────── */}
+      {/* ── Data e Hora ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="block">
           <FieldLabel>{t.date}</FieldLabel>
@@ -503,7 +544,7 @@ export function QuickQuoteForm() {
             required
             min={todayISO}
             value={form.date}
-            onChange={(e) => set("date", e.target.value)}
+            onChange={(e) => setField("date", e.target.value)}
             className={inputCls}
           />
         </label>
@@ -513,37 +554,79 @@ export function QuickQuoteForm() {
             type="time"
             required
             value={form.time}
-            onChange={(e) => set("time", e.target.value)}
+            onChange={(e) => setField("time", e.target.value)}
             className={inputCls}
           />
         </label>
       </div>
 
-      {/* ── Capacity counters ─────────────────────────────────────────── */}
+      {/* ── Capacidade ────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+        <p className="mb-4 text-xs font-medium uppercase tracking-wider text-neutral-500">
+          {t.capacityGroup}
+        </p>
         <div className="grid grid-cols-2 gap-6">
           <Counter
             label={t.passengers}
             value={form.passengers}
             min={1}
-            max={12}
+            max={18}
             ariaDecrement={t.decrement(t.passengers)}
             ariaIncrement={t.increment(t.passengers)}
-            onChange={(v) => set("passengers", v)}
+            onChange={(v) => setField("passengers", v)}
           />
           <Counter
             label={t.luggage}
             value={form.luggage}
             min={0}
-            max={12}
+            max={18}
             ariaDecrement={t.decrement(t.luggage)}
             ariaIncrement={t.increment(t.luggage)}
-            onChange={(v) => set("luggage", v)}
+            onChange={(v) => setField("luggage", v)}
           />
         </div>
       </div>
 
-      {/* ── Vehicle output card ───────────────────────────────────────── */}
+      {/* ── Extras ────────────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+        <p className="mb-4 text-xs font-medium uppercase tracking-wider text-neutral-500">
+          {t.extrasGroup}
+        </p>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <Counter
+            label={t.cadeiraBebe}
+            subLabel={t.cadeiraBebeSub}
+            value={extras.cadeiraBebe}
+            min={0}
+            max={4}
+            ariaDecrement={t.decrement(t.cadeiraBebe)}
+            ariaIncrement={t.increment(t.cadeiraBebe)}
+            onChange={(v) => setExtra("cadeiraBebe", v)}
+          />
+          <Counter
+            label={t.cadeiraCrianca}
+            subLabel={t.cadeiraCriancaSub}
+            value={extras.cadeiraCrianca}
+            min={0}
+            max={4}
+            ariaDecrement={t.decrement(t.cadeiraCrianca)}
+            ariaIncrement={t.increment(t.cadeiraCrianca)}
+            onChange={(v) => setExtra("cadeiraCrianca", v)}
+          />
+          <Counter
+            label={t.assentoBooster}
+            subLabel={t.assentoBoosterSub}
+            value={extras.assentoBooster}
+            min={0}
+            max={2}
+            ariaDecrement={t.decrement(t.assentoBooster)}
+            ariaIncrement={t.increment(t.assentoBooster)}
+            onChange={(v) => setExtra("assentoBooster", v)}
+          />
+        </div>
+      </div>
+
+      {/* ── Veículo Sugerido ──────────────────────────────────────────── */}
       <div
         className={[
           "rounded-2xl border p-4 transition-all duration-300",
@@ -574,8 +657,7 @@ export function QuickQuoteForm() {
             </svg>
             <div>
               <p className="font-semibold text-amber-800">
-                {t.vehicles.onRequest.name} —{" "}
-                {t.vehicles.onRequest.headline}
+                {t.vehicles.onRequest.name} — {t.vehicles.onRequest.headline}
               </p>
               <p className="mt-0.5 text-sm text-amber-700">
                 {t.vehicles.onRequest.body}
@@ -584,22 +666,28 @@ export function QuickQuoteForm() {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-black transition-all duration-300">
-              <VehicleIcon type={vehicleType} />
+            {/* Ícone: berlina → sedan · van/doubleVan → minivan */}
+            <div className="flex flex-shrink-0 items-center gap-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black transition-all duration-300">
+                {vehicleType === "berlina" ? <IconSedan /> : <IconVan />}
+              </div>
+              {vehicleType === "doubleVan" && (
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black">
+                  <IconVan />
+                </div>
+              )}
             </div>
             <div className="transition-all duration-200">
-              <p className="font-semibold text-black">
-                {t.vehicles[vehicleType].name}
-              </p>
-              <p className="text-xs text-neutral-500">
-                {t.vehicles[vehicleType].example}
-              </p>
+              <p className="font-semibold text-black">{vehicleDisplay.name}</p>
+              {vehicleDisplay.secondary && (
+                <p className="text-xs text-neutral-500">{vehicleDisplay.secondary}</p>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Contact details ───────────────────────────────────────────── */}
+      {/* ── Dados de Contacto ─────────────────────────────────────────── */}
       <div className="space-y-4">
         <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
           {t.contactGroup}
@@ -612,7 +700,7 @@ export function QuickQuoteForm() {
               required
               placeholder={t.namePlaceholder}
               value={form.name}
-              onChange={(e) => set("name", e.target.value)}
+              onChange={(e) => setField("name", e.target.value)}
               className={inputCls}
             />
           </label>
@@ -623,7 +711,7 @@ export function QuickQuoteForm() {
               required
               placeholder={t.phonePlaceholder}
               value={form.phone}
-              onChange={(e) => set("phone", e.target.value)}
+              onChange={(e) => setField("phone", e.target.value)}
               className={inputCls}
             />
           </label>
@@ -635,13 +723,13 @@ export function QuickQuoteForm() {
             required
             placeholder={t.emailPlaceholder}
             value={form.email}
-            onChange={(e) => set("email", e.target.value)}
+            onChange={(e) => setField("email", e.target.value)}
             className={inputCls}
           />
         </label>
       </div>
 
-      {/* ── Submit ────────────────────────────────────────────────────── */}
+      {/* ── Submissão ─────────────────────────────────────────────────── */}
       <button
         type="submit"
         disabled={isOnRequest || submitting}
@@ -674,6 +762,7 @@ export function QuickQuoteForm() {
         </div>
       )}
 
+      {/* ── Nudge "Sob Consulta" ───────────────────────────────────────── */}
       {isOnRequest && (
         <p className="text-center text-xs leading-relaxed text-neutral-500">
           {t.onRequestContact}{" "}
