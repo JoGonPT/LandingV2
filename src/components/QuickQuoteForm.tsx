@@ -27,6 +27,22 @@ interface ExtrasState {
   assentoBooster: number;
 }
 
+interface SubmittedSnapshot {
+  pickup: string;
+  dropoff: string;
+  dateTime: string;
+  passageiros: number;
+  bagagem: number;
+  cadeiraBebe: number;
+  cadeiraCrianca: number;
+  assentoBooster: number;
+  veiculoLabel: string;
+  name: string;
+  email: string;
+  phone: string;
+  lang: Lang;
+}
+
 // ============================================================================
 // DICTIONARY — 100% bilingue, mercado de chauffeur e transferes executivos
 // ============================================================================
@@ -536,23 +552,152 @@ function IconVan() {
 
 // ── Success ──────────────────────────────────────────────────────────────────
 
-function SuccessMessage({ heading, body }: { heading: string; body: string }) {
+const SUCCESS_LABELS = {
+  pt: {
+    route:    "Rota",
+    pickup:   "Origem",
+    dropoff:  "Destino",
+    when:     "Data / Hora",
+    capacity: "Capacidade",
+    pax:      "Passageiros",
+    bags:     "Bagagem",
+    extras:   "Extras",
+    baby:     "Cadeira de Bebé",
+    child:    "Cadeira de Criança",
+    booster:  "Assento Elevatório",
+    vehicle:  "Veículo Sugerido",
+    contact:  "Contacto",
+    name:     "Nome",
+    email:    "Email",
+    phone:    "Telefone",
+  },
+  en: {
+    route:    "Route",
+    pickup:   "Origin",
+    dropoff:  "Destination",
+    when:     "Date / Time",
+    capacity: "Capacity",
+    pax:      "Passengers",
+    bags:     "Luggage",
+    extras:   "Extras",
+    baby:     "Baby Seat",
+    child:    "Child Seat",
+    booster:  "Booster Seat",
+    vehicle:  "Suggested Vehicle",
+    contact:  "Contact",
+    name:     "Name",
+    email:    "Email",
+    phone:    "Phone",
+  },
+} as const;
+
+function SuccessMessage({
+  heading,
+  body,
+  snapshot,
+}: {
+  heading: string;
+  body: string;
+  snapshot?: SubmittedSnapshot;
+}) {
+  const lbl = snapshot ? SUCCESS_LABELS[snapshot.lang] : null;
+
+  // Format "2025-06-15T14:30" → "15/06/2025 · 14:30"
+  function formatDateTime(dt: string) {
+    const [d, t] = dt.split("T");
+    if (!d) return dt;
+    const [y, m, day] = d.split("-");
+    return `${day}/${m}/${y}${t ? ` · ${t}` : ""}`;
+  }
+
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black">
-        <svg
-          className="h-7 w-7 text-white"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
+    <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      {/* ── Cabeçalho ── */}
+      <div className="flex flex-col items-center px-8 pb-6 pt-8 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black">
+          <svg
+            className="h-7 w-7 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="mb-2 text-xl font-semibold text-black">{heading}</h3>
+        <p className="text-sm leading-relaxed text-neutral-500">{body}</p>
       </div>
-      <h3 className="mb-2 text-xl font-semibold text-black">{heading}</h3>
-      <p className="text-sm leading-relaxed text-neutral-500">{body}</p>
+
+      {/* ── Resumo da reserva ── */}
+      {snapshot && lbl && (
+        <div className="border-t border-neutral-100 px-8 pb-8 pt-6">
+          <div className="space-y-5">
+
+            {/* Rota */}
+            <SummarySection title={lbl.route}>
+              <SummaryRow label={lbl.pickup}  value={snapshot.pickup} />
+              <SummaryRow label={lbl.dropoff} value={snapshot.dropoff} />
+              <SummaryRow label={lbl.when}    value={formatDateTime(snapshot.dateTime)} />
+            </SummarySection>
+
+            {/* Capacidade */}
+            <SummarySection title={lbl.capacity}>
+              <SummaryRow label={lbl.pax}  value={String(snapshot.passageiros)} />
+              <SummaryRow label={lbl.bags} value={String(snapshot.bagagem)} />
+            </SummarySection>
+
+            {/* Extras — apenas se algum > 0 */}
+            {(snapshot.cadeiraBebe > 0 || snapshot.cadeiraCrianca > 0 || snapshot.assentoBooster > 0) && (
+              <SummarySection title={lbl.extras}>
+                {snapshot.cadeiraBebe    > 0 && <SummaryRow label={lbl.baby}    value={String(snapshot.cadeiraBebe)} />}
+                {snapshot.cadeiraCrianca > 0 && <SummaryRow label={lbl.child}   value={String(snapshot.cadeiraCrianca)} />}
+                {snapshot.assentoBooster > 0 && <SummaryRow label={lbl.booster} value={String(snapshot.assentoBooster)} />}
+              </SummarySection>
+            )}
+
+            {/* Veículo */}
+            <SummarySection title={lbl.vehicle}>
+              <SummaryRow label="" value={snapshot.veiculoLabel} bold />
+            </SummarySection>
+
+            {/* Contacto */}
+            <SummarySection title={lbl.contact}>
+              <SummaryRow label={lbl.name}  value={snapshot.name} />
+              <SummaryRow label={lbl.email} value={snapshot.email} />
+              <SummaryRow label={lbl.phone} value={snapshot.phone} />
+            </SummarySection>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SummarySection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      {title && (
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+          {title}
+        </p>
+      )}
+      <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      {label && (
+        <span className="min-w-[6rem] flex-shrink-0 text-xs text-neutral-400">{label}</span>
+      )}
+      <span className={["text-sm text-black", bold ? "font-semibold" : ""].join(" ").trim()}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -561,9 +706,7 @@ function SuccessMessage({ heading, body }: { heading: string; body: string }) {
 // ENDPOINT
 // ============================================================================
 
-// Define NEXT_PUBLIC_WP_API_URL=https://wp.way2go.pt em .env.local / Vercel env vars
-const WP_ENDPOINT =
-  (process.env.NEXT_PUBLIC_WP_API_URL ?? "") + "/wp-json/way2go/v1/orcamento";
+const BUDGET_ENDPOINT = "/api/send-budget";
 
 // ============================================================================
 // MAIN EXPORT
@@ -593,6 +736,7 @@ export function QuickQuoteForm() {
   const [submitting, setSubmitting]     = useState(false);
   const [submitted, setSubmitted]       = useState(false);
   const [submitError, setSubmitError]   = useState<string | null>(null);
+  const [snapshot, setSnapshot]         = useState<SubmittedSnapshot | null>(null);
 
   const t           = DICT[lang];
   const vehicleType = useMemo(() => inferVehicle(form.passengers, form.luggage), [form.passengers, form.luggage]);
@@ -641,7 +785,7 @@ export function QuickQuoteForm() {
     };
 
     try {
-      const res = await fetch(WP_ENDPOINT, {
+      const res = await fetch(BUDGET_ENDPOINT, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
@@ -652,6 +796,21 @@ export function QuickQuoteForm() {
         throw new Error(data?.message ?? `HTTP ${res.status}`);
       }
 
+      setSnapshot({
+        pickup:         form.pickup,
+        dropoff:        form.dropoff,
+        dateTime:       `${form.date}T${form.time}`,
+        passageiros:    form.passengers,
+        bagagem:        form.luggage,
+        cadeiraBebe:    extras.cadeiraBebe,
+        cadeiraCrianca: extras.cadeiraCrianca,
+        assentoBooster: extras.assentoBooster,
+        veiculoLabel:   vehicleDisplay.name,
+        name:           form.name,
+        email:          form.email,
+        phone:          form.phone,
+        lang,
+      });
       setSubmitted(true);
     } catch (err) {
       const isNetworkFailure = err instanceof TypeError;
@@ -662,7 +821,13 @@ export function QuickQuoteForm() {
   }
 
   if (submitted) {
-    return <SuccessMessage heading={t.successHeading} body={t.successBody} />;
+    return (
+      <SuccessMessage
+        heading={t.successHeading}
+        body={t.successBody}
+        snapshot={snapshot ?? undefined}
+      />
+    );
   }
 
   return (
