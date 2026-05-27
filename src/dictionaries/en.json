@@ -157,40 +157,101 @@
     "legal": {
         "privacy": {
             "title": "Privacy Policy",
-            "updated": "Last update: {date}",
+            "updated": "Last updated: May 2026",
+            "intro": [
+                "With this Privacy Policy, provided pursuant to Article 13 of Regulation (EU) 2016/679 (\"GDPR\"), we wish to inform the User about the ways in which his/her Personal Data (i.e., any information that can directly or indirectly identify him/her) will be processed when he/she visits, registers, and/or purchases services on the www.way2go.pt website and associated mobile applications (hereinafter collectively referred to as the \"Platform\").",
+                "This policy, together with the Cookie Policy and the General Terms of Use and Conditions of Sale, establishes the basis on which Users' personal data will be processed."
+            ],
             "sections": [
                 {
-                    "title": "1. Introduction",
-                    "content": "This Privacy Policy describes how we collect, use and protect your personal data in accordance with the General Data Protection Regulation (GDPR) of the European Union."
-                },
-                {
-                    "title": "2. Data Collected",
-                    "content": "We collect the following personal data:",
+                    "title": "1. Data Controller",
+                    "content": "The Data Controller of the personal data collected through the Platform is:",
                     "list": [
-                        "Full name",
-                        "E-mail address",
-                        "Telephone/WhatsApp number",
-                        "Travel information (locations, dates, times)",
-                        "Flight number (when applicable)"
+                        "Way2Go",
+                        "Email Address: privacy@way2go.pt"
                     ]
                 },
                 {
-                    "title": "3. Purpose of Treatment",
-                    "content": "Your data is used exclusively for:",
+                    "title": "2. Categories of Personal Data Processed",
+                    "content": "When you interact with the Platform, make a booking, contact support, or create an account, we process the following categories of personal data:",
                     "list": [
-                        "Process and confirm transfer reservations",
-                        "Communicate information about the service",
-                        "Improve the quality of our service",
-                        "Comply with legal and fiscal obligations"
+                        "Identification, Contact, and Login Data: First and last name, email address, telephone number, and account login credentials.",
+                        "Booking and Service Data: Detailed information regarding the requested transport/ride, pick-up and drop-off locations, dates, times, assigned driver details, and customer support interactions aimed at improving service delivery.",
+                        "Billing and Payment Data: Tax and accounting information (VAT number/Tax ID, billing address, company name if applicable), and financial/payment card details required to process transactions.",
+                        "Geolocation Data: Real-time geographical coordinates of the User's and driver's devices, strictly processed to ensure the safe, accurate, and efficient execution of the transportation service (identifying pick-up location, confirming customer on board, and completing the trip).",
+                        "Navigation and Usage Data: IP addresses, browser types, operating systems, navigation flows within the Platform, system logs, and performance indicators."
                     ]
                 },
                 {
-                    "title": "4. Legal Basis",
-                    "content": "The processing of your personal data is based on your express consent and the execution of the service provision contract."
+                    "title": "3. Purposes of Processing and Legal Bases",
+                    "content": "",
+                    "subsections": [
+                        {
+                            "title": "A. Contractual Performance and Legal Obligations",
+                            "list": [
+                                "Platform navigation, account registration, and user profile management.",
+                                "Processing, managing, billing, and executing transportation and mobility service contracts.",
+                                "Customer care, technical support, and managing user inquiries, reports, or complaints.",
+                                "Fulfillment of statutory, tax, and accounting obligations applicable to Way2Go's operations."
+                            ],
+                            "legalBasis": "Legal Basis: The necessity for the performance of a contract to which the User is a party or for pre-contractual steps (Art. 6.1.b of the GDPR), and compliance with legal obligations to which the Data Controller is subject (Art. 6.1.c of the GDPR)."
+                        },
+                        {
+                            "title": "B. Legitimate Interest",
+                            "list": [
+                                "Conducting aggregated statistical analysis to optimize Platform features and improve service quality.",
+                                "Preventing and detecting fraudulent or harmful actions, ensuring system security, and defending Way2Go's legal rights.",
+                                "Sending transactional communications (e.g., abandoned cart reminders or operational service updates)."
+                            ],
+                            "legalBasis": "Legal Basis: The legitimate interests pursued by Way2Go (Art. 6.1.f of the GDPR)."
+                        },
+                        {
+                            "title": "C. User Consent",
+                            "list": [
+                                "Direct Marketing and Profiling: Sending commercial emails, updates, and tailored promotions based on user preferences and behavioral clusters.",
+                                "Geolocation Activation: Real-time tracking for customers outside the strict requirements of active ride execution depends on permissions granted via device settings or the Platform interface."
+                            ],
+                            "legalBasis": "Legal Basis: The User's explicit consent (Art. 6.1.a of the GDPR). Providing data for these purposes is strictly optional and consent can be withdrawn at any time."
+                        }
+                    ]
                 },
                 {
-                    "title": "5. Data Sharing",
-                    "content": "Your data is not shared with third parties, except when necessary for the provision of the service (e.g. drivers) or by legal obligation."
+                    "title": "4. Data Retention Period",
+                    "content": "Personal data will be processed and stored only for the duration necessary to achieve the purposes for which it was collected:",
+                    "list": [
+                        "Contractual and Tax Data: Retained for the duration required by applicable commercial and tax statutes (typically up to 10 years in accordance with legal statutes of limitation).",
+                        "Account Data: Maintained as long as the User account remains active. Upon a deletion request, data will be erased or anonymized within a maximum of 3 months, subject to any overriding legal hold.",
+                        "Geolocation Data: Processed and stored for a maximum period of 4 months from collection, unless further retention is required for legal defense or active complaint resolution.",
+                        "Marketing and Profiling Data: Retained for 24 months for marketing and 12 months for profiling from the date of consent or the User's last active interaction (e.g., opening a newsletter), unless consent is revoked earlier."
+                    ]
+                },
+                {
+                    "title": "5. Data Recipients",
+                    "content": "To ensure the correct delivery of services, Way2Go may share personal data with:",
+                    "list": [
+                        "Authorized internal personnel from administrative, commercial, and technical support departments.",
+                        "Third-party service providers acting on behalf of Way2Go (e.g., payment gateways, cloud hosting services, IT infrastructure providers, and dispatch drivers/transport partners executing the ride).",
+                        "Competent administrative, tax, or judicial authorities when required by law or necessary for legal protection."
+                    ]
+                },
+                {
+                    "title": "6. International Data Transfers",
+                    "content": "Personal data is processed and stored primarily within the European Economic Area (EEA). If auxiliary technical tools require transferring data to third countries outside the EEA, Way2Go guarantees that the recipient country ensures an adequate level of data protection or that the transfer is governed by Standard Contractual Clauses approved by the European Commission (Art. 46 of the GDPR)."
+                },
+                {
+                    "title": "7. Rights of Data Subjects",
+                    "content": "Under the GDPR, Users have the right to request from Way2Go:",
+                    "list": [
+                        "Access and Rectification: The right to inspect their personal data and correct inaccurate or incomplete details.",
+                        "Erasure (\"Right to be Forgotten\"): The right to request data deletion when it is no longer required for its original purpose or when consent is withdrawn.",
+                        "Restriction and Objection: The right to restrict certain processing activities or object to processing based on legitimate interests or direct marketing.",
+                        "Data Portability: The right to receive their personal data in a structured, commonly used, and machine-readable format."
+                    ],
+                    "footer": "To exercise these rights, the User must submit a signed request via email to: privacy@way2go.pt. Users also maintain the right to lodge a complaint with their local Data Protection Supervisory Authority."
+                },
+                {
+                    "title": "8. Security Measures",
+                    "content": "Way2Go implements appropriate technical and organizational security measures (including data encryption, HTTPS protocols, and SSL certification) to safeguard personal data against unauthorized access, accidental alteration, disclosure, or destruction."
                 }
             ]
         },

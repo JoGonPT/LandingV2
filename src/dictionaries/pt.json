@@ -157,40 +157,101 @@
     "legal": {
         "privacy": {
             "title": "Política de Privacidade",
-            "updated": "Última atualização: {date}",
+            "updated": "Última atualização: Maio de 2026",
+            "intro": [
+                "Com a presente Política de Privacidade, fornecida nos termos do Artigo 13.º do Regulamento (UE) 2016/679 (\"RGPD\"), pretendemos informar o Utilizador sobre a forma como os seus Dados Pessoais (ou seja, qualquer informação que o possa identificar direta ou indiretamente) serão tratados quando visita, se regista e/ou adquire serviços no website www.way2go.pt e aplicações móveis associadas (doravante, conjuntamente designados por \"Plataforma\").",
+                "Esta política, em conjunto com a Política de Cookies e os Termos e Condições Gerais de Utilização e Venda, estabelece a base sobre a qual os dados pessoais dos Utilizadores serão tratados."
+            ],
             "sections": [
                 {
-                    "title": "1. Introdução",
-                    "content": "A presente Política de Privacidade descreve como recolhemos, utilizamos e protegemos os seus dados pessoais em conformidade com o Regulamento Geral de Proteção de Dados (RGPD) da União Europeia."
-                },
-                {
-                    "title": "2. Dados Recolhidos",
-                    "content": "Recolhemos os seguintes dados pessoais:",
+                    "title": "1. Responsável pelo Tratamento de Dados",
+                    "content": "O Responsável pelo Tratamento dos dados pessoais recolhidos através da Plataforma é:",
                     "list": [
-                        "Nome completo",
-                        "Endereço de e-mail",
-                        "Número de telefone/WhatsApp",
-                        "Informações de viagem (locais, datas, horários)",
-                        "Número de voo (quando aplicável)"
+                        "Way2Go",
+                        "Contacto de E-mail: privacy@way2go.pt"
                     ]
                 },
                 {
-                    "title": "3. Finalidade do Tratamento",
-                    "content": "Os seus dados são utilizados exclusivamente para:",
+                    "title": "2. Categorias de Dados Pessoais Tratados",
+                    "content": "Quando interage com a Plataforma, efetua uma reserva, contacta o suporte ou cria uma conta, recolhemos e tratamos as seguintes categorias de dados:",
                     "list": [
-                        "Processar e confirmar reservas de transfer",
-                        "Comunicar informações sobre o serviço",
-                        "Melhorar a qualidade do nosso serviço",
-                        "Cumprir obrigações legais e fiscais"
+                        "Dados de Identificação, Contacto e Acesso: Nome e apelido, endereço de e-mail, número de telefone e credenciais de acesso à conta.",
+                        "Dados de Reserva e Serviço: Informações detalhadas sobre a viagem/transporte contratado, locais de recolha e destino, datas, horários, dados de motoristas atribuídos e interações de suporte para melhoria da experiência do cliente.",
+                        "Dados de Faturação e Pagamento: Dados fiscais e contabilísticos (NIF/Número de IVA, morada de faturação, nome da empresa, se aplicável) e dados bancários ou de cartões de pagamento necessários para processar as transações.",
+                        "Dados de Geolocalização: Coordenadas geográficas em tempo real do dispositivo do Utilizador e do motorista, estritamente necessárias para a execução segura e eficiente do serviço de transporte (identificação do local de recolha, confirmação de passageiro a bordo e conclusão da viagem).",
+                        "Dados de Navegação e Utilização: Endereços IP, tipo de navegador, sistema operativo, fluxos de navegação na Plataforma, registos de logs e indicadores de performance do sistema."
                     ]
                 },
                 {
-                    "title": "4. Base Legal",
-                    "content": "O tratamento dos seus dados pessoais baseia-se no seu consentimento expresso e na execução do contrato de prestação de serviços."
+                    "title": "3. Finalidades do Tratamento e Bases Legais",
+                    "content": "",
+                    "subsections": [
+                        {
+                            "title": "A. Execução Contratual e Obrigações Legais",
+                            "list": [
+                                "Navegação, registo e gestão da conta do Utilizador na Plataforma.",
+                                "Processamento, gestão, faturação e execução dos contratos de serviços de transporte e mobilidade.",
+                                "Atendimento ao cliente, suporte técnico e gestão de reclamações ou pedidos de esclarecimento.",
+                                "Cumprimento de obrigações legais, fiscais e contabilísticas aplicáveis à atividade da Way2Go."
+                            ],
+                            "legalBasis": "Base Legal: Necessidade para a execução de um contrato no qual o Utilizador é parte ou para diligências pré-contratuais (Artigo 6.º, n.º 1, alínea b) do RGPD) e cumprimento de obrigações jurídicas (Artigo 6.º, n.º 1, alínea c) do RGPD)."
+                        },
+                        {
+                            "title": "B. Interesse Legítimo",
+                            "list": [
+                                "Realização de análises estatísticas agregadas para melhoria das funcionalidades da Plataforma e da qualidade do serviço.",
+                                "Prevenção e deteção de fraudes, segurança do sistema e proteção dos direitos legais da Way2Go.",
+                                "Envio de comunicações transacionais (ex.: lembretes de carrinhos abandonados ou atualizações operacionais do estado do serviço)."
+                            ],
+                            "legalBasis": "Base Legal: Interesse legítimo da Way2Go (Artigo 6.º, n.º 1, alínea f) do RGPD)."
+                        },
+                        {
+                            "title": "C. Consentimento do Utilizador",
+                            "list": [
+                                "Marketing Direto e Perfis: Envio de comunicações comerciais, ofertas e promoções personalizadas com base nas preferências de utilização, através de e-mail ou notificações.",
+                                "Geolocalização: A ativação da localização em tempo real para os clientes (fora do estritamente necessário para a recolha ativa) depende da autorização concedida nas definições do dispositivo ou na Plataforma."
+                            ],
+                            "legalBasis": "Base Legal: Consentimento explícito do Utilizador (Artigo 6.º, n.º 1, alínea a) do RGPD). O consentimento é opcional e pode ser retirado a qualquer momento."
+                        }
+                    ]
                 },
                 {
-                    "title": "5. Partilha de Dados",
-                    "content": "Os seus dados não são partilhados com terceiros, exceto quando necessário para a prestação do serviço (ex: motoristas) ou por obrigação legal."
+                    "title": "4. Período de Retenção dos Dados",
+                    "content": "Os dados pessoais serão conservados apenas durante o período estritamente necessário para cumprir as finalidades para as quais foram recolhidos:",
+                    "list": [
+                        "Dados Contratuais e Fiscais: Conservados pelo período exigido pela legislação fiscal e comercial aplicável (geralmente até 10 anos em conformidade com os prazos de prescrição legal).",
+                        "Dados de Conta de Utilizador: Mantidos enquanto a conta estiver ativa. Em caso de pedido de eliminação, os dados serão eliminados ou anonimizados num prazo máximo de 3 meses, salvaguardando obrigações legais pendentes.",
+                        "Dados de Geolocalização: Armazenados por um período máximo de 4 meses a contar da recolha, exceto se necessários para a resolução de litígios ou reclamações em curso.",
+                        "Marketing e Perfis: Conservados durante 24 meses para marketing e 12 meses para definição de perfis a partir do último contacto ativo do Utilizador, ou até que o consentimento seja revogado."
+                    ]
+                },
+                {
+                    "title": "5. Destinatários dos Dados",
+                    "content": "Para a correta execução dos serviços, a Way2Go poderá partilhar dados com:",
+                    "list": [
+                        "Pessoal interno autorizado das áreas administrativa, comercial e de suporte técnico.",
+                        "Prestadores de serviços subcontratados que atuem em nome da Way2Go (ex.: gateways de pagamento, serviços de alojamento em nuvem, prestadores de infraestrutura tecnológica e motoristas/parceiros de transporte encarregues da execução da viagem).",
+                        "Autoridades públicas, fiscais ou judiciais competentes, sempre que exigido por lei ou para a defesa de direitos legais."
+                    ]
+                },
+                {
+                    "title": "6. Transferências Internacionais de Dados",
+                    "content": "Os dados são tratados e armazenados preferencialmente no Espaço Económico Europeu (EEE). Caso alguma ferramenta tecnológica auxiliar exija a transferência de dados para fora do EEE, a Way2Go assegurará que o país de destino garante um nível de proteção adequado ou que a transferência é salvaguardada pelas Cláusulas Contratuais-Tipo aprovadas pela Comissão Europeia (Artigo 46.º do RGPD)."
+                },
+                {
+                    "title": "7. Direitos dos Titulares dos Dados",
+                    "content": "Nos termos do RGPD, o Utilizador tem o direito de solicitar à Way2Go:",
+                    "list": [
+                        "Acesso e Retificação: Consultar os seus dados e corrigir informações inexatas ou incompletas.",
+                        "Apagamento (\"Direito a ser Esquecido\"): Solicitar a eliminação dos seus dados quando estes já não forem necessários ou quando retirar o consentimento.",
+                        "Limitação e Oposição: Limitar o tratamento de determinados dados ou opor-se ao tratamento baseado em interesses legítimos ou para fins de marketing.",
+                        "Portabilidade: Receber os seus dados num formato estruturado, de uso corrente e leitura automática."
+                    ],
+                    "footer": "Para exercer os seus direitos, o Utilizador deverá enviar um pedido assinado para o e-mail: privacy@way2go.pt. O Utilizador tem também o direito de apresentar uma reclamação à autoridade de controlo competente (em Portugal, a Comissão Nacional de Proteção de Dados - CNPD)."
+                },
+                {
+                    "title": "8. Medidas de Segurança",
+                    "content": "A Way2Go implementa medidas de segurança técnicas e organizativas adequadas (incluindo encriptação de dados, protocolos HTTPS e certificados SSL) para proteger os dados pessoais contra acessos não autorizados, alteração, divulgação ou destruição acidental."
                 }
             ]
         },
