@@ -19,6 +19,8 @@ const schema = z.object({
   email:          z.string().email(),
   phone:          z.string().min(1),
   idioma:         z.enum(["pt", "en"]),
+  flightOrTrain:  z.string().optional(),
+  observations:   z.string().optional(),
 });
 
 type BudgetPayload = z.infer<typeof schema>;
@@ -146,8 +148,11 @@ function buildHtml(d: BudgetPayload): string {
                 row("Nome",      d.name),
                 row("Email",     `<a href="mailto:${d.email}" style="color:#000000;">${d.email}</a>`),
                 row("Telefone",  d.phone),
+                d.flightOrTrain ? row("Voo / Comboio", d.flightOrTrain) : "",
                 row("Idioma",    idioma),
               ].join(""))}
+
+              ${d.observations ? section("Observações", row("", d.observations)) : ""}
 
             </td>
           </tr>

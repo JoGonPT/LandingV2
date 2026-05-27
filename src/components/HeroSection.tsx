@@ -49,7 +49,7 @@ export default function HeroSection({ dict, locale }: HeroSectionProps) {
 
                             {/* Formulário de Orçamento Rápido Bilingue */}
                             <div className="w-full rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm md:p-6">
-                                <QuickQuoteForm />
+                                <QuickQuoteForm locale={locale} />
                             </div>
                         </div>
 

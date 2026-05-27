@@ -19,6 +19,8 @@ interface FormState {
   name: string;
   email: string;
   phone: string;
+  flightOrTrain: string;
+  observations: string;
 }
 
 interface ExtrasState {
@@ -40,6 +42,8 @@ interface SubmittedSnapshot {
   name: string;
   email: string;
   phone: string;
+  flightOrTrain?: string;
+  observations?: string;
   lang: Lang;
 }
 
@@ -49,8 +53,6 @@ interface SubmittedSnapshot {
 
 const DICT = {
   pt: {
-    switchLang: "Mudar para inglês",
-
     routeGroup:    "Rota",
     dateGroup:     "Data e Hora",
     capacityGroup: "Capacidade",
@@ -66,19 +68,25 @@ const DICT = {
     name:     "Nome Completo",
     phone:    "Telefone / WhatsApp",
     email:    "Endereço de E-mail",
+    flightOrTrain:    "Número de Voo / Comboio",
+    observations:     "Observações",
 
-    pickupPlaceholder:  "Ex: Aeroporto de Lisboa (LIS)",
-    dropoffPlaceholder: "Ex: Four Seasons Hotel, Lisboa",
-    namePlaceholder:    "O seu nome completo",
-    phonePlaceholder:   "+351 9XX XXX XXX",
-    emailPlaceholder:   "o.seu@email.com",
+    pickupPlaceholder:       "Ex: Aeroporto de Lisboa (LIS)",
+    dropoffPlaceholder:      "Ex: Four Seasons Hotel, Lisboa",
+    namePlaceholder:         "O seu nome completo",
+    phonePlaceholder:        "+351 9XX XXX XXX",
+    emailPlaceholder:        "o.seu@email.com",
+    flightOrTrainPlaceholder: "ex. TP 1234 ou AP120 (opcional)",
+    observationsPlaceholder: "Instruções especiais, referências adicionais… (opcional)",
 
     cadeiraBebe:       "Cadeira de Bebé",
     cadeiraBebeSub:    "0 – 9 kg",
     cadeiraCrianca:    "Cadeira de Criança",
     cadeiraCriancaSub: "9 – 18 kg",
     assentoBooster:    "Assento Elevatório",
-    assentoBoosterSub: "Booster Seat · máx. 2",
+    assentoBoosterSub: "Booster · máx. 2",
+
+    extrasNote: "Máximo de 4 extras no total",
 
     decrement: (label: string) => `Diminuir ${label}`,
     increment: (label: string) => `Aumentar ${label}`,
@@ -119,11 +127,11 @@ const DICT = {
       "Sem ligação ao servidor. Verifique a sua rede e tente novamente.",
     errorServer:
       "Ocorreu um erro ao enviar o pedido. Por favor, tente novamente ou contacte-nos diretamente.",
+    errorRequired: (fields: string[]) =>
+      `Campos obrigatórios em falta: ${fields.join(", ")}.`,
   },
 
   en: {
-    switchLang: "Switch to Portuguese",
-
     routeGroup:    "Route",
     dateGroup:     "Date & Time",
     capacityGroup: "Capacity",
@@ -139,19 +147,25 @@ const DICT = {
     name:     "Full Name",
     phone:    "Phone / WhatsApp",
     email:    "Email Address",
+    flightOrTrain:    "Flight / Train Number",
+    observations:     "Observations",
 
-    pickupPlaceholder:  "e.g. Lisbon Airport (LIS)",
-    dropoffPlaceholder: "e.g. Four Seasons Hotel, Lisbon",
-    namePlaceholder:    "Your full name",
-    phonePlaceholder:   "+351 9XX XXX XXX",
-    emailPlaceholder:   "your@email.com",
+    pickupPlaceholder:        "e.g. Lisbon Airport (LIS)",
+    dropoffPlaceholder:       "e.g. Four Seasons Hotel, Lisbon",
+    namePlaceholder:          "Your full name",
+    phonePlaceholder:         "+351 9XX XXX XXX",
+    emailPlaceholder:         "your@email.com",
+    flightOrTrainPlaceholder: "e.g. TP 1234 or AP120 (optional)",
+    observationsPlaceholder:  "Special instructions, additional references… (optional)",
 
     cadeiraBebe:       "Baby Seat",
     cadeiraBebeSub:    "0 – 9 kg",
     cadeiraCrianca:    "Child Seat",
     cadeiraCriancaSub: "9 – 18 kg",
     assentoBooster:    "Booster Seat",
-    assentoBoosterSub: "Max. 2 per booking",
+    assentoBoosterSub: "Booster · max. 2",
+
+    extrasNote: "Maximum 4 extras in total",
 
     decrement: (label: string) => `Decrease ${label}`,
     increment: (label: string) => `Increase ${label}`,
@@ -192,12 +206,14 @@ const DICT = {
       "Unable to reach the server. Please check your connection and try again.",
     errorServer:
       "Something went wrong while sending your request. Please try again or contact us directly.",
+    errorRequired: (fields: string[]) =>
+      `Missing required fields: ${fields.join(", ")}.`,
   },
 } as const;
 
 // ============================================================================
 // VEHICLE LOGIC
-// Limites revistos: Berlina ≤4pax/3 malas · Van ≤7/7 · 2 Vans ≤14/14 · Consulta >14
+// Berlina ≤4pax/3malas · Van ≤7/7 · 2 Vans ≤14/14 · Consulta >14 (bloqueado na UI)
 // ============================================================================
 
 function inferVehicle(passengers: number, luggage: number): VehicleType {
@@ -207,7 +223,6 @@ function inferVehicle(passengers: number, luggage: number): VehicleType {
   return "berlina";
 }
 
-// Lookup seguro sem indexação por tipo union — evita erros de TS com `as const`
 function resolveVehicleDisplay(
   type: VehicleType,
   t: (typeof DICT)[Lang],
@@ -231,48 +246,17 @@ function resolveVehicleDisplay(
 // SUB-COMPONENTS
 // ============================================================================
 
-// ── Language switcher ────────────────────────────────────────────────────────
-
-function LangSwitcher({
-  lang,
-  onSwitch,
-  ariaLabel,
-}: {
-  lang: Lang;
-  onSwitch: (l: Lang) => void;
-  ariaLabel: string;
-}) {
-  return (
-    <div
-      role="group"
-      aria-label={ariaLabel}
-      className="inline-flex items-center rounded-lg border border-neutral-200 bg-neutral-50 p-0.5"
-    >
-      {(["pt", "en"] as Lang[]).map((l, i) => (
-        <button
-          key={l}
-          type="button"
-          onClick={() => onSwitch(l)}
-          aria-pressed={lang === l}
-          className={[
-            "min-w-[2.5rem] rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all duration-200",
-            i === 0 ? "mr-0.5" : "",
-            lang === l ? "bg-black text-white shadow-sm" : "text-neutral-500 hover:text-black",
-          ].join(" ")}
-        >
-          {l.toUpperCase()}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ── Field label ──────────────────────────────────────────────────────────────
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
+function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
-    <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-neutral-500">
+    <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500">
       {children}
+      {optional && (
+        <span className="rounded bg-neutral-100 px-1 py-0.5 text-[9px] font-normal normal-case tracking-normal text-neutral-400">
+          opcional
+        </span>
+      )}
     </span>
   );
 }
@@ -283,10 +267,6 @@ const inputCls =
   "min-h-[44px] w-full rounded-lg border border-neutral-300 bg-white px-3 text-sm text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black";
 
 // ── Place autocomplete input ──────────────────────────────────────────────────
-//
-// Usa o proxy server-side /api/places/autocomplete (Google Places API v1)
-// restrito a PT + ES via PLACES_COUNTRIES env var — a chave nunca é exposta
-// ao cliente, pelo que não é necessário NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
 
 interface Suggestion {
   id: string;
@@ -317,7 +297,6 @@ function PlaceInput({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce: dispara fetch 300 ms após o utilizador parar de escrever
   useEffect(() => {
     const q = value.trim();
     if (q.length < 3) {
@@ -353,7 +332,6 @@ function PlaceInput({
     };
   }, [value, locale]);
 
-  // Fecha o dropdown ao clicar fora
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
       const target = e.target as Node;
@@ -390,7 +368,6 @@ function PlaceInput({
         className={inputCls}
       />
 
-      {/* Dropdown de sugestões */}
       {open && (suggestions.length > 0 || loading) && (
         <div
           ref={dropdownRef}
@@ -407,8 +384,6 @@ function PlaceInput({
                 <li key={s.id} role="option" aria-selected={false}>
                   <button
                     type="button"
-                    // onMouseDown previne que o blur do input feche o dropdown
-                    // antes do click ser registado
                     onMouseDown={(e) => {
                       e.preventDefault();
                       handleSelect(s);
@@ -510,7 +485,6 @@ function Counter({
 }
 
 // ── Vehicle icons ─────────────────────────────────────────────────────────────
-// berlina → sedan · van + doubleVan → minivan (o texto diferencia os casos)
 
 function IconSedan() {
   return (
@@ -554,40 +528,44 @@ function IconVan() {
 
 const SUCCESS_LABELS = {
   pt: {
-    route:    "Rota",
-    pickup:   "Origem",
-    dropoff:  "Destino",
-    when:     "Data / Hora",
-    capacity: "Capacidade",
-    pax:      "Passageiros",
-    bags:     "Bagagem",
-    extras:   "Extras",
-    baby:     "Cadeira de Bebé",
-    child:    "Cadeira de Criança",
-    booster:  "Assento Elevatório",
-    vehicle:  "Veículo Sugerido",
-    contact:  "Contacto",
-    name:     "Nome",
-    email:    "Email",
-    phone:    "Telefone",
+    route:         "Rota",
+    pickup:        "Origem",
+    dropoff:       "Destino",
+    when:          "Data / Hora",
+    capacity:      "Capacidade",
+    pax:           "Passageiros",
+    bags:          "Bagagem",
+    extras:        "Extras",
+    baby:          "Cadeira de Bebé",
+    child:         "Cadeira de Criança",
+    booster:       "Assento Elevatório",
+    vehicle:       "Veículo Sugerido",
+    contact:       "Contacto",
+    name:          "Nome",
+    email:         "Email",
+    phone:         "Telefone",
+    flightOrTrain: "Voo / Comboio",
+    observations:  "Observações",
   },
   en: {
-    route:    "Route",
-    pickup:   "Origin",
-    dropoff:  "Destination",
-    when:     "Date / Time",
-    capacity: "Capacity",
-    pax:      "Passengers",
-    bags:     "Luggage",
-    extras:   "Extras",
-    baby:     "Baby Seat",
-    child:    "Child Seat",
-    booster:  "Booster Seat",
-    vehicle:  "Suggested Vehicle",
-    contact:  "Contact",
-    name:     "Name",
-    email:    "Email",
-    phone:    "Phone",
+    route:         "Route",
+    pickup:        "Origin",
+    dropoff:       "Destination",
+    when:          "Date / Time",
+    capacity:      "Capacity",
+    pax:           "Passengers",
+    bags:          "Luggage",
+    extras:        "Extras",
+    baby:          "Baby Seat",
+    child:         "Child Seat",
+    booster:       "Booster Seat",
+    vehicle:       "Suggested Vehicle",
+    contact:       "Contact",
+    name:          "Name",
+    email:         "Email",
+    phone:         "Phone",
+    flightOrTrain: "Flight / Train",
+    observations:  "Observations",
   },
 } as const;
 
@@ -602,7 +580,6 @@ function SuccessMessage({
 }) {
   const lbl = snapshot ? SUCCESS_LABELS[snapshot.lang] : null;
 
-  // Format "2025-06-15T14:30" → "15/06/2025 · 14:30"
   function formatDateTime(dt: string) {
     const [d, t] = dt.split("T");
     if (!d) return dt;
@@ -612,7 +589,6 @@ function SuccessMessage({
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-      {/* ── Cabeçalho ── */}
       <div className="flex flex-col items-center px-8 pb-6 pt-8 text-center">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black">
           <svg
@@ -630,25 +606,21 @@ function SuccessMessage({
         <p className="text-sm leading-relaxed text-neutral-500">{body}</p>
       </div>
 
-      {/* ── Resumo da reserva ── */}
       {snapshot && lbl && (
         <div className="border-t border-neutral-100 px-8 pb-8 pt-6">
           <div className="space-y-5">
 
-            {/* Rota */}
             <SummarySection title={lbl.route}>
               <SummaryRow label={lbl.pickup}  value={snapshot.pickup} />
               <SummaryRow label={lbl.dropoff} value={snapshot.dropoff} />
               <SummaryRow label={lbl.when}    value={formatDateTime(snapshot.dateTime)} />
             </SummarySection>
 
-            {/* Capacidade */}
             <SummarySection title={lbl.capacity}>
               <SummaryRow label={lbl.pax}  value={String(snapshot.passageiros)} />
               <SummaryRow label={lbl.bags} value={String(snapshot.bagagem)} />
             </SummarySection>
 
-            {/* Extras — apenas se algum > 0 */}
             {(snapshot.cadeiraBebe > 0 || snapshot.cadeiraCrianca > 0 || snapshot.assentoBooster > 0) && (
               <SummarySection title={lbl.extras}>
                 {snapshot.cadeiraBebe    > 0 && <SummaryRow label={lbl.baby}    value={String(snapshot.cadeiraBebe)} />}
@@ -657,16 +629,20 @@ function SuccessMessage({
               </SummarySection>
             )}
 
-            {/* Veículo */}
             <SummarySection title={lbl.vehicle}>
               <SummaryRow label="" value={snapshot.veiculoLabel} bold />
             </SummarySection>
 
-            {/* Contacto */}
             <SummarySection title={lbl.contact}>
               <SummaryRow label={lbl.name}  value={snapshot.name} />
               <SummaryRow label={lbl.email} value={snapshot.email} />
               <SummaryRow label={lbl.phone} value={snapshot.phone} />
+              {snapshot.flightOrTrain && (
+                <SummaryRow label={lbl.flightOrTrain} value={snapshot.flightOrTrain} />
+              )}
+              {snapshot.observations && (
+                <SummaryRow label={lbl.observations} value={snapshot.observations} />
+              )}
             </SummarySection>
 
           </div>
@@ -712,8 +688,9 @@ const BUDGET_ENDPOINT = "/api/send-budget";
 // MAIN EXPORT
 // ============================================================================
 
-export function QuickQuoteForm() {
-  const [lang, setLang] = useState<Lang>("pt");
+export function QuickQuoteForm({ locale }: { locale: string }) {
+  // Deriva o idioma do locale do site — sem switcher interno
+  const lang: Lang = locale === "en" ? "en" : "pt";
 
   const [form, setForm] = useState<FormState>({
     pickup: "",
@@ -725,6 +702,8 @@ export function QuickQuoteForm() {
     name: "",
     email: "",
     phone: "",
+    flightOrTrain: "",
+    observations: "",
   });
 
   const [extras, setExtras] = useState<ExtrasState>({
@@ -733,18 +712,24 @@ export function QuickQuoteForm() {
     assentoBooster: 0,
   });
 
-  const [submitting, setSubmitting]     = useState(false);
-  const [submitted, setSubmitted]       = useState(false);
-  const [submitError, setSubmitError]   = useState<string | null>(null);
-  const [snapshot, setSnapshot]         = useState<SubmittedSnapshot | null>(null);
+  const [submitting, setSubmitting]   = useState(false);
+  const [submitted, setSubmitted]     = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [snapshot, setSnapshot]       = useState<SubmittedSnapshot | null>(null);
 
   const t           = DICT[lang];
   const vehicleType = useMemo(() => inferVehicle(form.passengers, form.luggage), [form.passengers, form.luggage]);
   const isOnRequest = vehicleType === "onRequest";
   const todayISO    = new Date().toISOString().split("T")[0];
 
-  // Informação de display calculada de forma type-safe
   const vehicleDisplay = useMemo(() => resolveVehicleDisplay(vehicleType, t), [vehicleType, t]);
+
+  // Extras: total máximo 4; booster individualmente máx. 2
+  const totalExtras    = extras.cadeiraBebe + extras.cadeiraCrianca + extras.assentoBooster;
+  const availableSlots = Math.max(0, 4 - totalExtras);
+  const maxBebe        = Math.min(4, extras.cadeiraBebe    + availableSlots);
+  const maxCrianca     = Math.min(4, extras.cadeiraCrianca + availableSlots);
+  const maxBooster     = Math.min(2, extras.assentoBooster + availableSlots);
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -758,30 +743,42 @@ export function QuickQuoteForm() {
     e.preventDefault();
     if (isOnRequest || submitting) return;
 
+    // Validação específica por campo — identifica cada campo em falta
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const missing: string[] = [];
+    if (!form.pickup.trim())           missing.push(t.pickup);
+    if (!form.dropoff.trim())          missing.push(t.dropoff);
+    if (!form.date)                    missing.push(t.date);
+    if (!form.time)                    missing.push(t.time);
+    if (!form.name.trim())             missing.push(t.name);
+    if (!emailRegex.test(form.email))  missing.push(t.email);
+    if (!form.phone.trim())            missing.push(t.phone);
+
+    if (missing.length > 0) {
+      setSubmitError(t.errorRequired(missing));
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError(null);
 
     const payload = {
-      // Rota e timing
-      pickup:   form.pickup,
-      dropoff:  form.dropoff,
-      dateTime: `${form.date}T${form.time}`,   // "2025-06-15T14:30"
-      // Capacidade
-      passageiros: form.passengers,
-      bagagem:     form.luggage,
-      // Extras
+      pickup:         form.pickup,
+      dropoff:        form.dropoff,
+      dateTime:       `${form.date}T${form.time}`,
+      passageiros:    form.passengers,
+      bagagem:        form.luggage,
       cadeiraBebe:    extras.cadeiraBebe,
       cadeiraCrianca: extras.cadeiraCrianca,
       assentoBooster: extras.assentoBooster,
-      // Veículo sugerido — chave interna + label localizado
-      veiculo:      vehicleType,
-      veiculoLabel: vehicleDisplay.name,
-      // Contacto
-      name:  form.name,
-      email: form.email,
-      phone: form.phone,
-      // Meta
-      idioma: lang,
+      veiculo:        vehicleType,
+      veiculoLabel:   vehicleDisplay.name,
+      name:           form.name,
+      email:          form.email,
+      phone:          form.phone,
+      flightOrTrain:  form.flightOrTrain || undefined,
+      observations:   form.observations  || undefined,
+      idioma:         lang,
     };
 
     try {
@@ -809,6 +806,8 @@ export function QuickQuoteForm() {
         name:           form.name,
         email:          form.email,
         phone:          form.phone,
+        flightOrTrain:  form.flightOrTrain || undefined,
+        observations:   form.observations  || undefined,
         lang,
       });
       setSubmitted(true);
@@ -832,11 +831,6 @@ export function QuickQuoteForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
-
-      {/* ── Language switcher ──────────────────────────────────────────── */}
-      <div className="flex justify-end">
-        <LangSwitcher lang={lang} onSwitch={setLang} ariaLabel={t.switchLang} />
-      </div>
 
       {/* ── Rota ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -883,6 +877,18 @@ export function QuickQuoteForm() {
         </label>
       </div>
 
+      {/* ── Número de Voo / Comboio ───────────────────────────────────── */}
+      <label className="block">
+        <FieldLabel optional>{t.flightOrTrain}</FieldLabel>
+        <input
+          type="text"
+          placeholder={t.flightOrTrainPlaceholder}
+          value={form.flightOrTrain}
+          onChange={(e) => setField("flightOrTrain", e.target.value)}
+          className={inputCls}
+        />
+      </label>
+
       {/* ── Capacidade ────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
         <p className="mb-4 text-xs font-medium uppercase tracking-wider text-neutral-500">
@@ -893,7 +899,7 @@ export function QuickQuoteForm() {
             label={t.passengers}
             value={form.passengers}
             min={1}
-            max={18}
+            max={14}
             ariaDecrement={t.decrement(t.passengers)}
             ariaIncrement={t.increment(t.passengers)}
             onChange={(v) => setField("passengers", v)}
@@ -902,7 +908,7 @@ export function QuickQuoteForm() {
             label={t.luggage}
             value={form.luggage}
             min={0}
-            max={18}
+            max={14}
             ariaDecrement={t.decrement(t.luggage)}
             ariaIncrement={t.increment(t.luggage)}
             onChange={(v) => setField("luggage", v)}
@@ -912,16 +918,19 @@ export function QuickQuoteForm() {
 
       {/* ── Extras ────────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-        <p className="mb-4 text-xs font-medium uppercase tracking-wider text-neutral-500">
-          {t.extrasGroup}
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+            {t.extrasGroup}
+          </p>
+          <span className="text-[10px] text-neutral-400">{t.extrasNote}</span>
+        </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           <Counter
             label={t.cadeiraBebe}
             subLabel={t.cadeiraBebeSub}
             value={extras.cadeiraBebe}
             min={0}
-            max={4}
+            max={maxBebe}
             ariaDecrement={t.decrement(t.cadeiraBebe)}
             ariaIncrement={t.increment(t.cadeiraBebe)}
             onChange={(v) => setExtra("cadeiraBebe", v)}
@@ -931,7 +940,7 @@ export function QuickQuoteForm() {
             subLabel={t.cadeiraCriancaSub}
             value={extras.cadeiraCrianca}
             min={0}
-            max={4}
+            max={maxCrianca}
             ariaDecrement={t.decrement(t.cadeiraCrianca)}
             ariaIncrement={t.increment(t.cadeiraCrianca)}
             onChange={(v) => setExtra("cadeiraCrianca", v)}
@@ -941,7 +950,7 @@ export function QuickQuoteForm() {
             subLabel={t.assentoBoosterSub}
             value={extras.assentoBooster}
             min={0}
-            max={2}
+            max={maxBooster}
             ariaDecrement={t.decrement(t.assentoBooster)}
             ariaIncrement={t.increment(t.assentoBooster)}
             onChange={(v) => setExtra("assentoBooster", v)}
@@ -989,7 +998,6 @@ export function QuickQuoteForm() {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            {/* Ícone: berlina → sedan · van/doubleVan → minivan */}
             <div className="flex flex-shrink-0 items-center gap-1">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black transition-all duration-300">
                 {vehicleType === "berlina" ? <IconSedan /> : <IconVan />}
@@ -1051,6 +1059,18 @@ export function QuickQuoteForm() {
           />
         </label>
       </div>
+
+      {/* ── Observações ───────────────────────────────────────────────── */}
+      <label className="block">
+        <FieldLabel optional>{t.observations}</FieldLabel>
+        <textarea
+          rows={3}
+          placeholder={t.observationsPlaceholder}
+          value={form.observations}
+          onChange={(e) => setField("observations", e.target.value)}
+          className="min-h-[80px] w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black resize-none"
+        />
+      </label>
 
       {/* ── Submissão ─────────────────────────────────────────────────── */}
       <button
