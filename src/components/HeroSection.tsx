@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { QuickQuoteForm } from "./QuickQuoteForm";
 
 interface HeroSectionProps {
@@ -78,8 +79,19 @@ export default function HeroSection({ dict, locale }: HeroSectionProps) {
 
                     {/* ── DIREITA: Painel visual premium ───────────────────────── */}
                     <div className="relative hidden w-full lg:block lg:w-1/2">
-                        <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-600 shadow-2xl">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_46%),radial-gradient(circle_at_80%_85%,rgba(255,255,255,0.18),transparent_48%)]" />
+                        <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-neutral-900 shadow-2xl">
+                            {/* Fotografia de fundo */}
+                            <Image
+                                src="/hero-chauffeur.webp"
+                                alt="Motorista executivo Way2Go a abrir a porta do veículo para o cliente"
+                                fill
+                                priority
+                                className="object-cover object-[55%_20%]"
+                                sizes="(min-width: 1024px) 50vw, 0vw"
+                            />
+                            {/* Gradiente escuro na base — garante legibilidade do texto */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                            {/* Texto na base do painel */}
                             <div className="absolute inset-0 flex items-end p-10">
                                 <p className="max-w-md text-xl font-semibold leading-relaxed text-white/90">
                                     {isPT
