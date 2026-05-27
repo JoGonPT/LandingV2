@@ -115,7 +115,7 @@
         "items": [
             {
                 "question": "How can I cancel my reservation?",
-                "answer": "You can cancel for free up to 24 hours before the service. Between 12h and 24h, 50% will be charged. Less than 12 hours, the full amount will be retained."
+                "answer": "You can cancel free of charge if your request is submitted more than 24 hours before the scheduled pick-up time. Cancellations made within less than 24 hours of the service are non-refundable."
             },
             {
                 "question": "Does the driver wait for me at the airport?",
@@ -256,20 +256,125 @@
             ]
         },
         "terms": {
-            "title": "Terms and Conditions",
-            "updated": "Last update: {date}",
-            "sections": [
+            "title": "Terms of Use and General Terms of Service",
+            "updated": "Last updated: May 2026",
+            "intro": [
+                "The www.way2go.pt website and the Way2Go mobile application (hereinafter collectively referred to as the \"Platform\") are owned and operated by Way2Go (hereinafter referred to as the \"Provider\" or \"Way2Go\").",
+                "Any information, support, requests, or complaints can be forwarded to Customer Support via email at: support@way2go.pt or through the interactive live chat available on the Platform."
+            ],
+            "parts": [
                 {
-                    "title": "1. Object",
-                    "content": "These terms regulate the private transfer service provided by Way2Go."
+                    "title": "PART I: Terms of Use of Our Platform",
+                    "sections": [
+                        {
+                            "title": "1. Use of the Platform",
+                            "content": "By accessing and using the Platform, you agree:",
+                            "list": [
+                                "To use it exclusively for lawful activities and legitimate inquiries or bookings.",
+                                "Not to make false or fraudulent requests. If there are plausible reasons to believe a booking is of this nature, Way2Go reserves the right to cancel the request and inform the competent law enforcement authorities.",
+                                "To provide your email address, phone number, and other contact details correctly and truthfully, and consent to the use of this information to execute the request (in accordance with the Privacy Policy)."
+                            ],
+                            "afterList": [
+                                "If you do not provide all required information, it will not be possible to process your request. Way2Go is not responsible for any inconvenience or damage resulting from the use of the Internet, including service interruptions, external intrusions, malware, or any event of force majeure."
+                            ]
+                        },
+                        {
+                            "title": "2. Intellectual and Industrial Property",
+                            "content": "The domain name of the Platform, the entire Way2Go technological ecosystem, its individual components (photographs, texts, videos, logos, software, etc.), and these legal documents are the exclusive intellectual property of Way2Go. Any total or partial reproduction, download, modification, or distribution of these elements for any purpose on any medium is strictly prohibited without the prior written consent of Way2Go."
+                        }
+                    ]
                 },
                 {
-                    "title": "2. Reservations",
-                    "content": "Reservations must be made at least 12 hours in advance. Last minute reservations are subject to availability."
-                },
-                {
-                    "title": "3. Cancellations",
-                    "content": "Free cancellations up to 24h before. Between 12h-24h 50% fee. Less than 12h no refund."
+                    "title": "PART II: General Terms and Conditions of Service",
+                    "sections": [
+                        {
+                            "title": "1. Definitions",
+                            "list": [
+                                "Way2Go / Provider: The entity owning the brand and the Platform, responsible for the technological intermediation and management of transport requests.",
+                                "Customer: The natural or legal person requesting the Services. Unless otherwise specified, the Customer also acts in the capacity of the Passenger.",
+                                "Passenger: The final person benefiting from the transport. If different from the Customer, the Passenger is deemed authorized by the Customer to request journey adjustments.",
+                                "Platform: The web portal www.way2go.pt, the Way2Go mobile application, and connected integration APIs.",
+                                "Booking: The purchase proposal for transport services submitted by the Customer through the Platform.",
+                                "Services: The technology-driven intermediation of local transfers, airport transfers, on-demand rides (Ride-Hailing), or hourly vehicle-with-driver arrangements operated via Way2Go.",
+                                "Carrier / Partner: The independent licensed transport company, professional driver, or fleet operator partnering with Way2Go to execute the physical transport under the Contract of Carriage."
+                            ]
+                        },
+                        {
+                            "title": "2. Scope of Service",
+                            "list": [
+                                "2.1. Way2Go provides a digital Platform for the intermediation of transportation and mobility services. At the Customer's request, Way2Go acts on behalf of the Customer to identify, allocate, and dispatch the ride to a licensed independent Partner Carrier.",
+                                "2.2. Way2Go's contractual obligation is limited to providing the software, platform availability, and intermediation services. The physical execution of the trip remains the sole responsibility of the allocated Partner Carrier under the Contract of Carriage.",
+                                "2.3. These Terms may be modified at any time. The applicable version will always be the one in effect on the date the Customer submits the Booking request."
+                            ]
+                        },
+                        {
+                            "title": "3. Account Registration and Management",
+                            "list": [
+                                "3.1. To make bookings and access specific features, the Customer must register an Account with accurate information and maintain an accepted, valid payment method.",
+                                "3.2. Accounts are personal and non-transferable. The Customer is entirely responsible for safeguarding their login credentials and agrees to immediately notify Way2Go of any unauthorized access at privacy@way2go.pt.",
+                                "3.3. Customers may delete their account at any time via their profile settings on the Platform or by contacting support at support@way2go.pt."
+                            ]
+                        },
+                        {
+                            "title": "4. Booking Procedure and Contract Conclusion",
+                            "content": "4.1. The Customer submits a booking by filling out the online form specifying: service type, pick-up/drop-off points, date, time, passenger count, luggage volume, and Passenger contact details.",
+                            "subsections": [
+                                {
+                                    "title": "4.2. Included Standard Features",
+                                    "list": [
+                                        "Meet & Greet: The driver waits in the arrivals hall with a welcome sign showing the Passenger's name.",
+                                        "Complimentary Waiting Time: Airport, port, and train station transfers include 1 hour of free waiting time from the scheduled arrival. For other locations (private addresses, hotels), the free waiting period is 15 minutes.",
+                                        "Door to Door: The passenger is picked up directly at the main entrance of the source address and dropped off at the threshold of the destination."
+                                    ]
+                                }
+                            ],
+                            "afterList": [
+                                "4.3. By clicking \"Pay\", the Customer issues a binding purchase proposal. The intermediation contract is finalized when Way2Go transmits a \"Booking Confirmation\" email to the Customer.",
+                                "4.4. Invoicing for the actual transport is issued by the Partner Carrier executing the ride. The Platform facilitates the collection of payments and provides electronic access to tax documents in the user area."
+                            ]
+                        },
+                        {
+                            "title": "5. Vehicle Classes and Upgrades",
+                            "list": [
+                                "5.1. Vehicle images displayed on the Platform are purely illustrative representations of vehicle categories (Sedan, Van, Minibus, etc.). The actual make, model, and color of the vehicle used may vary depending on local fleet availability.",
+                                "5.2. Way2Go reserves the right to arrange a higher vehicle category or a larger capacity vehicle (Free Upgrade) to ensure seamless service delivery at no additional cost to the Customer.",
+                                "5.3. Driver and Carrier contact details will be made available in the Customer's reserved area up to 24 hours prior to the scheduled service, or immediately after allocation for last-minute requests."
+                            ]
+                        },
+                        {
+                            "title": "6. Cancellations, Modifications, and Refunds",
+                            "list": [
+                                "6.1. Cancellations: Under applicable consumer protection laws for remote service contracts, the standard right of withdrawal does not apply to passenger transport services scheduled for specific execution dates.",
+                                "6.2. However, Way2Go offers a voluntary cancellation policy: Customers can cancel a Booking through the Platform without penalty and receive a full refund if requested more than 24 hours prior to the scheduled pick-up time. Cancellations made within less than 24 hours of the service are non-refundable.",
+                                "6.3. Modifications: Changes to dates, times, or routes requested more than 24 hours in advance are processed free of charge, subject to any additional fares resulting from the change (e.g., vehicle upgrades, night surcharges). Modification requests submitted within 24 hours of the trip are subject to local partner availability and may incur operational surcharges.",
+                                "6.4. No-Show: If a passenger fails to appear at the designated pick-up location after the complimentary waiting time expires, the ride is categorized as a \"No-Show\". The full booking amount will be retained, and no refund will be issued."
+                            ]
+                        },
+                        {
+                            "title": "7. Flight Monitoring and Rescheduling",
+                            "list": [
+                                "7.1. For airport transfers, provided the Customer entered the correct final flight number during booking, the Carrier is responsible for monitoring the Estimated Time of Arrival (ETA) and rescheduling the pick-up in case of delays up to a maximum limit of six (6) hours from the originally scheduled time.",
+                                "7.2. Rescheduling is calculated based on the actual landing time. In the event of an early flight landing, the original pick-up time selected at the time of booking remains the valid baseline unless otherwise coordinated with the driver.",
+                                "7.3. If operational constraints prevent the Carrier from rescheduling the service within the 6-hour delay limit, and no alternative partner can be allocated, the Customer will be entitled to a full refund for the unperformed service."
+                            ]
+                        },
+                        {
+                            "title": "8. Customer Obligations and Rules of Conduct",
+                            "list": [
+                                "8.1. The Customer is solely responsible for ensuring that all entered details (addresses, flight numbers, contact numbers) are fully accurate and non-misleading.",
+                                "8.2. Child Safety Seats: If any passenger is a minor, the Customer is required to request appropriate child restraint systems (baby seats or boosters) during the booking process. If the Customer fails to request this equipment and the driver legitimately declines transport due to local road safety regulations, the ride will be handled as a Customer-driven No-Show with no refund due.",
+                                "8.3. Luggage Limitations: Each passenger is entitled to one small personal item inside the cabin and one medium suitcase (up to 20 kg) to be placed in the luggage compartment. Excessive luggage, sports gear, or pets (which must be in an appropriate travel crate) must be declared and validated in advance."
+                            ]
+                        },
+                        {
+                            "title": "9. Governing Law, Jurisdiction, and Dispute Resolution",
+                            "list": [
+                                "9.1. These Terms and Conditions are governed by and construed in accordance with the laws of Portugal.",
+                                "9.2. For consumer disputes, Portuguese residents and EU consumers may access alternative dispute resolution entities (ADR/RAL), such as the Porto Consumer Information and Arbitration Center (CICAP), or utilize the European Commission's Online Dispute Resolution (ODR) platform at http://ec.europa.eu/consumers/odr/.",
+                                "9.3. Any litigation arising from or connected to the use of the Platform, the Services, or these Terms that cannot be settled out of court shall be submitted to the exclusive jurisdiction of the competent Judicial Courts of Porto, Portugal, with the express waiver of any other venue."
+                            ]
+                        }
+                    ]
                 }
             ]
         },

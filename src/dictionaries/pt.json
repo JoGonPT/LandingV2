@@ -115,7 +115,7 @@
         "items": [
             {
                 "question": "Como posso cancelar a minha reserva?",
-                "answer": "Pode cancelar gratuitamente até 24 horas antes do serviço. Entre as 12h e 24h, será cobrado 50%. Menos de 12 horas, o valor integral será retido."
+                "answer": "Pode cancelar gratuitamente se o pedido for efetuado com mais de 24 horas de antecedência em relação à hora de início do serviço. Cancelamentos com menos de 24 horas de antecedência não conferem direito a reembolso."
             },
             {
                 "question": "O motorista espera por mim no aeroporto?",
@@ -256,20 +256,125 @@
             ]
         },
         "terms": {
-            "title": "Termos e Condições",
-            "updated": "Última atualização: {date}",
-            "sections": [
+            "title": "Termos de Utilização e Termos Gerais de Serviço",
+            "updated": "Última atualização: Maio de 2026",
+            "intro": [
+                "A plataforma www.way2go.pt e a aplicação móvel Way2Go (doravante designadas conjuntamente por \"Plataforma\") são propriedade e geridas pela Way2Go (doravante \"Fornecedor\" ou \"Way2Go\").",
+                "Qualquer informação, suporte, pedido ou reclamação poderá ser encaminhado para o Serviço de Apoio ao Cliente através do e-mail: support@way2go.pt ou através do chat interativo presente na Plataforma."
+            ],
+            "parts": [
                 {
-                    "title": "1. Objeto",
-                    "content": "Estes termos regulam o serviço de transfer privado prestado pela Way2Go."
+                    "title": "PARTE I: Termos de Utilização da Plataforma",
+                    "sections": [
+                        {
+                            "title": "1. Utilização da Plataforma",
+                            "content": "Ao utilizar a Plataforma, o Utilizador compromete-se a:",
+                            "list": [
+                                "Utilizá-la exclusivamente para consultas legítimas e reservas lícitas.",
+                                "Não efetuar reservas falsas ou fraudulentas. Se houver motivos razoáveis para crer que uma reserva é dessa natureza, a Way2Go reserva-se o direito de a cancelar e informar as autoridades competentes.",
+                                "Fornecer o seu endereço de e-mail, número de telefone e/ou outros dados de contacto de forma correta e verídica, consentindo na sua utilização para gerir a reserva (conforme a Política de Privacidade)."
+                            ],
+                            "afterList": [
+                                "Se não fornecer todas as informações necessárias, não será possível processar o seu pedido. A Way2Go não se responsabiliza por quaisquer inconvenientes ou danos resultantes da utilização da Internet, incluindo interrupções de serviço, intrusões externas, presença de vírus ou casos de força maior."
+                            ]
+                        },
+                        {
+                            "title": "2. Propriedade Industrial e Intelectual",
+                            "content": "O nome de domínio da Plataforma, bem como a totalidade do ecossistema tecnológico Way2Go, os seus elementos individuais (fotografias, textos, vídeos, logótipos, software, etc.) e os presentes documentos legais constituem obras intelectuais e propriedade industrial exclusivas da Way2Go. É estritamente proibida qualquer reprodução, descarga, modificação ou utilização total ou parcial dos mesmos sem o consentimento prévio e por escrito da Way2Go."
+                        }
+                    ]
                 },
                 {
-                    "title": "2. Reservas",
-                    "content": "As reservas devem ser efetuadas com pelo menos 12 horas de antecedência. Reservas de última hora estão sujeitas a disponibilidade."
-                },
-                {
-                    "title": "3. Cancelamentos",
-                    "content": "Cancelamentos gratuitos até 24h antes. Entre 12h-24h taxa de 50%. Menos de 12h não há reembolso."
+                    "title": "PARTE II: Termos e Condições Gerais de Serviço",
+                    "sections": [
+                        {
+                            "title": "1. Definições",
+                            "list": [
+                                "Way2Go / Fornecedor: A entidade detentora da marca e da Plataforma, responsável pela intermediação e gestão tecnológica de contratos de transporte.",
+                                "Cliente: A pessoa singular ou coletiva que solicita a prestação dos Serviços. Salvo indicação em contrário, o Cliente atua também na qualidade de Passageiro.",
+                                "Passageiro: A pessoa final que usufruirá do transporte. Se for diferente do Cliente, declara-se autorizada por este a solicitar alterações ao trajeto.",
+                                "Plataforma: O portal web www.way2go.pt, a aplicação móvel Way2Go e as APIs de integração tecnológica.",
+                                "Reserva: A proposta de compra de serviços de transporte submetida pelo Cliente através da Plataforma.",
+                                "Serviços: A atividade de intermediação e facilitação tecnológica de transfers locais, transfers aeroportuários, viagens sob demanda (Ride-Hailing) ou reservas à hora operadas pela Way2Go.",
+                                "Transportador / Parceiro: O motorista profissional, empresa de transportes ou operador de frotas independente parceiro da Way2Go que executa materialmente o serviço de transporte sob o respetivo Contrato de Transporte."
+                            ]
+                        },
+                        {
+                            "title": "2. Objeto do Serviço",
+                            "list": [
+                                "2.1. A Way2Go disponibiliza uma Plataforma tecnológica para a intermediação de serviços de transporte e mobilidade. A pedido do Cliente, a Way2Go atua em seu nome para identificar, alocar e intermediar a viagem junto de um Transportador Parceiro licenciado.",
+                                "2.2. A obrigação da Way2Go no âmbito da intermediação e bom funcionamento da Plataforma é uma obrigação de meios e não de resultado no que concerne à execução física da viagem, a qual é da responsabilidade exclusiva do Transportador Parceiro adjudicado.",
+                                "2.3. Estes Termos podem ser atualizados a qualquer momento, sendo aplicada a versão em vigor à data da submissão da Reserva pelo Cliente."
+                            ]
+                        },
+                        {
+                            "title": "3. Registo e Gestão de Conta",
+                            "list": [
+                                "3.1. Para efetuar reservas e aceder a determinadas funcionalidades, o Cliente deve registar uma Conta fornecendo dados verídicos e manter um método de pagamento válido associado.",
+                                "3.2. A Conta é pessoal e intransmissível. O Cliente é o único responsável por manter a confidencialidade das suas credenciais de acesso. O Cliente deve notificar de imediato a Way2Go caso suspeite de utilização não autorizada da sua conta.",
+                                "3.3. O Cliente pode solicitar a eliminação da sua conta a qualquer momento através da opção \"Eliminar Conta\" na área reservada ou enviando um e-mail para privacy@way2go.pt."
+                            ]
+                        },
+                        {
+                            "title": "4. Processo de Reserva e Celebração do Contrato",
+                            "content": "4.1. Para realizar uma Reserva, o Cliente preenche o formulário eletrónico na Plataforma introduzindo: tipo de serviço, locais de recolha/destino, data, hora, número de passageiros, detalhes de bagagem e dados do Passageiro.",
+                            "subsections": [
+                                {
+                                    "title": "4.2. Serviços Adicionais Incluídos",
+                                    "list": [
+                                        "Meet & Greet: O motorista aguarda no terminal de chegadas com uma placa identificativa com o nome do Passageiro.",
+                                        "Tempo de Espera Gratuito: Nos transfers de aeroporto/porto/estação de comboio, está incluído um tempo de espera gratuito de 1 hora a partir da hora programada. Nos restantes transfers (moradas privadas, hotéis), o tempo gratuito é de 15 minutos.",
+                                        "Door to Door: O transporte efetua-se diretamente desde o ponto exato de recolha até à soleira do destino indicado."
+                                    ]
+                                }
+                            ],
+                            "afterList": [
+                                "4.3. Ao clicar em \"Pagar\", o Cliente emite uma proposta contratual de reserva vinculativa. O contrato de intermediação com a Way2Go considera-se concluído com a receção da \"Confirmação de Reserva\" por e-mail.",
+                                "4.4. A faturação do serviço de transporte é emitida pelo Transportador Parceiro que executa a viagem, sendo a Plataforma o meio facilitador da cobrança e disponibilização do respetivo documento fiscal na área de cliente."
+                            ]
+                        },
+                        {
+                            "title": "5. Alocação do Transportador e Veículos",
+                            "list": [
+                                "5.1. As imagens dos veículos na Plataforma são meramente ilustrativas da categoria do veículo (Sedan, Van, Minibus, etc.). O modelo real, cor e marca podem variar consoante a disponibilidade do parceiro local na região.",
+                                "5.2. A Way2Go reserva-se o direito de atribuir um veículo de categoria superior ou maior capacidade (Free Upgrade) para garantir a execução do serviço sem qualquer custo adicional para o Cliente.",
+                                "5.3. Até 24 horas antes do início do serviço, a Way2Go disponibiliza na área de cliente os dados de contacto do Transportador encarregue do serviço. Caso a reserva ocorra num período inferior, os dados estarão disponíveis imediatamente após a alocação do motorista."
+                            ]
+                        },
+                        {
+                            "title": "6. Cancelamentos, Alterações e Reembolsos",
+                            "list": [
+                                "6.1. Cancelamentos: O direito de livre resolução aplicável aos consumidores em contratos à distância não se aplica a estes serviços de transporte, por se tratarem de serviços com data e período de execução específicos (conforme a legislação de proteção do consumidor).",
+                                "6.2. No entanto, a Way2Go permite o cancelamento gratuito e reembolso total da Reserva se este for solicitado pelo Cliente na área reservada com mais de 24 horas de antecedência face à hora programada para o início do serviço. Cancelamentos efetuados com menos de 24 horas de antecedência não conferem direito a qualquer reembolso.",
+                                "6.3. Alterações: Pedidos de alteração (horários, rotas, categoria de veículo) solicitados com mais de 24 horas de antecedência são gratuitos, ficando o Cliente responsável pelo pagamento de eventuais taxas adicionais resultantes da alteração. Alterações com menos de 24 horas estão sujeitas a confirmação de disponibilidade por parte do Transportador e podem incorrer em sobretaxas operacionais.",
+                                "6.4. Não Comparência (No-Show): Se o Passageiro não comparecer no local e hora acordados após o decurso do tempo de espera gratuito, o serviço será considerado \"No-Show\" e o valor total será retido, sem direito a reembolso."
+                            ]
+                        },
+                        {
+                            "title": "7. Monitorização de Voos e Reagendamento",
+                            "list": [
+                                "7.1. Nos transfers associados a voos, caso o Cliente tenha introduzido corretamente o número do voo aquando da reserva, o Transportador Parceiro é responsável por monitorizar a hora estimada de chegada (ETA) e reprogramar a recolha em caso de atraso, até ao limite máximo de 6 (seis) horas de atraso face ao horário original.",
+                                "7.2. A reprogramação é calculada com base na hora real de aterragem do voo. Em caso de voo antecipado, mantém-se a hora originalmente selecionada pelo Cliente na reserva, salvo acordo em contrário com o motorista.",
+                                "7.3. Se, devido a restrições operacionais extremas, o Transportador alocado não conseguir assegurar o serviço no novo horário do voo atrasado dentro do limite de 6 horas, e não for possível encontrar outro parceiro viável, o Cliente terá direito ao reembolso total do montante pago pelo serviço não executado."
+                            ]
+                        },
+                        {
+                            "title": "8. Obrigações e Responsabilidades do Cliente",
+                            "list": [
+                                "8.1. O Cliente é o único responsável pela veracidade e exatidão de todos os dados introduzidos (moradas exatas, números de voo, horários de recolha).",
+                                "8.2. Transporte de Crianças: Se um ou mais passageiros forem menores, o Cliente deve solicitar obrigatoriamente os sistemas de retenção infantil adequados (cadeiras auto ou assentos elevatórios) no campo de extras da reserva. Caso não o faça e o Transportador se recuse a transportar os menores por incumprimento da lei rodoviária local, o serviço é considerado \"No-Show\" por culpa do Cliente e nenhum reembolso será devido.",
+                                "8.3. Bagagem e Animais: Cada passageiro tem direito a uma bagagem de mão pequena e uma mala média (máx. 20 kg) acomodada na bagageira. O transporte de bagagem excessiva, volumes fora de formato ou animais de estimação (em caixa de transporte adequada) deve ser expressamente comunicado e validado na Reserva."
+                            ]
+                        },
+                        {
+                            "title": "9. Resolução Alternativa de Litígios (RAL) e Lei Aplicável",
+                            "list": [
+                                "9.1. Os presentes Termos e Condições são regulados pela Lei Portuguesa.",
+                                "9.2. Em caso de litígio de consumo, o Cliente consumidor poderá recorrer às entidades de Resolução Alternativa de Litígios de Consumo (RAL) em Portugal, nomeadamente o Centro de Arbitragem de Conflitos de Consumo do Vale do Ave, Centro de Informação de Consumo e Arbitragem do Porto (CICAP), ou recorrer à Plataforma Europeia de Resolução de Litígios em Linha disponível em http://ec.europa.eu/consumers/odr/.",
+                                "9.3. Para a resolução de quaisquer litígios judiciais emergentes do presente contrato que não possam ser resolvidos por via amigável ou mediação de consumo, as partes estipulam como competente o foro da Comarca do Porto, com expressa renúncia a qualquer outro."
+                            ]
+                        }
+                    ]
                 }
             ]
         },
