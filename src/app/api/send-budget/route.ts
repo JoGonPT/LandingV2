@@ -108,26 +108,32 @@ async function sendEmailsBackground(d: BudgetPayload): Promise<void> {
   const from = `"Way2Go" <${SMTP_USER}>`;
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from,
       to:      d.email,
       subject: "Recebemos o seu pedido de orçamento — Way2Go",
       html:    buildClientHtml(d),
     });
-    console.log("[send-budget] Email cliente enviado com sucesso para:", d.email);
+    console.log("[NODEMAILER_SUCCESS] cliente | messageId:", info.messageId, "| accepted:", info.accepted);
+    if (info.rejected.length > 0) {
+      console.error("[NODEMAILER_REJECTED] cliente | rejected:", info.rejected);
+    }
   } catch (error) {
     console.error("[ERRO_EMAIL_REAL] Falha no email do cliente:", error);
   }
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from,
       to:      "reservas@vruum.pt",
       replyTo: d.email,
       subject: `🔔 [BACKUP] Novo Orçamento Web — ${d.name}`,
       html:    buildInternalHtml(d),
     });
-    console.log("[send-budget] Email interno enviado com sucesso.");
+    console.log("[NODEMAILER_SUCCESS] interno | messageId:", info.messageId, "| accepted:", info.accepted);
+    if (info.rejected.length > 0) {
+      console.error("[NODEMAILER_REJECTED] interno | rejected:", info.rejected);
+    }
   } catch (error) {
     console.error("[ERRO_EMAIL_REAL] Falha no email interno:", error);
   }
