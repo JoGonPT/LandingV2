@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import { z } from "zod";
 
 // ── Payload schema ────────────────────────────────────────────────────────────
@@ -28,7 +27,6 @@ type BudgetPayload = z.infer<typeof schema>;
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  // 1. Parse + validate
   let body: unknown;
   try {
     body = await request.json();
@@ -44,32 +42,34 @@ export async function POST(request: Request) {
     );
   }
 
-  const d = parsed.data;
-
-  // 2. SMTP transporter
-  const transporter = nodemailer.createTransport({
-    host:   process.env.SMTP_HOST,
-    port:   Number(process.env.SMTP_PORT ?? 587),
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-  // 3. Send
-  try {
-    await transporter.sendMail({
-      from:    `"Way2Go" <${process.env.SMTP_USER}>`,
-      to:      process.env.BUDGET_TO_EMAIL ?? "reservas@vruum.pt",
-      replyTo: d.email,
-      subject: `Novo Pedido de Orçamento — ${d.name}`,
-      html:    buildHtml(d),
-    });
-  } catch (err) {
-    console.error("[send-budget] Falha SMTP:", err);
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.error("[send-budget] DISCORD_WEBHOOK_URL não definido.");
     return NextResponse.json(
-      { message: "Erro ao enviar o email. Tente novamente." },
+      { message: "Serviço de notificação não configurado." },
+      { status: 500 },
+    );
+  }
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(buildDiscordPayload(parsed.data)),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("[send-budget] Discord rejeitou o pedido:", res.status, text);
+      return NextResponse.json(
+        { message: "Erro ao enviar notificação." },
+        { status: 500 },
+      );
+    }
+  } catch (err) {
+    console.error("[send-budget] Falha na ligação ao Discord:", err);
+    return NextResponse.json(
+      { message: "Erro ao enviar notificação." },
       { status: 500 },
     );
   }
@@ -77,120 +77,61 @@ export async function POST(request: Request) {
   return NextResponse.json({ success: true });
 }
 
-// ── HTML template ─────────────────────────────────────────────────────────────
+// ── Discord embed builder ─────────────────────────────────────────────────────
 
-function buildHtml(d: BudgetPayload): string {
-  const receivedAt = new Date().toLocaleString("pt-PT", {
-    timeZone: "Europe/Lisbon",
-    dateStyle: "full",
-    timeStyle: "short",
-  });
-
-  // Format dateTime "2025-06-15T14:30" → "15/06/2025 às 14:30"
+function buildDiscordPayload(d: BudgetPayload) {
   const [datePart, timePart] = d.dateTime.split("T");
   const [year, month, day]   = (datePart ?? "").split("-");
   const formattedDate        = `${day}/${month}/${year} às ${timePart ?? ""}`;
 
-  const extrasRows = [
-    d.cadeiraBebe    > 0 ? row("Cadeira de Bebé",      String(d.cadeiraBebe))    : "",
-    d.cadeiraCrianca > 0 ? row("Cadeira de Criança",   String(d.cadeiraCrianca)) : "",
-    d.assentoBooster > 0 ? row("Assento Elevatório",   String(d.assentoBooster)) : "",
-  ].join("");
+  const fields: { name: string; value: string; inline: boolean }[] = [
+    // ── Cliente ──────────────────────────────────────────────
+    { name: "👤 Nome",     value: d.name,  inline: true },
+    { name: "📧 Email",    value: d.email, inline: true },
+    { name: "📱 Telefone", value: d.phone, inline: true },
 
-  const extrasSection = extrasRows
-    ? section("Extras", extrasRows)
-    : "";
+    // ── Trajeto ───────────────────────────────────────────────
+    { name: "📍 Origem",  value: d.pickup,  inline: true },
+    { name: "🏁 Destino", value: d.dropoff, inline: true },
+    // 3rd column: voo/comboio se existir, senão spacer para manter grelha
+    d.flightOrTrain
+      ? { name: "✈️ Voo / Comboio", value: d.flightOrTrain, inline: true }
+      : { name: "​",            value: "​",         inline: true },
 
-  const idioma = d.idioma === "pt" ? "Português (PT-PT)" : "English (EN-US)";
+    // ── Logística ─────────────────────────────────────────────
+    { name: "📅 Data / Hora",  value: formattedDate,       inline: true },
+    { name: "👥 Passageiros",  value: String(d.passageiros), inline: true },
+    { name: "🧳 Bagagem",      value: `${d.bagagem} mala${d.bagagem !== 1 ? "s" : ""}`, inline: true },
 
-  return `<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pedido de Orçamento Way2Go</title>
-</head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e5e5;">
+    // ── Veículo (linha inteira) ───────────────────────────────
+    { name: "🚗 Veículo Sugerido", value: d.veiculoLabel, inline: false },
+  ];
 
-          <!-- Header -->
-          <tr>
-            <td style="background:#000000;padding:28px 32px;">
-              <p style="margin:0;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#999999;">Way2Go</p>
-              <p style="margin:6px 0 0;font-size:22px;font-weight:700;color:#ffffff;">Novo Pedido de Orçamento</p>
-              <p style="margin:6px 0 0;font-size:12px;color:#aaaaaa;">Recebido em ${receivedAt}</p>
-            </td>
-          </tr>
+  // Extras — só se existirem
+  const extraLines: string[] = [];
+  if (d.cadeiraBebe    > 0) extraLines.push(`Cadeira de Bebé: ${d.cadeiraBebe}`);
+  if (d.cadeiraCrianca > 0) extraLines.push(`Cadeira de Criança: ${d.cadeiraCrianca}`);
+  if (d.assentoBooster > 0) extraLines.push(`Assento Elevatório: ${d.assentoBooster}`);
+  if (extraLines.length > 0) {
+    fields.push({ name: "🪑 Extras", value: extraLines.join("\n"), inline: false });
+  }
 
-          <!-- Body -->
-          <tr>
-            <td style="padding:28px 32px;">
+  if (d.observations) {
+    fields.push({ name: "📝 Observações", value: d.observations, inline: false });
+  }
 
-              ${section("Rota", [
-                row("Origem",    d.pickup),
-                row("Destino",   d.dropoff),
-                row("Data / Hora", formattedDate),
-              ].join(""))}
+  // Language tag no footer
+  const lang = d.idioma === "pt" ? "PT-PT" : "EN-US";
 
-              ${section("Capacidade", [
-                row("Passageiros", String(d.passageiros)),
-                row("Bagagem",     String(d.bagagem)),
-              ].join(""))}
-
-              ${extrasSection}
-
-              ${section("Veículo Sugerido", row("Classe", d.veiculoLabel))}
-
-              ${section("Contacto", [
-                row("Nome",      d.name),
-                row("Email",     `<a href="mailto:${d.email}" style="color:#000000;">${d.email}</a>`),
-                row("Telefone",  d.phone),
-                d.flightOrTrain ? row("Voo / Comboio", d.flightOrTrain) : "",
-                row("Idioma",    idioma),
-              ].join(""))}
-
-              ${d.observations ? section("Observações", row("", d.observations)) : ""}
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f5f5f5;padding:20px 32px;border-top:1px solid #e5e5e5;">
-              <p style="margin:0;font-size:11px;color:#999999;text-align:center;">
-                Esta mensagem foi gerada automaticamente pelo formulário em way2go.pt.<br/>
-                Responda diretamente a este email para contactar o cliente.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-}
-
-function section(title: string, rows: string): string {
-  return `
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-      <tr>
-        <td style="padding-bottom:8px;border-bottom:2px solid #000000;">
-          <p style="margin:0;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:#000000;">${title}</p>
-        </td>
-      </tr>
-      ${rows}
-    </table>`;
-}
-
-function row(label: string, value: string): string {
-  return `
-    <tr>
-      <td style="padding:8px 0 0;width:40%;font-size:12px;color:#888888;vertical-align:top;">${label}</td>
-      <td style="padding:8px 0 0;font-size:13px;color:#000000;font-weight:500;">${value}</td>
-    </tr>`;
+  return {
+    embeds: [
+      {
+        title:     "🔔 Novo Pedido de Orçamento — Way2Go",
+        color:     0xC9A84C, // executive gold
+        fields,
+        footer:    { text: `Way2Go · Formulário ${lang} · way2go.pt` },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
 }

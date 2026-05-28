@@ -26,7 +26,6 @@
     "autoprefixer": "^10.4.24",
     "negotiator": "^1.0.0",
     "next": "^15",
-    "nodemailer": "^8.0.9",
     "postcss-selector-parser": "^7.1.1",
     "react": "^19",
     "react-dom": "^19.2.5",
@@ -36,7 +35,6 @@
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.16.1",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
