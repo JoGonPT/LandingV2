@@ -78,22 +78,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // ── 2. Emails (background — sem bloquear a resposta) ──────────────────────
-  void sendEmailsBackground(d);
+  // ── 2. Emails (DEBUG — aguarda para expor erros nos logs da Vercel) ─────────
+  await sendEmailsBackground(d);
 
   return NextResponse.json({ success: true });
 }
 
-// ── Background email sender ───────────────────────────────────────────────────
-//
-// Promise.allSettled garante que ambos os emails são disparados em paralelo
-// e que um falha isoladamente sem afectar o outro. Erros são apenas logged.
+// ── Email sender (DEBUG MODE — bloqueante para expor erros nos logs) ─────────
 
 async function sendEmailsBackground(d: BudgetPayload): Promise<void> {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    console.warn("[send-budget] Variáveis SMTP não configuradas — emails omitidos.");
+    console.error("[ERRO_EMAIL_REAL] Variáveis SMTP em falta:", {
+      SMTP_HOST:  SMTP_HOST  ?? "UNDEFINED",
+      SMTP_USER:  SMTP_USER  ?? "UNDEFINED",
+      SMTP_PASS:  SMTP_PASS  ? "SET" : "UNDEFINED",
+    });
     return;
   }
 
@@ -106,30 +107,30 @@ async function sendEmailsBackground(d: BudgetPayload): Promise<void> {
 
   const from = `"Way2Go" <${SMTP_USER}>`;
 
-  const results = await Promise.allSettled([
-    transporter.sendMail({
+  try {
+    await transporter.sendMail({
       from,
       to:      d.email,
       subject: "Recebemos o seu pedido de orçamento — Way2Go",
       html:    buildClientHtml(d),
-    }),
-    transporter.sendMail({
+    });
+    console.log("[send-budget] Email cliente enviado com sucesso para:", d.email);
+  } catch (error) {
+    console.error("[ERRO_EMAIL_REAL] Falha no email do cliente:", error);
+  }
+
+  try {
+    await transporter.sendMail({
       from,
       to:      "reservas@vruum.pt",
       replyTo: d.email,
       subject: `🔔 [BACKUP] Novo Orçamento Web — ${d.name}`,
       html:    buildInternalHtml(d),
-    }),
-  ]);
-
-  results.forEach((result, i) => {
-    if (result.status === "rejected") {
-      console.error(
-        `[send-budget] Email ${i === 0 ? "cliente" : "interno"} falhou:`,
-        result.reason,
-      );
-    }
-  });
+    });
+    console.log("[send-budget] Email interno enviado com sucesso.");
+  } catch (error) {
+    console.error("[ERRO_EMAIL_REAL] Falha no email interno:", error);
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
