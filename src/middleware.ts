@@ -12,13 +12,23 @@ const defaultLocale = "pt";
 /** App routes that live outside `app/[locale]` — strip mistaken `/{locale}/…` prefixes. */
 const nonLocalizedTopSections = ["partner", "internal", "master-admin"] as const;
 
-function getLocale(request: NextRequest): string | undefined {
+function getLocale(request: NextRequest): string {
   const negotiatorHeaders: Record<string, string> = {};
   request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
 
-  const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
+  // Negotiator returns ["*"] when no Accept-Language header is sent (bots, crawlers,
+  // verification services); "*" isn't a valid locale and crashes matchLocale below.
+  const languages = new Negotiator({ headers: negotiatorHeaders })
+    .languages()
+    .filter((lang) => lang !== "*");
 
-  return matchLocale(languages, locales, defaultLocale);
+  if (languages.length === 0) return defaultLocale;
+
+  try {
+    return matchLocale(languages, locales, defaultLocale);
+  } catch {
+    return defaultLocale;
+  }
 }
 
 function isDriversHost(request: NextRequest): boolean {
