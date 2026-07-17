@@ -10,6 +10,9 @@ export const metadata: Metadata = {
     title: "Way2Go | Professional Transfer Service",
     description: "Serviço de transfer de alta qualidade em Portugal. High-quality transfer service in Portugal.",
     keywords: "transfer, airport, transport, portugal, chauffeur, transferes, aeroporto",
+    other: {
+        "trustpilot-one-time-domain-verification-id": "f96a6770-e2b7-446f-a14e-e547c0425ea8",
+    },
 };
 
 export default async function LocaleLayout({
