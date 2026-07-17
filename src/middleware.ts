@@ -76,12 +76,14 @@ export async function middleware(request: NextRequest) {
 
   if (pathnameIsMissingLocale) {
     const locale = getLocale(request);
-    return NextResponse.redirect(
-      new URL(
-        `/${locale}${pathname === "/" ? "" : pathname}`,
-        request.url,
-      ),
-    );
+
+    if (pathname === "/") {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}`;
+      return NextResponse.rewrite(url);
+    }
+
+    return NextResponse.redirect(new URL(`/${locale}${pathname}`, request.url));
   }
 
   return NextResponse.next();
