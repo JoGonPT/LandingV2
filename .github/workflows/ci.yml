@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Uma série rápida de pushes cancela as execuções anteriores do mesmo ramo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, testes e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20 # corresponde a `engines.node` no package.json
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint # --max-warnings=0: qualquer aviso falha
+
+      # `--coverage` para o relatório ficar nos logs de cada execução. Não há
+      # limiar mínimo imposto: a cobertura global (~14%) reflete sobretudo as
+      # rotas ainda sem teste, e um limiar arbitrário só criaria ruído. O que
+      # importa está coberto — middleware 94%, funil de leads 91%.
+      - name: Testes
+        run: npm run test:coverage
+
+      # A build é a verificação de tipos real: `tsc --noEmit` isolado tropeça
+      # nos tipos que o Next gera em `.next/types`.
+      #
+      # As `NEXT_PUBLIC_*` são incorporadas em tempo de build. Aqui ficam com
+      # valores fictícios — isto valida que compila, não produz um artefacto
+      # publicável. O deploy tem de correr com as variáveis reais.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://way2go.pt
+          NEXT_PUBLIC_SUPABASE_URL: https://exemplo.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
