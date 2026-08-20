@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { SITE_URL } from "@/lib/site";
 import type { BookingPayload, CheckoutCompleteSuccess } from "@/lib/transfercrm/types";
 
 export interface PartnerCheckoutLabels {
@@ -82,7 +83,9 @@ export function PartnerCheckoutPaymentStep({
       elements,
       redirect: "if_required",
       confirmParams: {
-        return_url: returnUrl || "https://way2go.pt",
+        // A raiz faz 308 para o www; o Stripe redireciona o cliente para aqui
+        // depois do pagamento e um salto a mais arrisca perder os parâmetros.
+        return_url: returnUrl || SITE_URL,
       },
     });
 

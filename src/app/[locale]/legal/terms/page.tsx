@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDictionary } from "@/get-dictionaries";
+import { legalMetadata } from "@/lib/legal-metadata";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -27,6 +28,15 @@ interface TermsDict {
     updated: string;
     intro?: string[];
     parts: TermsPart[];
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ locale: string }>;
+}) {
+    const { locale } = await params;
+    return legalMetadata("terms", locale);
 }
 
 export function generateStaticParams() {
