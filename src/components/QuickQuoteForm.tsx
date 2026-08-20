@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useId } from "react";
 
 // ============================================================================
 // TYPES
@@ -70,6 +70,7 @@ const DICT = {
     email:    "Endereço de E-mail",
     flightOrTrain:    "Número de Voo / Comboio",
     observations:     "Observações",
+    optional:         "opcional",
 
     pickupPlaceholder:       "Ex: Aeroporto de Lisboa (LIS)",
     dropoffPlaceholder:      "Ex: Four Seasons Hotel, Lisboa",
@@ -149,6 +150,7 @@ const DICT = {
     email:    "Email Address",
     flightOrTrain:    "Flight / Train Number",
     observations:     "Observations",
+    optional:         "optional",
 
     pickupPlaceholder:        "e.g. Lisbon Airport (LIS)",
     dropoffPlaceholder:       "e.g. Four Seasons Hotel, Lisbon",
@@ -248,16 +250,46 @@ function resolveVehicleDisplay(
 
 // ── Field label ──────────────────────────────────────────────────────────────
 
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
-  return (
-    <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500">
+/**
+ * Rótulo de campo.
+ *
+ * Renderiza `<label htmlFor>` quando recebe `htmlFor`, e `<span>` caso
+ * contrário. A distinção importa: a maioria dos campos deste formulário já está
+ * envolvida num `<label className="block">` — associação implícita, válida — e
+ * um `<label>` aninhado dentro de outro é HTML inválido. Só os campos que **não**
+ * têm esse invólucro (as moradas do `PlaceInput`) precisam de associação
+ * explícita.
+ */
+function FieldLabel({
+  htmlFor,
+  children,
+  optional,
+}: {
+  htmlFor?: string;
+  children: React.ReactNode;
+  /** Texto já traduzido; antes estava fixo em "opcional" e aparecia assim em EN. */
+  optional?: string;
+}) {
+  const className =
+    "mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500";
+
+  const content = (
+    <>
       {children}
       {optional && (
         <span className="rounded bg-neutral-100 px-1 py-0.5 text-[9px] font-normal normal-case tracking-normal text-neutral-400">
-          opcional
+          {optional}
         </span>
       )}
-    </span>
+    </>
+  );
+
+  return htmlFor ? (
+    <label htmlFor={htmlFor} className={className}>
+      {content}
+    </label>
+  ) : (
+    <span className={className}>{content}</span>
   );
 }
 
@@ -290,6 +322,9 @@ function PlaceInput({
   required = false,
   onChange,
 }: PlaceInputProps) {
+  // Este campo não está envolvido num `<label>`, ao contrário dos restantes do
+  // formulário — precisa de associação explícita via `htmlFor`/`id`.
+  const inputId = useId();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen]               = useState(false);
   const [loading, setLoading]         = useState(false);
@@ -353,8 +388,9 @@ function PlaceInput({
 
   return (
     <div className="relative">
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel htmlFor={inputId}>{label}</FieldLabel>
       <input
+        id={inputId}
         ref={inputRef}
         type="text"
         required={required}
@@ -712,6 +748,9 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
     assentoBooster: 0,
   });
 
+  // Honeypot anti-bot: invisível para pessoas, preenchido por bots que
+  // submetem todos os campos do formulário. Ver /api/send-budget.
+  const [website, setWebsite]         = useState("");
   const [submitting, setSubmitting]   = useState(false);
   const [submitted, setSubmitted]     = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -779,6 +818,7 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
       flightOrTrain:  form.flightOrTrain || undefined,
       observations:   form.observations  || undefined,
       idioma:         lang,
+      website,
     };
 
     try {
@@ -831,6 +871,20 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
+      {/* Honeypot — fora do fluxo visual e do foco por teclado, e ignorado por
+          leitores de ecrã. Não usar `type="hidden"`: os bots ignoram esses. */}
+      <div aria-hidden="true" className="absolute left-[-9999px] top-0 h-0 w-0 overflow-hidden">
+        <label htmlFor="website">Website</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+        />
+      </div>
 
       {/* ── Rota ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -879,7 +933,7 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
 
       {/* ── Número de Voo / Comboio ───────────────────────────────────── */}
       <label className="block">
-        <FieldLabel optional>{t.flightOrTrain}</FieldLabel>
+        <FieldLabel optional={t.optional}>{t.flightOrTrain}</FieldLabel>
         <input
           type="text"
           placeholder={t.flightOrTrainPlaceholder}
@@ -1062,7 +1116,7 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
 
       {/* ── Observações ───────────────────────────────────────────────── */}
       <label className="block">
-        <FieldLabel optional>{t.observations}</FieldLabel>
+        <FieldLabel optional={t.optional}>{t.observations}</FieldLabel>
         <textarea
           rows={3}
           placeholder={t.observationsPlaceholder}
