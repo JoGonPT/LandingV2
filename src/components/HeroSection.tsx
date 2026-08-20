@@ -16,13 +16,12 @@ interface HeroSectionProps {
 export default function HeroSection({ dict, locale }: HeroSectionProps) {
     const isPT = locale === "pt";
 
-    const mainTitle = isPT
-        ? "Transfers Privados Portugal — Conforto e Pontualidade"
-        : dict.title;
-
-    const mainSubtitle = isPT
-        ? "Serviço premium de transporte privado em Portugal. Viaje com elegância e tranquilidade."
-        : dict.subtitle;
+    // A copy vem do dicionário nos dois idiomas. Havia aqui uma sobreposição em
+    // português hardcoded que ignorava `dict.title`/`dict.subtitle`: o PT falava
+    // de "Portugal" e o EN prometia "Worldwide", ou seja, as duas versões do
+    // mesmo site comunicavam posicionamentos diferentes.
+    const mainTitle = dict.title;
+    const mainSubtitle = dict.subtitle;
 
     return (
         <section className="relative min-h-screen overflow-hidden bg-white px-6 py-20 pt-32">

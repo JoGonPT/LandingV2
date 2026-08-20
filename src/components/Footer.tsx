@@ -19,7 +19,20 @@ interface FooterProps {
 
 const WHATSAPP_NUMBER = "351913281953";
 const WHATSAPP_HREF   = `https://wa.me/${WHATSAPP_NUMBER}`;
-const EMAIL           = "reservas@vruum.pt";
+/**
+ * Endereço **mostrado** ao público, e usado no `mailto:` deste rodapé.
+ *
+ * A entrega interna dos leads continua a ir para `reservas@vruum.pt`, definida
+ * em `LEADS_INTERNAL_EMAIL` (ver `api/send-budget`): a caixa no domínio way2go
+ * ainda não está ativa. São coisas distintas de propósito — a marca que o
+ * cliente vê é Way2Go, o encaminhamento interno é um detalhe de operação.
+ *
+ * ⚠️ Enquanto `reservas@way2go.pt` não existir, o email que um cliente envia ao
+ * clicar aqui **é devolvido**. Criar um alias/reencaminhamento
+ * `reservas@way2go.pt → reservas@vruum.pt` no fornecedor de email resolve, e é
+ * normalmente uma alteração de minutos. Ver F2-1 em docs/TODO.md.
+ */
+const EMAIL           = "reservas@way2go.pt";
 
 export default function Footer({ dict, locale }: FooterProps) {
     const year      = new Date().getFullYear();
