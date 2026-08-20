@@ -75,6 +75,8 @@ Esforço: **XS** < 1h · **S** ~meio dia · **M** 1-2 dias · **L** 3-5 dias · 
 | ⬜ **NOVO-4** | CSP com nonce, para remover `'unsafe-inline'` | Exige mover a CSP para o middleware; risco de partir hidratação e Stripe | — |
 | ⬜ **NOVO-5** | `noUncheckedIndexedAccess` | **21 erros medidos** em 10 ficheiros, em reservas/pagamentos | — |
 | ⬜ **NOVO-6** | `exactOptionalPropertyTypes` | **53 erros medidos** | — |
+| 🔴 **NOVO-7** | **Preço não distingue níveis de veículo** — enviar `vehicle_class_code` | Medido: Van Premium vale 79,97 €, seria cotada a 45 € | §8, 20 ago |
+| ⬜ **NOVO-8** | `distance_km` opcional no código, obrigatório na API | Sem impacto em execução; corrigir tipo e comentário | §8, 20 ago |
 | 🚫 **F0-7** | Selo Trustpilot | Adiado por decisão de 19 ago — exposição assumida | §6-C |
 
 ---
@@ -171,6 +173,78 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 ## 8. Registo de alterações
 
 Cada entrada regista o que mudou, como foi verificado, e o que se descobriu pelo caminho.
+
+### 20 ago 2026 — Validação contra a API real do TransferCRM: **erro de preço confirmado**
+
+Especificação obtida de `https://way2go.transfercrm.com/api/v2/openapi.json` (OpenAPI 3.1, 26
+caminhos, 31 esquemas) e confrontada com o código. Depois, cotações reais contra o tenant.
+
+#### 🔴 CRÍTICO — todos os níveis de veículo são cotados ao mesmo preço
+
+A API distingue níveis de serviço por **`vehicle_class_code`**, não por `vehicle_type`. A própria
+documentação diz: *"Wins over `vehicle_type` for pricing when set"* e *"preferred for
+distinguishing service tiers"*.
+
+**O código só envia `vehicle_type`**, com valores (`berlina`, `first`, `business`, `doubleVan`)
+que **não existem no catálogo do operador**. O catálogo real, obtido de `GET /v2/vehicle-classes`:
+
+| code | vehicle_type | service_class | tier |
+|---|---|---|---|
+| standard-sedan | sedan | standard | 2 |
+| premium-sedan | sedan | luxury | 4 |
+| standard-van | van | standard | 2 |
+| premium-van | van | luxury | 4 |
+
+Repare que `vehicle_type: sedan` aponta para **duas** classes com preços diferentes.
+
+**Medido** — Porto Aeroporto → Maia, 12 km, 2 passageiros:
+
+| Pedido | Preço | Multiplicador | Classe aplicada |
+|---|---|---|---|
+| `vehicle_type: berlina` *(o código envia isto)* | **45,00 €** | 1 | **nenhuma** |
+| `vehicle_type: first` *(idem)* | **45,00 €** | 1 | **nenhuma** |
+| `vehicle_type: business` *(idem)* | **45,00 €** | 1 | **nenhuma** |
+| `vehicle_class_code: standard-sedan` | 45,00 € | 1,33 | ✓ |
+| `vehicle_class_code: premium-sedan` | **67,20 €** | 2 | ✓ |
+| `vehicle_class_code: standard-van` | 47,04 € | 1,4 | ✓ |
+| `vehicle_class_code: premium-van` | **79,97 €** | 2,38 | ✓ |
+
+**O CRM ignora em silêncio os valores desconhecidos** — não devolve erro, aplica a tarifa mínima
+de 45 € a tudo.
+
+**Impacto:** nesta rota, uma Van Premium vale 79,97 € e seria cotada a 45 € — **menos 35 €, ou
+44% abaixo**. E, pior do que a margem: os três níveis que a Way2Go vende (Business, First, Van)
+aparecem todos ao mesmo preço, o que anula a diferenciação comercial.
+
+**Isto reenquadra a questão dos preços (§6-A):** não é a tabela do servidor que está errada — é o
+pedido ao CRM que não diz qual o veículo.
+
+**Correção necessária:** mapear os tipos da interface (`berlina`, `van`, `doubleVan`) para os
+`vehicle_class_code` do catálogo, e enviar `vehicle_class_code` em vez de — ou além de —
+`vehicle_type`. Requer decisão de negócio: *que classe corresponde a cada nível vendido?*
+
+#### 🟡 `distance_km` — inconsistência de tipos, sem impacto
+
+A API marca-o **obrigatório** em `POST /v2/quote`; o código declara-o opcional, com um comentário
+a afirmar que o CRM deriva a distância — o que a especificação contradiz.
+
+Sem impacto em execução: o `resolveBookingPayloadDistance` resolve a distância antes de cotar, por
+três vias (valor existente → cotação sem veículo → OSM/OSRM), e o próprio código já refere o erro
+do Laravel *"The distance km field is required."* Corrigir o tipo e o comentário.
+
+#### ✅ O que está correto
+
+- **Caminhos e servidor**: `apiV2RootFromBaseUrl` monta corretamente contra o servidor `.../api`
+- **Envelope `data`**: as respostas vêm em `{"data": {...}}` e o `unwrapData` trata disso
+- **`GET /v2/availability`**: compatível, campos obrigatórios todos presentes
+- **`POST /v2/book`**: compatível — nenhum obrigatório em falta, nenhum campo inventado
+- **Autenticação**: `Bearer` corresponde ao declarado. O código suporta ainda `ApiKey` e `Basic`,
+  que a API não documenta — caminhos mortos, inofensivos
+
+#### Campos da API que o código não usa
+
+`vehicle_class_code`, `vehicle_class_id`, `waypoints`, `pickup_timezone`, `return_trip`. O
+primeiro é o do achado crítico; os restantes são funcionalidade por explorar.
 
 ### 19 ago 2026 — Fase 3: achados médios e baixos; e **dois achados meus estavam errados**
 
