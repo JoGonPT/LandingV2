@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { clientKey } from "@/lib/rate-limit";
+import { checkLoginAllowed, clearLoginFailures, registerLoginFailure } from "@/lib/login-throttle";
+
 import { getPartnerBySlug } from "@/lib/partner/config";
 import { constantTimeEqualUtf8 } from "@/lib/partner/credentials";
 import {
@@ -16,6 +19,16 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Trava força bruta: 5 falhas do mesmo IP abrem 15 min de bloqueio.
+  const throttleKey = `partner-auth:${clientKey(req)}`;
+  const throttle = checkLoginAllowed(throttleKey);
+  if (!throttle.allowed) {
+    return NextResponse.json(
+      { ok: false, message: "Too many failed attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(throttle.retryAfterSeconds) } },
+    );
+  }
+
   let sessionSecret: string;
   try {
     sessionSecret = getPartnerSessionSecret();
@@ -32,13 +45,16 @@ export async function POST(req: Request) {
 
   const partner = await getPartnerBySlug(body.slug);
   if (!partner) {
+    registerLoginFailure(throttleKey);
     return NextResponse.json({ ok: false, message: "Unknown partner." }, { status: 401 });
   }
 
   if (!constantTimeEqualUtf8(body.secret, partner.accessSecret)) {
+    registerLoginFailure(throttleKey);
     return NextResponse.json({ ok: false, message: "Invalid credentials." }, { status: 401 });
   }
 
+  clearLoginFailures(throttleKey);
   const maxAge = getPartnerSessionMaxAgeSec();
   const token = signPartnerSession(sessionSecret, partner.slug, maxAge);
   const res = NextResponse.json({ ok: true as const, slug: partner.slug, displayName: partner.displayName });

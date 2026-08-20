@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { clientKey } from "@/lib/rate-limit";
+import { checkLoginAllowed, clearLoginFailures, registerLoginFailure } from "@/lib/login-throttle";
+
 import { constantTimeEqualUtf8 } from "@/lib/partner/credentials";
 import {
   getMasterAdminPassword,
@@ -15,6 +18,16 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Trava força bruta: 5 falhas do mesmo IP abrem 15 min de bloqueio.
+  const throttleKey = `admin-login:${clientKey(req)}`;
+  const throttle = checkLoginAllowed(throttleKey);
+  if (!throttle.allowed) {
+    return NextResponse.json(
+      { ok: false, message: "Too many failed attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(throttle.retryAfterSeconds) } },
+    );
+  }
+
   let sessionSecret: string;
   try {
     sessionSecret = getMasterAdminSessionSecret();
@@ -35,9 +48,11 @@ export async function POST(req: Request) {
   }
 
   if (!constantTimeEqualUtf8(body.password, configuredPassword)) {
+    registerLoginFailure(throttleKey);
     return NextResponse.json({ ok: false, message: "Invalid password." }, { status: 401 });
   }
 
+  clearLoginFailures(throttleKey);
   const maxAge = getMasterAdminSessionMaxAgeSec();
   const token = signMasterAdminSession(sessionSecret, maxAge);
   const res = NextResponse.json({ ok: true as const });
