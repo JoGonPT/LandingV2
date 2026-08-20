@@ -533,8 +533,25 @@ demais para motores de busca e leitores de ecrã.
 
 Ponderei uma alternativa (dividir a app em grupos de rotas com layouts raiz separados), mais
 correta em teoria mas bastante mais invasiva num codebase sem testes E2E. Escolhi o cabeçalho e
-**medi o custo em vez de o assumir**: receava perder a pré-renderização, mas as páginas
-mantiveram-se `●` (SSG) na build e o `lang` sai correto em execução. O receio não se confirmou.
+medi o custo.
+
+> **Correção a esta entrada (20 ago 2026).** Escrevi aqui que a pré-renderização se manteve e que
+> "o receio não se confirmou". **Estava incompleto.** Verifiquei só as páginas `●` (SSG via
+> `generateStaticParams`) — essas mantiveram-se, e são as públicas, que é o que mais conta. Mas as
+> páginas `○` (estáticas simples) **passaram a `ƒ`**, porque usam o layout raiz que agora lê
+> `headers()`:
+>
+> | Rota | Antes | Depois |
+> |---|---|---|
+> | `/_not-found` | ○ | **ƒ** |
+> | `/internal/admin`, `/internal/admin/login` | ○ | **ƒ** |
+> | `/master-admin/login` | ○ | **ƒ** |
+> | `/partner` | ○ | **ƒ** |
+> | `/[locale]` e as 3 páginas legais | ● | ● |
+>
+> O impacto prático continua desprezável — são páginas de administração, um 404 e um redirect,
+> todas de tráfego residual e sem chamadas externas. A decisão mantém-se. Mas medi parcialmente e
+> generalizei: verifiquei o caso que esperava e não o conjunto todo.
 
 | Caminho | Antes | Depois |
 |---|---|---|
