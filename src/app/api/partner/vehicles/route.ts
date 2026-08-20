@@ -41,19 +41,23 @@ export async function POST(req: Request) {
     const store = getPartnerCreditStore();
     const acc = await store.getAccount(body.slug);
 
-    const vehicles =
-      acc && acc.pricingModel === "MARKUP"
-        ? result.vehicleOptions.map((v) => {
-            const b = computePartnerCommissionBreakdown(v.estimatedPrice, acc.commissionRate, acc.pricingModel);
-            return { ...v, guestRetailPrice: b.retailPrice };
-          })
-        : result.vehicleOptions;
+    const aplicarMarkup = <T extends { estimatedPrice?: number }>(item: T): T => {
+      if (!acc || acc.pricingModel !== "MARKUP" || item.estimatedPrice === undefined) return item;
+      const b = computePartnerCommissionBreakdown(item.estimatedPrice, acc.commissionRate, acc.pricingModel);
+      return { ...item, guestRetailPrice: b.retailPrice };
+    };
+
+    const vehicles = result.vehicleOptions.map(aplicarMarkup);
+    // As classes vêm do catálogo do CRM e são a fonte de verdade do preço:
+    // `vehicles` (categoria grosseira) não distingue standard de premium.
+    const vehicleClasses = result.vehicleClasses.map(aplicarMarkup);
 
     return NextResponse.json({
       success: true as const,
       requestId: rid,
       available: result.available,
       vehicles,
+      vehicleClasses,
       pickupLocation: result.pickupLocation,
       dropoffLocation: result.dropoffLocation,
       pickupDate: result.pickupDate,

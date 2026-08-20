@@ -142,3 +142,22 @@ describe("cabeçalho de locale para o layout raiz", () => {
         expect(requestLocale(res)).toBe("en");
     });
 });
+
+describe("ecrã de Em breve", () => {
+    // Regressão: `/em-breve` caía na lógica de idioma, era reescrito para
+    // `/pt/em-breve`, e esse caminho voltava a ser trancado — um ciclo.
+    it("é servido tal e qual, sem prefixo de idioma", async () => {
+        for (const path of ["/em-breve", "/em-breve/"]) {
+            const res = await middleware(request(path));
+            expect(locationPath(res), path).toBeNull();
+            expect(rewriteTarget(res), path).toBeNull();
+        }
+    });
+
+    it("sem o portão ligado, o site público é servido normalmente", async () => {
+        // `SITE_COMING_SOON` não está definido nestes testes.
+        const res = await middleware(request("/pt/"));
+        expect(rewriteTarget(res)).toBeNull();
+        expect(locationPath(res)).toBeNull();
+    });
+});
