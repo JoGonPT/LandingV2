@@ -77,14 +77,15 @@ export default function LocaleLayout({ children }: { children: React.ReactNode }
                         "url": SITE_URL,
                         "telephone": "+351913281953",
                         "email": "support@way2go.pt",
-                        // Localidade confirmada pelo dono do produto (19 ago 2026), coerente
-                        // com o foro contratual da Comarca do Porto nos T&C.
-                        // `streetAddress` e `postalCode` ficam de fora por não serem
-                        // conhecidos — dados NAP inventados desqualificam resultados
-                        // enriquecidos no Google. Completar quando houver a morada fiscal.
+                        // Morada completa, confirmada pelo dono do produto (20 ago 2026).
+                        // Coerente com o foro contratual da Comarca do Porto nos T&C —
+                        // a Maia é do distrito do Porto, o que confirma que o "Lisboa"
+                        // que aqui estava antes era um placeholder errado, não só genérico.
                         "address": {
                             "@type": "PostalAddress",
+                            "streetAddress": "Rua Álvaro Aurélio do Céu Oliveira 312, 9.º C",
                             "addressLocality": "Maia",
+                            "postalCode": "4470-134",
                             "addressRegion": "Porto",
                             "addressCountry": "PT",
                         },

@@ -372,14 +372,23 @@ Implementado como duas coisas distintas, que é o correto: `Footer.tsx` mostra a
 `LEADS_INTERNAL_EMAIL` no `send-budget` mantém o encaminhamento interno. Verificado que `vruum`
 já não aparece em lado nenhum do HTML público.
 
-> ⚠️ **Risco em aberto, assinalado ao dono do produto.** O endereço do rodapé é um `mailto:`
+> ✅ **RESOLVIDO 20 ago 2026.** Por decisão do dono do produto, o rodapé mostra
+> `reservas@way2go.pt` mas o `mailto:` entrega em `reservas@vruum.pt`, que existe. Contrapartida
+> assumida: quem clicar vê o endereço vruum no seu programa de email — inconsistência de marca
+> visível, mas preferível a perder a mensagem. Quando a caixa way2go existir, apagar
+> `EMAIL_DELIVERY` no `Footer.tsx`. **Morada fiscal completa também recebida e aplicada ao JSON-LD.**
+>
+> <details><summary>Risco original (histórico)</summary>
+>
+> O endereço do rodapé é um `mailto:`
 > clicável ([`Footer.tsx:59`](../src/components/Footer.tsx)). Enquanto `reservas@way2go.pt` não
 > existir, **o email que um cliente envia ao clicar é devolvido** — e um cliente que recebe um
 > bounce raramente tenta outra via.
 >
 > **Mitigação recomendada:** criar um alias/reencaminhamento
-> `reservas@way2go.pt → reservas@vruum.pt` no fornecedor de email. É normalmente uma alteração de
-> minutos e fecha a lacuna sem esperar pela migração da caixa.
+> `reservas@way2go.pt → reservas@vruum.pt` no fornecedor de email.
+>
+> </details>
 
 #### F2-2 — cobertura geográfica alinhada
 
