@@ -8,10 +8,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:standalone": "node scripts/clean-build.mjs && next build && node scripts/assemble-standalone.mjs",
     "start": "next start",
-    "start:cpanel": "node server.js",
+    "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "db:push": "npx supabase db push --yes",
     "db:push:dry": "npx supabase db push --dry-run --yes"
   },
@@ -30,6 +32,7 @@
     "postcss-selector-parser": "^7.1.1",
     "react": "^19",
     "react-dom": "^19.2.5",
+    "sharp": "^0.35.3",
     "stripe": "^17.7.0",
     "zod": "^4.3.6"
   },
@@ -39,6 +42,7 @@
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^9",
     "eslint-config-next": "^15",
     "postcss": "^8.5.9",
