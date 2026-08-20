@@ -1,0 +1,23 @@
+{
+  // ── Extensão Python ────────────────────────────────────────────────────────
+  // Este projeto é Next.js/TypeScript e não tem um único ficheiro Python.
+  //
+  // Por defeito a extensão Python assume `${workspaceFolder}/.env` como ficheiro
+  // de ambiente e, ao encontrá-lo, sugere ativar a injeção em terminais.
+  // **Não ativar.** O `.env` deste repositório tem segredos reais
+  // (TRANSFERCRM_BEARER_TOKEN, PARTNER_SESSION_SECRET, W2G_MASTER_ADMIN_PASSWORD,
+  // DRIVER_SESSION_SECRET); injetá-los em todos os terminais expõe-nos a
+  // qualquer comando que ali corra, incluindo scripts de dependências.
+  //
+  // `python.envFile` vazio remove o ficheiro da equação e silencia o aviso sem
+  // desligar nada de que o projeto dependa.
+  "python.envFile": "",
+  "python.terminal.useEnvFile": false,
+
+  // O Next.js carrega `.env`/`.env.local` sozinho em `next dev` e `next build`.
+  // Nenhuma ferramenta deste projeto precisa deles no ambiente do terminal.
+  "files.exclude": {
+    "**/.next": true,
+    "**/coverage": true
+  }
+}
