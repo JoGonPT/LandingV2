@@ -40,7 +40,10 @@ export class CheckoutAmountMismatchError extends CheckoutError {
 export class CheckoutRefundFailedError extends CheckoutError {
   constructor(
     message: string,
-    public readonly cause?: unknown,
+    // `override` explícito: `cause` existe em `Error`, e sem o modificador o
+    // TypeScript não distingue uma sobreposição intencional de uma colisão
+    // acidental de nomes com a classe base.
+    public override readonly cause?: unknown,
   ) {
     super(message, "REFUND_FAILED");
     this.name = "CheckoutRefundFailedError";

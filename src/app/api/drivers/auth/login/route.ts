@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { checkLoginAllowed, clearLoginFailures, registerLoginFailure } from "@/lib/login-throttle";
+import { clientKey } from "@/lib/rate-limit";
 import { isDriverSupabaseAuthConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -10,6 +12,16 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Trava força bruta: 5 falhas do mesmo IP abrem 15 min de bloqueio.
+  const throttleKey = `driver-login:${clientKey(req)}`;
+  const throttle = checkLoginAllowed(throttleKey);
+  if (!throttle.allowed) {
+    return NextResponse.json(
+      { error: "Too many failed attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(throttle.retryAfterSeconds) } },
+    );
+  }
+
   if (!isDriverSupabaseAuthConfigured()) {
     return NextResponse.json(
       {
@@ -33,6 +45,7 @@ export async function POST(req: Request) {
     password: body.password,
   });
   if (error || !data.user) {
+    registerLoginFailure(throttleKey);
     return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
   }
 
@@ -46,11 +59,13 @@ export async function POST(req: Request) {
     profile && typeof profile.role === "string" ? profile.role.trim().toUpperCase() : "";
   if (profileError || !profile || role !== "DRIVER") {
     await supabase.auth.signOut();
+    registerLoginFailure(throttleKey);
     return NextResponse.json(
       { error: "This account is not authorized for the driver portal." },
       { status: 403 },
     );
   }
 
+  clearLoginFailures(throttleKey);
   return NextResponse.json({ ok: true });
 }

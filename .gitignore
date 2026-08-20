@@ -2,12 +2,15 @@
 out
 node_modules
 .data
-.env
 *.log
-.env*.local
 .vercel
 .DS_Store
 tsconfig.tsbuildinfo
 
-.vercel
-.env*.local
+# Segredos — nunca versionar.
+# `.env.production` é criado pelo audit_env.sh (vercel env pull) com todos os
+# segredos de produção em texto simples; sem esta regra ia num `git add .`.
+.env
+.env.*
+!.env.example
+coverage

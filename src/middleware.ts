@@ -5,6 +5,7 @@ import { match as matchLocale } from "@formatjs/intl-localematcher";
 import Negotiator from "negotiator";
 
 import { applySupabaseSessionToResponse } from "@/lib/supabase/middleware";
+import { LOCALE_HEADER } from "@/lib/site";
 
 const locales = ["pt", "en"] as const;
 const defaultLocale = "pt";
@@ -90,19 +91,56 @@ export async function middleware(request: NextRequest) {
     if (pathname === "/") {
       const url = request.nextUrl.clone();
       url.pathname = `/${locale}`;
-      return NextResponse.rewrite(url);
+      return NextResponse.rewrite(url, withLocaleHeader(request, locale));
     }
 
     return NextResponse.redirect(new URL(`/${locale}${pathname}`, request.url));
   }
 
-  return NextResponse.next();
+  // O caminho já traz o locale — propagá-lo para o layout raiz poder emitir
+  // o `lang` correto no HTML servido.
+  const localeFromPath = locales.find(
+    (loc) => pathname === `/${loc}` || pathname.startsWith(`/${loc}/`),
+  );
+
+  return NextResponse.next(
+    localeFromPath ? withLocaleHeader(request, localeFromPath) : undefined,
+  );
+}
+
+/**
+ * Cabeçalho `LOCALE_HEADER` no **pedido**, para o layout raiz o poder ler.
+ *
+ * O layout raiz é único para todas as rotas e não recebe `params`, pelo que não
+ * tem outra forma de saber o locale. Antes, o `<html lang>` era sempre `pt` e um
+ * componente de cliente corrigia-o depois da hidratação — tarde demais para os
+ * motores de busca e para os leitores de ecrã, que leem o HTML inicial.
+ */
+function withLocaleHeader(request: NextRequest, locale: string) {
+  const headers = new Headers(request.headers);
+  headers.set(LOCALE_HEADER, locale);
+  return { request: { headers } };
 }
 
 export const config = {
   matcher: [
-    // Exclui: rotas de API, assets do Next.js, favicon, service-worker
-    // e qualquer ficheiro estático com extensão conhecida (imagens, fontes, etc.)
-    "/((?!api|_next/static|_next/image|favicon\\.ico|service-worker\\.js)(?!.*\\.(?:png|jpg|jpeg|gif|webp|ico|svg|ttf|woff|woff2|mp4|pdf)$).*)",
+    // Exclui: rotas de API, internos do Next, rotas de metadata (robots,
+    // sitemap, ícones, imagens OG), o service worker dos motoristas, e
+    // qualquer ficheiro estático com extensão conhecida.
+    //
+    // Três armadilhas já apanhadas aqui — ver `middleware-matcher.test.ts`,
+    // que valida este padrão contra uma tabela de caminhos:
+    //
+    //  1. `api` sem delimitador excluía tudo o que *começasse* por "api":
+    //     `/apitest`, `/apifoo`, `/api-docs` saltavam o middleware por
+    //     completo — landing servida em URLs arbitrários (conteúdo duplicado)
+    //     e sem refresh de sessão Supabase. Daí o `(?:/|$)`.
+    //  2. Faltavam `robots.txt`, `sitemap.xml`, `icon` e `opengraph-image`:
+    //     eram redirecionados para `/pt/...` e devolviam 404, o que tornava
+    //     todo o SEO inoperante.
+    //  3. A exclusão dizia `service-worker.js`, mas o ficheiro real é
+    //     `driver-sw.js` — o service worker da PWA de motoristas nunca era
+    //     alcançável (307 → 404), e o `.catch()` no registo escondia a falha.
+    "/((?!api(?:/|$)|_next/|favicon\\.ico|driver-sw\\.js|robots\\.txt|sitemap\\.xml|icon(?:/|$)|apple-icon(?:/|$)|manifest\\.webmanifest)(?!.*/(?:opengraph-image|twitter-image)(?:/|$))(?!.*\\.(?:png|jpg|jpeg|gif|webp|avif|ico|svg|ttf|woff|woff2|mp4|pdf|txt|xml)$).*)",
   ],
 };

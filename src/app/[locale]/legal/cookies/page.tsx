@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDictionary } from "@/get-dictionaries";
+import { legalMetadata } from "@/lib/legal-metadata";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -7,6 +8,15 @@ interface LegalSection {
     title: string;
     content: string;
     list?: string[];
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ locale: string }>;
+}) {
+    const { locale } = await params;
+    return legalMetadata("cookies", locale);
 }
 
 export function generateStaticParams() {

@@ -1,396 +1,396 @@
 {
-    "common": {
-        "back": "← Voltar ao início",
-        "reserve": "Reservar",
-        "faq": "FAQ",
-        "privacy": "Privacidade",
-        "contact": "Contactar",
-        "loading": "A carregar...",
-        "copyright": "© {year} Way2Go. Todos os direitos reservados."
+  "common": {
+    "back": "← Voltar ao início",
+    "reserve": "Reservar",
+    "faq": "FAQ",
+    "privacy": "Privacidade",
+    "contact": "Contactar",
+    "loading": "A carregar...",
+    "copyright": "© {year} Way2Go. Todos os direitos reservados."
+  },
+  "hero": {
+    "badge": "Serviço Premium de Transfer",
+    "title": "Transfers Privados de Aeroporto em Portugal e Espanha",
+    "subtitle": "Serviço premium de transporte privado com motoristas profissionais e pontualidade garantida.",
+    "cta": "Reservar Agora"
+  },
+  "booking": {
+    "title": "Faça a sua Reserva",
+    "route": "Trajeto",
+    "pickup": "Local de recolha",
+    "dropoff": "Destino",
+    "datetime": "Data e Hora",
+    "date": "Data",
+    "time": "Hora",
+    "details": "Detalhes",
+    "passengers": "Passageiros",
+    "luggage": "Malas",
+    "distanceKm": "Distância do trajeto (km)",
+    "flight": "Número de voo",
+    "flightPlaceholder": "ex. LH 1234",
+    "childSeat": "Cadeira de criança",
+    "contactInfo": "Dados de Contacto",
+    "name": "Nome Completo",
+    "email": "E-mail",
+    "confirmEmail": "Confirmar e-mail",
+    "whatsapp": "WhatsApp / Telemóvel",
+    "gdpr": {
+      "text": "Aceito a política de privacidade e os termos de serviço.",
+      "link": "política de privacidade"
     },
-    "hero": {
-        "badge": "Serviço Premium de Transfer",
-        "title": "Os Seus Transfers de Aeroporto de Confiança em Todo o Mundo",
-        "subtitle": "Serviço premium de transporte privado com motoristas profissionais e pontualidade garantida.",
-        "cta": "Reservar Agora"
-    },
-    "booking": {
-        "title": "Faça a sua Reserva",
+    "submit": "Enviar Reserva",
+    "checkout": {
+      "chooseVehicle": "Continuar",
+      "vehicleStepTitle": "Escolha a sua classe",
+      "continueFromForm": "Continuar",
+      "continueToPay": "Ir para o pagamento",
+      "loadingVehicles": "A verificar disponibilidade…",
+      "loadingCheckout": "A preparar pagamento seguro…",
+      "totalToPay": "Total a pagar",
+      "confirmPay": "Confirmar e pagar",
+      "processing": "A processar…",
+      "back": "Voltar",
+      "noVehicles": "Não há viaturas disponíveis para este trajeto. Tente noutra hora ou contacte-nos.",
+      "stripeMissing": "O pagamento online ainda não está disponível. Contacte-nos para reservar.",
+      "breakdownTitle": "Detalhe do preço",
+      "summary": {
+        "title": "A sua viagem",
         "route": "Trajeto",
-        "pickup": "Local de recolha",
-        "dropoff": "Destino",
-        "datetime": "Data e Hora",
-        "date": "Data",
-        "time": "Hora",
-        "details": "Detalhes",
-        "passengers": "Passageiros",
-        "luggage": "Malas",
-        "distanceKm": "Distância do trajeto (km)",
-        "flight": "Número de voo",
-        "flightPlaceholder": "ex. LH 1234",
+        "when": "Quando",
+        "vehicle": "Viatura",
+        "extras": "Extras",
         "childSeat": "Cadeira de criança",
-        "contactInfo": "Dados de Contacto",
-        "name": "Nome Completo",
-        "email": "E-mail",
-        "confirmEmail": "Confirmar e-mail",
-        "whatsapp": "WhatsApp / Telemóvel",
-        "gdpr": {
-            "text": "Aceito a política de privacidade e os termos de serviço.",
-            "link": "política de privacidade"
+        "luggage": "{n} malas",
+        "seats": "{n} lugares disponíveis",
+        "total": "Total",
+        "updating": "A atualizar preço…",
+        "pendingPrice": "Escolha uma viatura",
+        "none": "Nenhum"
+      },
+      "vehicles": {
+        "businessClass": "Classe Business",
+        "firstClass": "Primeira Classe",
+        "businessVan": "Carrinha Business",
+        "businessHint": "Classe E ou similar",
+        "firstHint": "Classe S ou similar",
+        "vanHint": "Classe V ou similar",
+        "seats": "{n} lugares disponíveis"
+      },
+      "routePreview": {
+        "title": "Estimativa do trajeto",
+        "loading": "A calcular distância e preço…",
+        "suggested": "Sugerido:",
+        "from": "Desde",
+        "distanceEta": "{km} km · ~{min} min",
+        "distanceOnly": "{km} km",
+        "etaNote": "O tempo de percurso é indicativo (trânsito variável). O preço final confirma-se ao escolher a viatura.",
+        "availabilityNote": "Valor indicativo a partir das tarifas disponíveis; o preço exato depende da classe escolhida."
+      },
+      "breakdown": {
+        "baseFee": "Taxa base",
+        "perKm": "Por km",
+        "perMin": "Por minuto",
+        "vehicleMultiplier": "Multiplicador de viatura",
+        "timeSurcharge": "Sobretaxa horária",
+        "minimumFare": "Tarifa mínima"
+      }
+    },
+    "success": {
+      "title": "Reserva agendada (a aguardar pagamento)",
+      "message": "Obrigado — o seu transfer Way2Go está pré-reservado. Os dados e link de pagamento serão enviados por email para o cliente.",
+      "orderLabel": "Número de reserva Way2Go",
+      "referenceHint": "Guarde esta referência para acompanhamento até confirmação do pagamento.",
+      "close": "Fechar"
+    },
+    "errors": {
+      "generic": "Não foi possível enviar a reserva. Tente novamente.",
+      "gdpr": "É necessário aceitar a política de privacidade.",
+      "emailMismatch": "Os campos de e-mail não coincidem.",
+      "distanceRequired": "Não foi possível calcular a distância do trajeto. Ajuste origem/destino e tente novamente.",
+      "distancePending": "A calcular distância… aguarde 1-2s."
+    }
+  },
+  "faq": {
+    "title": "Perguntas Frequentes",
+    "items": [
+      {
+        "question": "Como posso cancelar a minha reserva?",
+        "answer": "Pode cancelar gratuitamente se o pedido for efetuado com mais de 24 horas de antecedência em relação à hora de início do serviço. Cancelamentos com menos de 24 horas de antecedência não conferem direito a reembolso."
+      },
+      {
+        "question": "O motorista espera por mim no aeroporto?",
+        "answer": "Sim, o nosso motorista estará à sua espera no átrio de chegadas com uma placa com o seu nome. Monitorizamos o seu voo para ajustar em caso de atraso."
+      },
+      {
+        "question": "Quais são os métodos de pagamento?",
+        "answer": "Aceitamos numerário, cartões de débito/crédito, MB Way e transferência bancária antecipada."
+      },
+      {
+        "question": "Os veículos têm Wi-Fi e água?",
+        "answer": "Sim, todos os nossos veículos estão equipados com Wi-Fi gratuito, garrafas de água e carregadores USB para o seu conforto."
+      },
+      {
+        "question": "Qual é a vossa área de operação?",
+        "answer": "Operamos em todo o território nacional e Espanha, com especial incidência em Lisboa, Porto e Algarve."
+      }
+    ]
+  },
+  "footer": {
+    "contacts": "Contactos",
+    "legal": "Informação Legal",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos e Condições",
+    "cookies": "Gestão de Cookies",
+    "about": "Sobre Nós",
+    "aboutText": "Serviço de transfer profissional com uma vasta experiência no setor. Conforto, pontualidade e discrição garantidos.",
+    "explore": "Explore",
+    "airportTransfers": "Transferes de Aeroporto",
+    "byTheHour": "Ao Serviço / À Hora",
+    "copyright": "© {year} Way2Go. Todos os direitos reservados."
+  },
+  "cookies": {
+    "text": "Utilizamos cookies para melhorar a sua experiência. Ao continuar a navegar, concorda com a nossa ",
+    "policy": "Política de Cookies",
+    "accept": "Aceitar",
+    "reject": "Rejeitar"
+  },
+  "legal": {
+    "privacy": {
+      "title": "Política de Privacidade",
+      "updated": "Última atualização: Maio de 2026",
+      "intro": [
+        "Com a presente Política de Privacidade, fornecida nos termos do Artigo 13.º do Regulamento (UE) 2016/679 (\"RGPD\"), pretendemos informar o Utilizador sobre a forma como os seus Dados Pessoais (ou seja, qualquer informação que o possa identificar direta ou indiretamente) serão tratados quando visita, se regista e/ou adquire serviços no website www.way2go.pt e aplicações móveis associadas (doravante, conjuntamente designados por \"Plataforma\").",
+        "Esta política, em conjunto com a Política de Cookies e os Termos e Condições Gerais de Utilização e Venda, estabelece a base sobre a qual os dados pessoais dos Utilizadores serão tratados."
+      ],
+      "sections": [
+        {
+          "title": "1. Responsável pelo Tratamento de Dados",
+          "content": "O Responsável pelo Tratamento dos dados pessoais recolhidos através da Plataforma é:",
+          "list": [
+            "Way2Go",
+            "Contacto de E-mail: privacy@way2go.pt"
+          ]
         },
-        "submit": "Enviar Reserva",
-        "checkout": {
-            "chooseVehicle": "Continuar",
-            "vehicleStepTitle": "Escolha a sua classe",
-            "continueFromForm": "Continuar",
-            "continueToPay": "Ir para o pagamento",
-            "loadingVehicles": "A verificar disponibilidade…",
-            "loadingCheckout": "A preparar pagamento seguro…",
-            "totalToPay": "Total a pagar",
-            "confirmPay": "Confirmar e pagar",
-            "processing": "A processar…",
-            "back": "Voltar",
-            "noVehicles": "Não há viaturas disponíveis para este trajeto. Tente noutra hora ou contacte-nos.",
-            "stripeMissing": "O pagamento online ainda não está disponível. Contacte-nos para reservar.",
-            "breakdownTitle": "Detalhe do preço",
-            "summary": {
-                "title": "A sua viagem",
-                "route": "Trajeto",
-                "when": "Quando",
-                "vehicle": "Viatura",
-                "extras": "Extras",
-                "childSeat": "Cadeira de criança",
-                "luggage": "{n} malas",
-                "seats": "{n} lugares disponíveis",
-                "total": "Total",
-                "updating": "A atualizar preço…",
-                "pendingPrice": "Escolha uma viatura",
-                "none": "Nenhum"
+        {
+          "title": "2. Categorias de Dados Pessoais Tratados",
+          "content": "Quando interage com a Plataforma, efetua uma reserva, contacta o suporte ou cria uma conta, recolhemos e tratamos as seguintes categorias de dados:",
+          "list": [
+            "Dados de Identificação, Contacto e Acesso: Nome e apelido, endereço de e-mail, número de telefone e credenciais de acesso à conta.",
+            "Dados de Reserva e Serviço: Informações detalhadas sobre a viagem/transporte contratado, locais de recolha e destino, datas, horários, dados de motoristas atribuídos e interações de suporte para melhoria da experiência do cliente.",
+            "Dados de Faturação e Pagamento: Dados fiscais e contabilísticos (NIF/Número de IVA, morada de faturação, nome da empresa, se aplicável) e dados bancários ou de cartões de pagamento necessários para processar as transações.",
+            "Dados de Geolocalização: Coordenadas geográficas em tempo real do dispositivo do Utilizador e do motorista, estritamente necessárias para a execução segura e eficiente do serviço de transporte (identificação do local de recolha, confirmação de passageiro a bordo e conclusão da viagem).",
+            "Dados de Navegação e Utilização: Endereços IP, tipo de navegador, sistema operativo, fluxos de navegação na Plataforma, registos de logs e indicadores de performance do sistema."
+          ]
+        },
+        {
+          "title": "3. Finalidades do Tratamento e Bases Legais",
+          "content": "",
+          "subsections": [
+            {
+              "title": "A. Execução Contratual e Obrigações Legais",
+              "list": [
+                "Navegação, registo e gestão da conta do Utilizador na Plataforma.",
+                "Processamento, gestão, faturação e execução dos contratos de serviços de transporte e mobilidade.",
+                "Atendimento ao cliente, suporte técnico e gestão de reclamações ou pedidos de esclarecimento.",
+                "Cumprimento de obrigações legais, fiscais e contabilísticas aplicáveis à atividade da Way2Go."
+              ],
+              "legalBasis": "Base Legal: Necessidade para a execução de um contrato no qual o Utilizador é parte ou para diligências pré-contratuais (Artigo 6.º, n.º 1, alínea b) do RGPD) e cumprimento de obrigações jurídicas (Artigo 6.º, n.º 1, alínea c) do RGPD)."
             },
-            "vehicles": {
-                "businessClass": "Classe Business",
-                "firstClass": "Primeira Classe",
-                "businessVan": "Carrinha Business",
-                "businessHint": "Classe E ou similar",
-                "firstHint": "Classe S ou similar",
-                "vanHint": "Classe V ou similar",
-                "seats": "{n} lugares disponíveis"
+            {
+              "title": "B. Interesse Legítimo",
+              "list": [
+                "Realização de análises estatísticas agregadas para melhoria das funcionalidades da Plataforma e da qualidade do serviço.",
+                "Prevenção e deteção de fraudes, segurança do sistema e proteção dos direitos legais da Way2Go.",
+                "Envio de comunicações transacionais (ex.: lembretes de carrinhos abandonados ou atualizações operacionais do estado do serviço)."
+              ],
+              "legalBasis": "Base Legal: Interesse legítimo da Way2Go (Artigo 6.º, n.º 1, alínea f) do RGPD)."
             },
-            "routePreview": {
-                "title": "Estimativa do trajeto",
-                "loading": "A calcular distância e preço…",
-                "suggested": "Sugerido:",
-                "from": "Desde",
-                "distanceEta": "{km} km · ~{min} min",
-                "distanceOnly": "{km} km",
-                "etaNote": "O tempo de percurso é indicativo (trânsito variável). O preço final confirma-se ao escolher a viatura.",
-                "availabilityNote": "Valor indicativo a partir das tarifas disponíveis; o preço exato depende da classe escolhida."
-            },
-            "breakdown": {
-                "baseFee": "Taxa base",
-                "perKm": "Por km",
-                "perMin": "Por minuto",
-                "vehicleMultiplier": "Multiplicador de viatura",
-                "timeSurcharge": "Sobretaxa horária",
-                "minimumFare": "Tarifa mínima"
+            {
+              "title": "C. Consentimento do Utilizador",
+              "list": [
+                "Marketing Direto e Perfis: Envio de comunicações comerciais, ofertas e promoções personalizadas com base nas preferências de utilização, através de e-mail ou notificações.",
+                "Geolocalização: A ativação da localização em tempo real para os clientes (fora do estritamente necessário para a recolha ativa) depende da autorização concedida nas definições do dispositivo ou na Plataforma."
+              ],
+              "legalBasis": "Base Legal: Consentimento explícito do Utilizador (Artigo 6.º, n.º 1, alínea a) do RGPD). O consentimento é opcional e pode ser retirado a qualquer momento."
             }
+          ]
         },
-        "success": {
-            "title": "Reserva agendada (a aguardar pagamento)",
-            "message": "Obrigado — o seu transfer Way2Go está pré-reservado. Os dados e link de pagamento serão enviados por email para o cliente.",
-            "orderLabel": "Número de reserva Way2Go",
-            "referenceHint": "Guarde esta referência para acompanhamento até confirmação do pagamento.",
-            "close": "Fechar"
+        {
+          "title": "4. Período de Retenção dos Dados",
+          "content": "Os dados pessoais serão conservados apenas durante o período estritamente necessário para cumprir as finalidades para as quais foram recolhidos:",
+          "list": [
+            "Dados Contratuais e Fiscais: Conservados pelo período exigido pela legislação fiscal e comercial aplicável (geralmente até 10 anos em conformidade com os prazos de prescrição legal).",
+            "Dados de Conta de Utilizador: Mantidos enquanto a conta estiver ativa. Em caso de pedido de eliminação, os dados serão eliminados ou anonimizados num prazo máximo de 3 meses, salvaguardando obrigações legais pendentes.",
+            "Dados de Geolocalização: Armazenados por um período máximo de 4 meses a contar da recolha, exceto se necessários para a resolução de litígios ou reclamações em curso.",
+            "Marketing e Perfis: Conservados durante 24 meses para marketing e 12 meses para definição de perfis a partir do último contacto ativo do Utilizador, ou até que o consentimento seja revogado."
+          ]
         },
-        "errors": {
-            "generic": "Não foi possível enviar a reserva. Tente novamente.",
-            "gdpr": "É necessário aceitar a política de privacidade.",
-            "emailMismatch": "Os campos de e-mail não coincidem.",
-            "distanceRequired": "Não foi possível calcular a distância do trajeto. Ajuste origem/destino e tente novamente.",
-            "distancePending": "A calcular distância… aguarde 1-2s."
+        {
+          "title": "5. Destinatários dos Dados",
+          "content": "Para a correta execução dos serviços, a Way2Go poderá partilhar dados com:",
+          "list": [
+            "Pessoal interno autorizado das áreas administrativa, comercial e de suporte técnico.",
+            "Prestadores de serviços subcontratados que atuem em nome da Way2Go (ex.: gateways de pagamento, serviços de alojamento em nuvem, prestadores de infraestrutura tecnológica e motoristas/parceiros de transporte encarregues da execução da viagem).",
+            "Autoridades públicas, fiscais ou judiciais competentes, sempre que exigido por lei ou para a defesa de direitos legais."
+          ]
+        },
+        {
+          "title": "6. Transferências Internacionais de Dados",
+          "content": "Os dados são tratados e armazenados preferencialmente no Espaço Económico Europeu (EEE). Caso alguma ferramenta tecnológica auxiliar exija a transferência de dados para fora do EEE, a Way2Go assegurará que o país de destino garante um nível de proteção adequado ou que a transferência é salvaguardada pelas Cláusulas Contratuais-Tipo aprovadas pela Comissão Europeia (Artigo 46.º do RGPD)."
+        },
+        {
+          "title": "7. Direitos dos Titulares dos Dados",
+          "content": "Nos termos do RGPD, o Utilizador tem o direito de solicitar à Way2Go:",
+          "list": [
+            "Acesso e Retificação: Consultar os seus dados e corrigir informações inexatas ou incompletas.",
+            "Apagamento (\"Direito a ser Esquecido\"): Solicitar a eliminação dos seus dados quando estes já não forem necessários ou quando retirar o consentimento.",
+            "Limitação e Oposição: Limitar o tratamento de determinados dados ou opor-se ao tratamento baseado em interesses legítimos ou para fins de marketing.",
+            "Portabilidade: Receber os seus dados num formato estruturado, de uso corrente e leitura automática."
+          ],
+          "footer": "Para exercer os seus direitos, o Utilizador deverá enviar um pedido assinado para o e-mail: privacy@way2go.pt. O Utilizador tem também o direito de apresentar uma reclamação à autoridade de controlo competente (em Portugal, a Comissão Nacional de Proteção de Dados - CNPD)."
+        },
+        {
+          "title": "8. Medidas de Segurança",
+          "content": "A Way2Go implementa medidas de segurança técnicas e organizativas adequadas (incluindo encriptação de dados, protocolos HTTPS e certificados SSL) para proteger os dados pessoais contra acessos não autorizados, alteração, divulgação ou destruição acidental."
         }
+      ]
     },
-    "faq": {
-        "title": "Perguntas Frequentes",
-        "items": [
+    "terms": {
+      "title": "Termos de Utilização e Termos Gerais de Serviço",
+      "updated": "Última atualização: Maio de 2026",
+      "intro": [
+        "A plataforma www.way2go.pt e a aplicação móvel Way2Go (doravante designadas conjuntamente por \"Plataforma\") são propriedade e geridas pela Way2Go (doravante \"Fornecedor\" ou \"Way2Go\").",
+        "Qualquer informação, suporte, pedido ou reclamação poderá ser encaminhado para o Serviço de Apoio ao Cliente através do e-mail: support@way2go.pt ou através do chat interativo presente na Plataforma."
+      ],
+      "parts": [
+        {
+          "title": "PARTE I: Termos de Utilização da Plataforma",
+          "sections": [
             {
-                "question": "Como posso cancelar a minha reserva?",
-                "answer": "Pode cancelar gratuitamente se o pedido for efetuado com mais de 24 horas de antecedência em relação à hora de início do serviço. Cancelamentos com menos de 24 horas de antecedência não conferem direito a reembolso."
+              "title": "1. Utilização da Plataforma",
+              "content": "Ao utilizar a Plataforma, o Utilizador compromete-se a:",
+              "list": [
+                "Utilizá-la exclusivamente para consultas legítimas e reservas lícitas.",
+                "Não efetuar reservas falsas ou fraudulentas. Se houver motivos razoáveis para crer que uma reserva é dessa natureza, a Way2Go reserva-se o direito de a cancelar e informar as autoridades competentes.",
+                "Fornecer o seu endereço de e-mail, número de telefone e/ou outros dados de contacto de forma correta e verídica, consentindo na sua utilização para gerir a reserva (conforme a Política de Privacidade)."
+              ],
+              "afterList": [
+                "Se não fornecer todas as informações necessárias, não será possível processar o seu pedido. A Way2Go não se responsabiliza por quaisquer inconvenientes ou danos resultantes da utilização da Internet, incluindo interrupções de serviço, intrusões externas, presença de vírus ou casos de força maior."
+              ]
             },
             {
-                "question": "O motorista espera por mim no aeroporto?",
-                "answer": "Sim, o nosso motorista estará à sua espera no átrio de chegadas com uma placa com o seu nome. Monitorizamos o seu voo para ajustar em caso de atraso."
-            },
-            {
-                "question": "Quais são os métodos de pagamento?",
-                "answer": "Aceitamos numerário, cartões de débito/crédito, MB Way e transferência bancária antecipada."
-            },
-            {
-                "question": "Os veículos têm Wi-Fi e água?",
-                "answer": "Sim, todos os nossos veículos estão equipados com Wi-Fi gratuito, garrafas de água e carregadores USB para o seu conforto."
-            },
-            {
-                "question": "Qual é a vossa área de operação?",
-                "answer": "Operamos em todo o território nacional e Espanha, com especial incidência em Lisboa, Porto e Algarve."
+              "title": "2. Propriedade Industrial e Intelectual",
+              "content": "O nome de domínio da Plataforma, bem como a totalidade do ecossistema tecnológico Way2Go, os seus elementos individuais (fotografias, textos, vídeos, logótipos, software, etc.) e os presentes documentos legais constituem obras intelectuais e propriedade industrial exclusivas da Way2Go. É estritamente proibida qualquer reprodução, descarga, modificação ou utilização total ou parcial dos mesmos sem o consentimento prévio e por escrito da Way2Go."
             }
-        ]
-    },
-    "footer": {
-        "contacts": "Contactos",
-        "legal": "Informação Legal",
-        "privacy": "Política de Privacidade",
-        "terms": "Termos e Condições",
-        "cookies": "Gestão de Cookies",
-        "about": "Sobre Nós",
-        "aboutText": "Serviço de transfer profissional com uma vasta experiência no setor. Conforto, pontualidade e discrição garantidos.",
-        "explore": "Explore",
-        "airportTransfers": "Transferes de Aeroporto",
-        "byTheHour": "Ao Serviço / À Hora",
-        "copyright": "© {year} Way2Go. Todos os direitos reservados."
+          ]
+        },
+        {
+          "title": "PARTE II: Termos e Condições Gerais de Serviço",
+          "sections": [
+            {
+              "title": "1. Definições",
+              "list": [
+                "Way2Go / Fornecedor: A entidade detentora da marca e da Plataforma, responsável pela intermediação e gestão tecnológica de contratos de transporte.",
+                "Cliente: A pessoa singular ou coletiva que solicita a prestação dos Serviços. Salvo indicação em contrário, o Cliente atua também na qualidade de Passageiro.",
+                "Passageiro: A pessoa final que usufruirá do transporte. Se for diferente do Cliente, declara-se autorizada por este a solicitar alterações ao trajeto.",
+                "Plataforma: O portal web www.way2go.pt, a aplicação móvel Way2Go e as APIs de integração tecnológica.",
+                "Reserva: A proposta de compra de serviços de transporte submetida pelo Cliente através da Plataforma.",
+                "Serviços: A atividade de intermediação e facilitação tecnológica de transfers locais, transfers aeroportuários, viagens sob demanda (Ride-Hailing) ou reservas à hora operadas pela Way2Go.",
+                "Transportador / Parceiro: O motorista profissional, empresa de transportes ou operador de frotas independente parceiro da Way2Go que executa materialmente o serviço de transporte sob o respetivo Contrato de Transporte."
+              ]
+            },
+            {
+              "title": "2. Objeto do Serviço",
+              "list": [
+                "2.1. A Way2Go disponibiliza uma Plataforma tecnológica para a intermediação de serviços de transporte e mobilidade. A pedido do Cliente, a Way2Go atua em seu nome para identificar, alocar e intermediar a viagem junto de um Transportador Parceiro licenciado.",
+                "2.2. A obrigação da Way2Go no âmbito da intermediação e bom funcionamento da Plataforma é uma obrigação de meios e não de resultado no que concerne à execução física da viagem, a qual é da responsabilidade exclusiva do Transportador Parceiro adjudicado.",
+                "2.3. Estes Termos podem ser atualizados a qualquer momento, sendo aplicada a versão em vigor à data da submissão da Reserva pelo Cliente."
+              ]
+            },
+            {
+              "title": "3. Registo e Gestão de Conta",
+              "list": [
+                "3.1. Para efetuar reservas e aceder a determinadas funcionalidades, o Cliente deve registar uma Conta fornecendo dados verídicos e manter um método de pagamento válido associado.",
+                "3.2. A Conta é pessoal e intransmissível. O Cliente é o único responsável por manter a confidencialidade das suas credenciais de acesso. O Cliente deve notificar de imediato a Way2Go caso suspeite de utilização não autorizada da sua conta.",
+                "3.3. O Cliente pode solicitar a eliminação da sua conta a qualquer momento através da opção \"Eliminar Conta\" na área reservada ou enviando um e-mail para privacy@way2go.pt."
+              ]
+            },
+            {
+              "title": "4. Processo de Reserva e Celebração do Contrato",
+              "content": "4.1. Para realizar uma Reserva, o Cliente preenche o formulário eletrónico na Plataforma introduzindo: tipo de serviço, locais de recolha/destino, data, hora, número de passageiros, detalhes de bagagem e dados do Passageiro.",
+              "subsections": [
+                {
+                  "title": "4.2. Serviços Adicionais Incluídos",
+                  "list": [
+                    "Meet & Greet: O motorista aguarda no terminal de chegadas com uma placa identificativa com o nome do Passageiro.",
+                    "Tempo de Espera Gratuito: Nos transfers de aeroporto/porto/estação de comboio, está incluído um tempo de espera gratuito de 1 hora a partir da hora programada. Nos restantes transfers (moradas privadas, hotéis), o tempo gratuito é de 15 minutos.",
+                    "Door to Door: O transporte efetua-se diretamente desde o ponto exato de recolha até à soleira do destino indicado."
+                  ]
+                }
+              ],
+              "afterList": [
+                "4.3. Ao clicar em \"Pagar\", o Cliente emite uma proposta contratual de reserva vinculativa. O contrato de intermediação com a Way2Go considera-se concluído com a receção da \"Confirmação de Reserva\" por e-mail.",
+                "4.4. A faturação do serviço de transporte é emitida pelo Transportador Parceiro que executa a viagem, sendo a Plataforma o meio facilitador da cobrança e disponibilização do respetivo documento fiscal na área de cliente."
+              ]
+            },
+            {
+              "title": "5. Alocação do Transportador e Veículos",
+              "list": [
+                "5.1. As imagens dos veículos na Plataforma são meramente ilustrativas da categoria do veículo (Sedan, Van, Minibus, etc.). O modelo real, cor e marca podem variar consoante a disponibilidade do parceiro local na região.",
+                "5.2. A Way2Go reserva-se o direito de atribuir um veículo de categoria superior ou maior capacidade (Free Upgrade) para garantir a execução do serviço sem qualquer custo adicional para o Cliente.",
+                "5.3. Até 24 horas antes do início do serviço, a Way2Go disponibiliza na área de cliente os dados de contacto do Transportador encarregue do serviço. Caso a reserva ocorra num período inferior, os dados estarão disponíveis imediatamente após a alocação do motorista."
+              ]
+            },
+            {
+              "title": "6. Cancelamentos, Alterações e Reembolsos",
+              "list": [
+                "6.1. Cancelamentos: O direito de livre resolução aplicável aos consumidores em contratos à distância não se aplica a estes serviços de transporte, por se tratarem de serviços com data e período de execução específicos (conforme a legislação de proteção do consumidor).",
+                "6.2. No entanto, a Way2Go permite o cancelamento gratuito e reembolso total da Reserva se este for solicitado pelo Cliente na área reservada com mais de 24 horas de antecedência face à hora programada para o início do serviço. Cancelamentos efetuados com menos de 24 horas de antecedência não conferem direito a qualquer reembolso.",
+                "6.3. Alterações: Pedidos de alteração (horários, rotas, categoria de veículo) solicitados com mais de 24 horas de antecedência são gratuitos, ficando o Cliente responsável pelo pagamento de eventuais taxas adicionais resultantes da alteração. Alterações com menos de 24 horas estão sujeitas a confirmação de disponibilidade por parte do Transportador e podem incorrer em sobretaxas operacionais.",
+                "6.4. Não Comparência (No-Show): Se o Passageiro não comparecer no local e hora acordados após o decurso do tempo de espera gratuito, o serviço será considerado \"No-Show\" e o valor total será retido, sem direito a reembolso."
+              ]
+            },
+            {
+              "title": "7. Monitorização de Voos e Reagendamento",
+              "list": [
+                "7.1. Nos transfers associados a voos, caso o Cliente tenha introduzido corretamente o número do voo aquando da reserva, o Transportador Parceiro é responsável por monitorizar a hora estimada de chegada (ETA) e reprogramar a recolha em caso de atraso, até ao limite máximo de 6 (seis) horas de atraso face ao horário original.",
+                "7.2. A reprogramação é calculada com base na hora real de aterragem do voo. Em caso de voo antecipado, mantém-se a hora originalmente selecionada pelo Cliente na reserva, salvo acordo em contrário com o motorista.",
+                "7.3. Se, devido a restrições operacionais extremas, o Transportador alocado não conseguir assegurar o serviço no novo horário do voo atrasado dentro do limite de 6 horas, e não for possível encontrar outro parceiro viável, o Cliente terá direito ao reembolso total do montante pago pelo serviço não executado."
+              ]
+            },
+            {
+              "title": "8. Obrigações e Responsabilidades do Cliente",
+              "list": [
+                "8.1. O Cliente é o único responsável pela veracidade e exatidão de todos os dados introduzidos (moradas exatas, números de voo, horários de recolha).",
+                "8.2. Transporte de Crianças: Se um ou mais passageiros forem menores, o Cliente deve solicitar obrigatoriamente os sistemas de retenção infantil adequados (cadeiras auto ou assentos elevatórios) no campo de extras da reserva. Caso não o faça e o Transportador se recuse a transportar os menores por incumprimento da lei rodoviária local, o serviço é considerado \"No-Show\" por culpa do Cliente e nenhum reembolso será devido.",
+                "8.3. Bagagem e Animais: Cada passageiro tem direito a uma bagagem de mão pequena e uma mala média (máx. 20 kg) acomodada na bagageira. O transporte de bagagem excessiva, volumes fora de formato ou animais de estimação (em caixa de transporte adequada) deve ser expressamente comunicado e validado na Reserva."
+              ]
+            },
+            {
+              "title": "9. Resolução Alternativa de Litígios (RAL) e Lei Aplicável",
+              "list": [
+                "9.1. Os presentes Termos e Condições são regulados pela Lei Portuguesa.",
+                "9.2. Em caso de litígio de consumo, o Cliente consumidor poderá recorrer às entidades de Resolução Alternativa de Litígios de Consumo (RAL) em Portugal, nomeadamente o Centro de Arbitragem de Conflitos de Consumo do Vale do Ave, Centro de Informação de Consumo e Arbitragem do Porto (CICAP), ou recorrer à Plataforma Europeia de Resolução de Litígios em Linha disponível em http://ec.europa.eu/consumers/odr/.",
+                "9.3. Para a resolução de quaisquer litígios judiciais emergentes do presente contrato que não possam ser resolvidos por via amigável ou mediação de consumo, as partes estipulam como competente o foro da Comarca do Porto, com expressa renúncia a qualquer outro."
+              ]
+            }
+          ]
+        }
+      ]
     },
     "cookies": {
-        "text": "Utilizamos cookies para melhorar a sua experiência. Ao continuar a navegar, concorda com a nossa ",
-        "policy": "Política de Cookies",
-        "accept": "Aceitar",
-        "reject": "Rejeitar"
-    },
-    "legal": {
-        "privacy": {
-            "title": "Política de Privacidade",
-            "updated": "Última atualização: Maio de 2026",
-            "intro": [
-                "Com a presente Política de Privacidade, fornecida nos termos do Artigo 13.º do Regulamento (UE) 2016/679 (\"RGPD\"), pretendemos informar o Utilizador sobre a forma como os seus Dados Pessoais (ou seja, qualquer informação que o possa identificar direta ou indiretamente) serão tratados quando visita, se regista e/ou adquire serviços no website www.way2go.pt e aplicações móveis associadas (doravante, conjuntamente designados por \"Plataforma\").",
-                "Esta política, em conjunto com a Política de Cookies e os Termos e Condições Gerais de Utilização e Venda, estabelece a base sobre a qual os dados pessoais dos Utilizadores serão tratados."
-            ],
-            "sections": [
-                {
-                    "title": "1. Responsável pelo Tratamento de Dados",
-                    "content": "O Responsável pelo Tratamento dos dados pessoais recolhidos através da Plataforma é:",
-                    "list": [
-                        "Way2Go",
-                        "Contacto de E-mail: privacy@way2go.pt"
-                    ]
-                },
-                {
-                    "title": "2. Categorias de Dados Pessoais Tratados",
-                    "content": "Quando interage com a Plataforma, efetua uma reserva, contacta o suporte ou cria uma conta, recolhemos e tratamos as seguintes categorias de dados:",
-                    "list": [
-                        "Dados de Identificação, Contacto e Acesso: Nome e apelido, endereço de e-mail, número de telefone e credenciais de acesso à conta.",
-                        "Dados de Reserva e Serviço: Informações detalhadas sobre a viagem/transporte contratado, locais de recolha e destino, datas, horários, dados de motoristas atribuídos e interações de suporte para melhoria da experiência do cliente.",
-                        "Dados de Faturação e Pagamento: Dados fiscais e contabilísticos (NIF/Número de IVA, morada de faturação, nome da empresa, se aplicável) e dados bancários ou de cartões de pagamento necessários para processar as transações.",
-                        "Dados de Geolocalização: Coordenadas geográficas em tempo real do dispositivo do Utilizador e do motorista, estritamente necessárias para a execução segura e eficiente do serviço de transporte (identificação do local de recolha, confirmação de passageiro a bordo e conclusão da viagem).",
-                        "Dados de Navegação e Utilização: Endereços IP, tipo de navegador, sistema operativo, fluxos de navegação na Plataforma, registos de logs e indicadores de performance do sistema."
-                    ]
-                },
-                {
-                    "title": "3. Finalidades do Tratamento e Bases Legais",
-                    "content": "",
-                    "subsections": [
-                        {
-                            "title": "A. Execução Contratual e Obrigações Legais",
-                            "list": [
-                                "Navegação, registo e gestão da conta do Utilizador na Plataforma.",
-                                "Processamento, gestão, faturação e execução dos contratos de serviços de transporte e mobilidade.",
-                                "Atendimento ao cliente, suporte técnico e gestão de reclamações ou pedidos de esclarecimento.",
-                                "Cumprimento de obrigações legais, fiscais e contabilísticas aplicáveis à atividade da Way2Go."
-                            ],
-                            "legalBasis": "Base Legal: Necessidade para a execução de um contrato no qual o Utilizador é parte ou para diligências pré-contratuais (Artigo 6.º, n.º 1, alínea b) do RGPD) e cumprimento de obrigações jurídicas (Artigo 6.º, n.º 1, alínea c) do RGPD)."
-                        },
-                        {
-                            "title": "B. Interesse Legítimo",
-                            "list": [
-                                "Realização de análises estatísticas agregadas para melhoria das funcionalidades da Plataforma e da qualidade do serviço.",
-                                "Prevenção e deteção de fraudes, segurança do sistema e proteção dos direitos legais da Way2Go.",
-                                "Envio de comunicações transacionais (ex.: lembretes de carrinhos abandonados ou atualizações operacionais do estado do serviço)."
-                            ],
-                            "legalBasis": "Base Legal: Interesse legítimo da Way2Go (Artigo 6.º, n.º 1, alínea f) do RGPD)."
-                        },
-                        {
-                            "title": "C. Consentimento do Utilizador",
-                            "list": [
-                                "Marketing Direto e Perfis: Envio de comunicações comerciais, ofertas e promoções personalizadas com base nas preferências de utilização, através de e-mail ou notificações.",
-                                "Geolocalização: A ativação da localização em tempo real para os clientes (fora do estritamente necessário para a recolha ativa) depende da autorização concedida nas definições do dispositivo ou na Plataforma."
-                            ],
-                            "legalBasis": "Base Legal: Consentimento explícito do Utilizador (Artigo 6.º, n.º 1, alínea a) do RGPD). O consentimento é opcional e pode ser retirado a qualquer momento."
-                        }
-                    ]
-                },
-                {
-                    "title": "4. Período de Retenção dos Dados",
-                    "content": "Os dados pessoais serão conservados apenas durante o período estritamente necessário para cumprir as finalidades para as quais foram recolhidos:",
-                    "list": [
-                        "Dados Contratuais e Fiscais: Conservados pelo período exigido pela legislação fiscal e comercial aplicável (geralmente até 10 anos em conformidade com os prazos de prescrição legal).",
-                        "Dados de Conta de Utilizador: Mantidos enquanto a conta estiver ativa. Em caso de pedido de eliminação, os dados serão eliminados ou anonimizados num prazo máximo de 3 meses, salvaguardando obrigações legais pendentes.",
-                        "Dados de Geolocalização: Armazenados por um período máximo de 4 meses a contar da recolha, exceto se necessários para a resolução de litígios ou reclamações em curso.",
-                        "Marketing e Perfis: Conservados durante 24 meses para marketing e 12 meses para definição de perfis a partir do último contacto ativo do Utilizador, ou até que o consentimento seja revogado."
-                    ]
-                },
-                {
-                    "title": "5. Destinatários dos Dados",
-                    "content": "Para a correta execução dos serviços, a Way2Go poderá partilhar dados com:",
-                    "list": [
-                        "Pessoal interno autorizado das áreas administrativa, comercial e de suporte técnico.",
-                        "Prestadores de serviços subcontratados que atuem em nome da Way2Go (ex.: gateways de pagamento, serviços de alojamento em nuvem, prestadores de infraestrutura tecnológica e motoristas/parceiros de transporte encarregues da execução da viagem).",
-                        "Autoridades públicas, fiscais ou judiciais competentes, sempre que exigido por lei ou para a defesa de direitos legais."
-                    ]
-                },
-                {
-                    "title": "6. Transferências Internacionais de Dados",
-                    "content": "Os dados são tratados e armazenados preferencialmente no Espaço Económico Europeu (EEE). Caso alguma ferramenta tecnológica auxiliar exija a transferência de dados para fora do EEE, a Way2Go assegurará que o país de destino garante um nível de proteção adequado ou que a transferência é salvaguardada pelas Cláusulas Contratuais-Tipo aprovadas pela Comissão Europeia (Artigo 46.º do RGPD)."
-                },
-                {
-                    "title": "7. Direitos dos Titulares dos Dados",
-                    "content": "Nos termos do RGPD, o Utilizador tem o direito de solicitar à Way2Go:",
-                    "list": [
-                        "Acesso e Retificação: Consultar os seus dados e corrigir informações inexatas ou incompletas.",
-                        "Apagamento (\"Direito a ser Esquecido\"): Solicitar a eliminação dos seus dados quando estes já não forem necessários ou quando retirar o consentimento.",
-                        "Limitação e Oposição: Limitar o tratamento de determinados dados ou opor-se ao tratamento baseado em interesses legítimos ou para fins de marketing.",
-                        "Portabilidade: Receber os seus dados num formato estruturado, de uso corrente e leitura automática."
-                    ],
-                    "footer": "Para exercer os seus direitos, o Utilizador deverá enviar um pedido assinado para o e-mail: privacy@way2go.pt. O Utilizador tem também o direito de apresentar uma reclamação à autoridade de controlo competente (em Portugal, a Comissão Nacional de Proteção de Dados - CNPD)."
-                },
-                {
-                    "title": "8. Medidas de Segurança",
-                    "content": "A Way2Go implementa medidas de segurança técnicas e organizativas adequadas (incluindo encriptação de dados, protocolos HTTPS e certificados SSL) para proteger os dados pessoais contra acessos não autorizados, alteração, divulgação ou destruição acidental."
-                }
-            ]
+      "title": "Política de Cookies",
+      "updated": "Última atualização: {date}",
+      "sections": [
+        {
+          "title": "1. O que são cookies?",
+          "content": "Cookies são pequenos ficheiros de texto armazenados no seu dispositivo para melhorar a navegação."
         },
-        "terms": {
-            "title": "Termos de Utilização e Termos Gerais de Serviço",
-            "updated": "Última atualização: Maio de 2026",
-            "intro": [
-                "A plataforma www.way2go.pt e a aplicação móvel Way2Go (doravante designadas conjuntamente por \"Plataforma\") são propriedade e geridas pela Way2Go (doravante \"Fornecedor\" ou \"Way2Go\").",
-                "Qualquer informação, suporte, pedido ou reclamação poderá ser encaminhado para o Serviço de Apoio ao Cliente através do e-mail: support@way2go.pt ou através do chat interativo presente na Plataforma."
-            ],
-            "parts": [
-                {
-                    "title": "PARTE I: Termos de Utilização da Plataforma",
-                    "sections": [
-                        {
-                            "title": "1. Utilização da Plataforma",
-                            "content": "Ao utilizar a Plataforma, o Utilizador compromete-se a:",
-                            "list": [
-                                "Utilizá-la exclusivamente para consultas legítimas e reservas lícitas.",
-                                "Não efetuar reservas falsas ou fraudulentas. Se houver motivos razoáveis para crer que uma reserva é dessa natureza, a Way2Go reserva-se o direito de a cancelar e informar as autoridades competentes.",
-                                "Fornecer o seu endereço de e-mail, número de telefone e/ou outros dados de contacto de forma correta e verídica, consentindo na sua utilização para gerir a reserva (conforme a Política de Privacidade)."
-                            ],
-                            "afterList": [
-                                "Se não fornecer todas as informações necessárias, não será possível processar o seu pedido. A Way2Go não se responsabiliza por quaisquer inconvenientes ou danos resultantes da utilização da Internet, incluindo interrupções de serviço, intrusões externas, presença de vírus ou casos de força maior."
-                            ]
-                        },
-                        {
-                            "title": "2. Propriedade Industrial e Intelectual",
-                            "content": "O nome de domínio da Plataforma, bem como a totalidade do ecossistema tecnológico Way2Go, os seus elementos individuais (fotografias, textos, vídeos, logótipos, software, etc.) e os presentes documentos legais constituem obras intelectuais e propriedade industrial exclusivas da Way2Go. É estritamente proibida qualquer reprodução, descarga, modificação ou utilização total ou parcial dos mesmos sem o consentimento prévio e por escrito da Way2Go."
-                        }
-                    ]
-                },
-                {
-                    "title": "PARTE II: Termos e Condições Gerais de Serviço",
-                    "sections": [
-                        {
-                            "title": "1. Definições",
-                            "list": [
-                                "Way2Go / Fornecedor: A entidade detentora da marca e da Plataforma, responsável pela intermediação e gestão tecnológica de contratos de transporte.",
-                                "Cliente: A pessoa singular ou coletiva que solicita a prestação dos Serviços. Salvo indicação em contrário, o Cliente atua também na qualidade de Passageiro.",
-                                "Passageiro: A pessoa final que usufruirá do transporte. Se for diferente do Cliente, declara-se autorizada por este a solicitar alterações ao trajeto.",
-                                "Plataforma: O portal web www.way2go.pt, a aplicação móvel Way2Go e as APIs de integração tecnológica.",
-                                "Reserva: A proposta de compra de serviços de transporte submetida pelo Cliente através da Plataforma.",
-                                "Serviços: A atividade de intermediação e facilitação tecnológica de transfers locais, transfers aeroportuários, viagens sob demanda (Ride-Hailing) ou reservas à hora operadas pela Way2Go.",
-                                "Transportador / Parceiro: O motorista profissional, empresa de transportes ou operador de frotas independente parceiro da Way2Go que executa materialmente o serviço de transporte sob o respetivo Contrato de Transporte."
-                            ]
-                        },
-                        {
-                            "title": "2. Objeto do Serviço",
-                            "list": [
-                                "2.1. A Way2Go disponibiliza uma Plataforma tecnológica para a intermediação de serviços de transporte e mobilidade. A pedido do Cliente, a Way2Go atua em seu nome para identificar, alocar e intermediar a viagem junto de um Transportador Parceiro licenciado.",
-                                "2.2. A obrigação da Way2Go no âmbito da intermediação e bom funcionamento da Plataforma é uma obrigação de meios e não de resultado no que concerne à execução física da viagem, a qual é da responsabilidade exclusiva do Transportador Parceiro adjudicado.",
-                                "2.3. Estes Termos podem ser atualizados a qualquer momento, sendo aplicada a versão em vigor à data da submissão da Reserva pelo Cliente."
-                            ]
-                        },
-                        {
-                            "title": "3. Registo e Gestão de Conta",
-                            "list": [
-                                "3.1. Para efetuar reservas e aceder a determinadas funcionalidades, o Cliente deve registar uma Conta fornecendo dados verídicos e manter um método de pagamento válido associado.",
-                                "3.2. A Conta é pessoal e intransmissível. O Cliente é o único responsável por manter a confidencialidade das suas credenciais de acesso. O Cliente deve notificar de imediato a Way2Go caso suspeite de utilização não autorizada da sua conta.",
-                                "3.3. O Cliente pode solicitar a eliminação da sua conta a qualquer momento através da opção \"Eliminar Conta\" na área reservada ou enviando um e-mail para privacy@way2go.pt."
-                            ]
-                        },
-                        {
-                            "title": "4. Processo de Reserva e Celebração do Contrato",
-                            "content": "4.1. Para realizar uma Reserva, o Cliente preenche o formulário eletrónico na Plataforma introduzindo: tipo de serviço, locais de recolha/destino, data, hora, número de passageiros, detalhes de bagagem e dados do Passageiro.",
-                            "subsections": [
-                                {
-                                    "title": "4.2. Serviços Adicionais Incluídos",
-                                    "list": [
-                                        "Meet & Greet: O motorista aguarda no terminal de chegadas com uma placa identificativa com o nome do Passageiro.",
-                                        "Tempo de Espera Gratuito: Nos transfers de aeroporto/porto/estação de comboio, está incluído um tempo de espera gratuito de 1 hora a partir da hora programada. Nos restantes transfers (moradas privadas, hotéis), o tempo gratuito é de 15 minutos.",
-                                        "Door to Door: O transporte efetua-se diretamente desde o ponto exato de recolha até à soleira do destino indicado."
-                                    ]
-                                }
-                            ],
-                            "afterList": [
-                                "4.3. Ao clicar em \"Pagar\", o Cliente emite uma proposta contratual de reserva vinculativa. O contrato de intermediação com a Way2Go considera-se concluído com a receção da \"Confirmação de Reserva\" por e-mail.",
-                                "4.4. A faturação do serviço de transporte é emitida pelo Transportador Parceiro que executa a viagem, sendo a Plataforma o meio facilitador da cobrança e disponibilização do respetivo documento fiscal na área de cliente."
-                            ]
-                        },
-                        {
-                            "title": "5. Alocação do Transportador e Veículos",
-                            "list": [
-                                "5.1. As imagens dos veículos na Plataforma são meramente ilustrativas da categoria do veículo (Sedan, Van, Minibus, etc.). O modelo real, cor e marca podem variar consoante a disponibilidade do parceiro local na região.",
-                                "5.2. A Way2Go reserva-se o direito de atribuir um veículo de categoria superior ou maior capacidade (Free Upgrade) para garantir a execução do serviço sem qualquer custo adicional para o Cliente.",
-                                "5.3. Até 24 horas antes do início do serviço, a Way2Go disponibiliza na área de cliente os dados de contacto do Transportador encarregue do serviço. Caso a reserva ocorra num período inferior, os dados estarão disponíveis imediatamente após a alocação do motorista."
-                            ]
-                        },
-                        {
-                            "title": "6. Cancelamentos, Alterações e Reembolsos",
-                            "list": [
-                                "6.1. Cancelamentos: O direito de livre resolução aplicável aos consumidores em contratos à distância não se aplica a estes serviços de transporte, por se tratarem de serviços com data e período de execução específicos (conforme a legislação de proteção do consumidor).",
-                                "6.2. No entanto, a Way2Go permite o cancelamento gratuito e reembolso total da Reserva se este for solicitado pelo Cliente na área reservada com mais de 24 horas de antecedência face à hora programada para o início do serviço. Cancelamentos efetuados com menos de 24 horas de antecedência não conferem direito a qualquer reembolso.",
-                                "6.3. Alterações: Pedidos de alteração (horários, rotas, categoria de veículo) solicitados com mais de 24 horas de antecedência são gratuitos, ficando o Cliente responsável pelo pagamento de eventuais taxas adicionais resultantes da alteração. Alterações com menos de 24 horas estão sujeitas a confirmação de disponibilidade por parte do Transportador e podem incorrer em sobretaxas operacionais.",
-                                "6.4. Não Comparência (No-Show): Se o Passageiro não comparecer no local e hora acordados após o decurso do tempo de espera gratuito, o serviço será considerado \"No-Show\" e o valor total será retido, sem direito a reembolso."
-                            ]
-                        },
-                        {
-                            "title": "7. Monitorização de Voos e Reagendamento",
-                            "list": [
-                                "7.1. Nos transfers associados a voos, caso o Cliente tenha introduzido corretamente o número do voo aquando da reserva, o Transportador Parceiro é responsável por monitorizar a hora estimada de chegada (ETA) e reprogramar a recolha em caso de atraso, até ao limite máximo de 6 (seis) horas de atraso face ao horário original.",
-                                "7.2. A reprogramação é calculada com base na hora real de aterragem do voo. Em caso de voo antecipado, mantém-se a hora originalmente selecionada pelo Cliente na reserva, salvo acordo em contrário com o motorista.",
-                                "7.3. Se, devido a restrições operacionais extremas, o Transportador alocado não conseguir assegurar o serviço no novo horário do voo atrasado dentro do limite de 6 horas, e não for possível encontrar outro parceiro viável, o Cliente terá direito ao reembolso total do montante pago pelo serviço não executado."
-                            ]
-                        },
-                        {
-                            "title": "8. Obrigações e Responsabilidades do Cliente",
-                            "list": [
-                                "8.1. O Cliente é o único responsável pela veracidade e exatidão de todos os dados introduzidos (moradas exatas, números de voo, horários de recolha).",
-                                "8.2. Transporte de Crianças: Se um ou mais passageiros forem menores, o Cliente deve solicitar obrigatoriamente os sistemas de retenção infantil adequados (cadeiras auto ou assentos elevatórios) no campo de extras da reserva. Caso não o faça e o Transportador se recuse a transportar os menores por incumprimento da lei rodoviária local, o serviço é considerado \"No-Show\" por culpa do Cliente e nenhum reembolso será devido.",
-                                "8.3. Bagagem e Animais: Cada passageiro tem direito a uma bagagem de mão pequena e uma mala média (máx. 20 kg) acomodada na bagageira. O transporte de bagagem excessiva, volumes fora de formato ou animais de estimação (em caixa de transporte adequada) deve ser expressamente comunicado e validado na Reserva."
-                            ]
-                        },
-                        {
-                            "title": "9. Resolução Alternativa de Litígios (RAL) e Lei Aplicável",
-                            "list": [
-                                "9.1. Os presentes Termos e Condições são regulados pela Lei Portuguesa.",
-                                "9.2. Em caso de litígio de consumo, o Cliente consumidor poderá recorrer às entidades de Resolução Alternativa de Litígios de Consumo (RAL) em Portugal, nomeadamente o Centro de Arbitragem de Conflitos de Consumo do Vale do Ave, Centro de Informação de Consumo e Arbitragem do Porto (CICAP), ou recorrer à Plataforma Europeia de Resolução de Litígios em Linha disponível em http://ec.europa.eu/consumers/odr/.",
-                                "9.3. Para a resolução de quaisquer litígios judiciais emergentes do presente contrato que não possam ser resolvidos por via amigável ou mediação de consumo, as partes estipulam como competente o foro da Comarca do Porto, com expressa renúncia a qualquer outro."
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        "cookies": {
-            "title": "Política de Cookies",
-            "updated": "Última atualização: {date}",
-            "sections": [
-                {
-                    "title": "1. O que são cookies?",
-                    "content": "Cookies são pequenos ficheiros de texto armazenados no seu dispositivo para melhorar a navegação."
-                },
-                {
-                    "title": "2. Como usamos",
-                    "content": "Usamos cookies técnicos para o funcionamento do site e analíticos para estatísticas de visita."
-                }
-            ]
+        {
+          "title": "2. Como usamos",
+          "content": "Usamos cookies técnicos para o funcionamento do site e analíticos para estatísticas de visita."
         }
+      ]
     }
+  }
 }

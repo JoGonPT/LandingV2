@@ -19,7 +19,26 @@ interface FooterProps {
 
 const WHATSAPP_NUMBER = "351913281953";
 const WHATSAPP_HREF   = `https://wa.me/${WHATSAPP_NUMBER}`;
-const EMAIL           = "reservas@vruum.pt";
+/**
+ * O endereço mostrado e o endereço de entrega são distintos **de propósito**,
+ * e provisoriamente.
+ *
+ * A marca que o cliente vê é Way2Go. Mas a caixa `reservas@way2go.pt` ainda não
+ * existe, e apontar o `mailto:` para uma caixa inexistente faz o email do
+ * cliente ser devolvido — quem recebe um bounce raramente tenta outra via.
+ * Até a caixa estar ativa, o link entrega em `reservas@vruum.pt`, que existe.
+ *
+ * Contrapartida assumida: o cliente que clicar vê `reservas@vruum.pt` no
+ * destinatário do seu programa de email. É uma inconsistência de marca visível,
+ * mas preferível a perder a mensagem.
+ *
+ * ➡️ Quando `reservas@way2go.pt` existir (caixa ou alias), apagar
+ * `EMAIL_DELIVERY` e deixar o `mailto:` usar o `EMAIL_DISPLAY`.
+ * O formulário do site não é afetado: entrega via `LEADS_INTERNAL_EMAIL`,
+ * em `api/send-budget`. Ver F2-1 em docs/TODO.md.
+ */
+const EMAIL_DISPLAY   = "reservas@way2go.pt";
+const EMAIL_DELIVERY  = "reservas@vruum.pt";
 
 export default function Footer({ dict, locale }: FooterProps) {
     const year      = new Date().getFullYear();
@@ -56,10 +75,10 @@ export default function Footer({ dict, locale }: FooterProps) {
                             <div className="flex flex-col gap-0.5">
                                 <span className="text-xs text-gray-400">Email</span>
                                 <a
-                                    href={`mailto:${EMAIL}`}
+                                    href={`mailto:${EMAIL_DELIVERY}`}
                                     className="font-medium text-black transition-colors hover:text-gray-600"
                                 >
-                                    {EMAIL}
+                                    {EMAIL_DISPLAY}
                                 </a>
                             </div>
                             {/* WhatsApp */}
