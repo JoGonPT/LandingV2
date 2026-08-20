@@ -18,7 +18,10 @@ const eslintConfig = [
       "coverage/**",
       "next-env.d.ts",
       "nestjs-api/**",
-      "src/lib/transfercrm/**/*.js",
+      // A exclusão de `src/lib/transfercrm/**/*.js` foi removida com os próprios
+      // ficheiros: eram output compilado versionado ao lado das fontes `.ts`, e
+      // ficavam fora do lint — livres para divergir em silêncio do TypeScript
+      // que supostamente refletiam.
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
