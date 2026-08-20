@@ -39,6 +39,15 @@ export interface BookingPayload {
     distanceKm?: number;
   };
   vehicleType?: string;
+  /**
+   * Código da classe do catálogo do CRM (`GET /v2/vehicle-classes`).
+   *
+   * Preferir isto a `vehicleType`: a API só distingue níveis de serviço por
+   * aqui. Enviar apenas `vehicleType` fazia o CRM aplicar a tarifa mínima a
+   * todos os veículos, porque os valores do site (`berlina`, `first`, …) não
+   * existem no catálogo e eram ignorados em silêncio.
+   */
+  vehicleClassCode?: string;
   quotedPrice?: { amount: number; currency: string };
   contact: {
     fullName: string;
@@ -97,9 +106,35 @@ export interface TransferCrmVehicleOption {
   guestRetailPrice?: number;
 }
 
+/**
+ * Classe de veículo tal como o site a mostra ao cliente.
+ *
+ * Vem toda do CRM — nome, descrição, fotografia, lugares e preço. O site não
+ * tem catálogo próprio: era isso que fazia com que mudar um nome ou um preço no
+ * CRM não tivesse qualquer efeito no site.
+ */
+export interface TransferCrmVehicleClass {
+  /** Identificador estável; é o que se envia ao reservar. */
+  code: string;
+  name: string;
+  description?: string;
+  photoUrl?: string;
+  seats?: number;
+  seatsAvailable?: number;
+  serviceClass?: string;
+  tier?: number;
+  estimatedPrice?: number;
+  currency?: string;
+  includesDistance?: boolean;
+  /** Portal de parceiros: preço a mostrar ao hóspede (modelo de markup). */
+  guestRetailPrice?: number;
+}
+
 export interface TransferCrmAvailabilityResult {
   available: boolean;
   vehicleOptions: TransferCrmVehicleOption[];
+  /** Classes com preço para esta rota. Preferir isto a `vehicleOptions`. */
+  vehicleClasses: TransferCrmVehicleClass[];
   pickupLocation: string;
   dropoffLocation: string;
   pickupDate: string;
