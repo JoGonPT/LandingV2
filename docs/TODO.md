@@ -166,6 +166,7 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 | **§7-5** | Se a tabela de preços do seed corresponde aos preços praticados | Os valores estão em `supabase/migrations/20260419143000_native_engine_blueprint.sql`, mas nada no repositório confirma que são os comerciais atuais | Confirmar com a operação antes de expor preços ao público |
 | **§7-6** | Limites de rate da API do TransferCRM | `docs/transfercrm-rollout-checklist.md` menciona 60 req/min, mas é documentação interna, não resposta do fornecedor | Confirmar com o TransferCRM |
 | **§7-7** | Estado das avaliações reais no Trustpilot | Só existe a meta tag de verificação de domínio; não há widget nem dados | Conta Trustpilot da Way2Go |
+| **§7-9** | Se os 5 projetos Vercel redundantes têm variáveis de produção configuradas | A leitura do token do CLI da Vercel foi recusada, e o painel não é acessível a partir daqui | Painel da Vercel → cada projeto → Settings → Environment Variables. Se tiverem segredos de produção, convém apagar os projetos e não só desligar o Git |
 | **§7-8** | Se `booking_retry_queue` chegou a ser criada em produção | Está especificada em `docs/engine-agnostic-architecture.md` e o `OPERATIONAL_CHECKLIST.md` diz que o retry é "Condicional", e confirmei que não existe em nenhuma das 19 migrações do repositório | Inspecionar o schema Supabase de produção |
 
 ---
@@ -173,6 +174,64 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 ## 8. Registo de alterações
 
 Cada entrada regista o que mudou, como foi verificado, e o que se descobriu pelo caminho.
+
+### 21 ago 2026 — Recetor de webhooks a devolver 500; e seis projetos Vercel no mesmo repositório
+
+**O 500 do recetor de webhooks** (PR #7, `fix/recetor-de-webhooks`)
+
+O `POST /api/webhooks/transfercrm` verificava a assinatura e passava logo à lógica de negócio
+**sem qualquer `try/catch` à volta**. Essa lógica chama o cliente do TransferCRM, que lança quando
+a configuração falta, e a exceção subia até à resposta — 500 com corpo vazio, apesar de a
+assinatura estar a verificar corretamente. Foi isso que confundiu o diagnóstico: a sequência
+observada foi 401 (segredo errado) → segredo corrigido → 500, o que parecia agravamento e era
+apenas o passo seguinte a falhar.
+
+Um recetor de webhooks não deve devolver 500 numa entrega já verificada: o remetente reenvia o
+mesmo evento e a repetição não corrige a causa. Duas alterações em
+`src/app/api/webhooks/transfercrm/route.ts`:
+
+- a falha ao registar o evento é escrita no log e a entrega é aceite com 200;
+- deduplicação por `X-Webhook-Event-Id`, que a API garante manter igual entre tentativas. Sem
+  isto, um reenvio duplicaria o histórico de estados da reserva.
+
+A verificação de assinatura ficou intacta: assinatura de outro segredo continua 401, segredo em
+falta continua 202.
+
+Verificado: 6 testes novos em `src/app/api/webhooks/transfercrm/route.test.ts`, incluindo um de
+regressão que força `recordStatusEvent` a lançar e exige 200. Suite completa **144 testes em 19
+ficheiros**, todos a passar; `tsc --noEmit` sem erros; lint limpo; CI do PR verde.
+
+**Ainda não confirmado em produção.** O PR #7 não foi integrado — o merge foi recusado duas vezes
+pelo classificador de permissões. Só depois do deploy é que se pode disparar o teste a partir do
+CRM e ver 200. Até lá, o recetor em produção continua a devolver 500.
+
+**Os seis projetos Vercel**
+
+Ao investigar o check `landing-pages` que falhava em todos os PRs, a causa era um erro de escrita
+nas definições do projeto: o comando de build estava `npm run buid`. Falhava desde sempre, em
+qualquer commit e em qualquer branch — o build nunca chegava a começar. Não era um problema do
+código.
+
+Mas corrigir o typo teria piorado a situação, e é esse o achado que importa: **seis projetos
+Vercel estavam ligados ao mesmo repositório**, e quatro serviam cópias públicas e completas do
+site de produção. Medido com `curl`: `landingv2-eosin`, `workspace-six-eta-65`,
+`way2go-landing` e `landing-v3-one` respondiam todos 200 com o título de produção
+(`Way2Go | Transfers Privados e Serviço de Motorista`). O `landing-pages` estava protegido por
+login da Vercel. Corrigir o `buid` teria transformado o único projeto avariado numa quinta cópia
+pública a funcionar.
+
+Resolução, por decisão do João: **desligada a ligação Git dos cinco projetos redundantes**
+(`vercel git disconnect`). Deixam de fazer build a cada commit e desaparecem dos checks dos PRs.
+Os URLs `.vercel.app` existentes continuam no ar, congelados na versão de hoje — desligar o Git
+não remove deployments. É reversível.
+
+Confirmado depois: `landing-v2` — o projeto que serve `www.way2go.pt` — **continua ligado**
+(`vercel git connect` respondeu "already connected"), e o seu comando de build é `npm run build`,
+correto. Os deploys de produção estão intactos.
+
+Não verificado: se as cópias redundantes têm variáveis de produção configuradas. Se tiverem,
+cada uma aceitava reservas reais, emails reais e escritas no CRM real a partir de um endereço que
+ninguém vigia. Fica em §7-9.
 
 ### 20 ago 2026 — Validação contra a API real do TransferCRM: **erro de preço confirmado**
 
