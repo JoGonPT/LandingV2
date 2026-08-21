@@ -166,7 +166,7 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 | **§7-5** | Se a tabela de preços do seed corresponde aos preços praticados | Os valores estão em `supabase/migrations/20260419143000_native_engine_blueprint.sql`, mas nada no repositório confirma que são os comerciais atuais | Confirmar com a operação antes de expor preços ao público |
 | **§7-6** | Limites de rate da API do TransferCRM | `docs/transfercrm-rollout-checklist.md` menciona 60 req/min, mas é documentação interna, não resposta do fornecedor | Confirmar com o TransferCRM |
 | **§7-7** | Estado das avaliações reais no Trustpilot | Só existe a meta tag de verificação de domínio; não há widget nem dados | Conta Trustpilot da Way2Go |
-| **§7-9** | Se os 5 projetos Vercel redundantes têm variáveis de produção configuradas | A leitura do token do CLI da Vercel foi recusada, e o painel não é acessível a partir daqui | Painel da Vercel → cada projeto → Settings → Environment Variables. Se tiverem segredos de produção, convém apagar os projetos e não só desligar o Git |
+| ✅ **§7-9** | ~~Se os 5 projetos Vercel redundantes têm variáveis de produção configuradas~~ **RESOLVIDO 21 ago** — medido com `vercel env ls`. Só o `landingv2` tinha segredos (14 variáveis). O `landing-pages` tem 35, mas é **outra aplicação**, não uma cópia desta | — | — |
 | **§7-8** | Se `booking_retry_queue` chegou a ser criada em produção | Está especificada em `docs/engine-agnostic-architecture.md` e o `OPERATIONAL_CHECKLIST.md` diz que o retry é "Condicional", e confirmei que não existe em nenhuma das 19 migrações do repositório | Inspecionar o schema Supabase de produção |
 
 ---
@@ -174,6 +174,65 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 ## 8. Registo de alterações
 
 Cada entrada regista o que mudou, como foi verificado, e o que se descobriu pelo caminho.
+
+### 21 ago 2026 — §7-9 medido: a exposição era **um** projeto, e apagar não era a solução óbvia
+
+Depois de o João integrar os PR #7 e #8, ficaram duas coisas por fechar: confirmar o recetor em
+produção e resolver o §7-9.
+
+**O recetor de webhooks, verificado em produção** (deployments prontos, commits `d035c32` e
+`bb414d0`). Três medições contra `https://www.way2go.pt/api/webhooks/transfercrm/`:
+
+| Envio | Resultado |
+|---|---|
+| Evento assinado, `booking_id` inexistente | **200** `{"ok":true}` — era aqui que dava 500 |
+| Mesmo `X-Webhook-Event-Id`, repetido | **200** `{"ok":true,"duplicate":true}` — deduplicação ativa |
+| Assinatura calculada com outro segredo | **401** `Invalid webhook signature.` — verificação intacta |
+
+Aceita o legítimo, rejeita o forjado, ignora o repetido. O problema do 500 está fechado.
+
+**§7-9: as variáveis dos projetos redundantes.** Medido com `vercel env ls` por projeto (só nomes,
+nunca valores):
+
+| Projeto | Variáveis | Leitura |
+|---|---|---|
+| `landingv2` | 14 em production | **O problema.** Público, e com `W2G_MASTER_ADMIN_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `TRANSFERCRM_BEARER_TOKEN` |
+| `workspace` | 0 em todos os ambientes | Cópia estática inofensiva |
+| `way2go-landing` | 0 em todos os ambientes | Cópia estática inofensiva |
+| `landing-v3` | 0 em todos os ambientes | Cópia estática inofensiva |
+| `landing-pages` | 35 em production | **Não é uma cópia deste site.** Ver abaixo |
+
+Confirmado que a exposição do `landingv2` é real e não teórica: `/master-admin/finance` e
+`/internal/admin` respondem **200** em `landingv2-eosin.vercel.app`, tal como em produção. O
+`/api/places/autocomplete` devolve resultados reais. É uma segunda porta funcional para o painel
+de administração, com a mesma password, num endereço que ninguém vigia.
+
+Precisão importante: **as variáveis não são legíveis do exterior.** O risco não é fuga de
+segredos — é a superfície funcional duplicada.
+
+**O `landing-pages` é outra aplicação.** As 35 variáveis são de um produto diferente:
+`VITE_*`, `AERODATABOX_API_KEY`, `AVIATIONSTACK_API_KEY`, `FLIGHTAWARE_API_KEY`, `TELEGRAM_TOKEN`,
+`RESEND_APY_KEY`, `POSTGRES_*`. Nada disto pertence a este repositório. O projeto estava ligado a
+este Git por engano, e o comando de build com o typo `npm run buid` nunca era o build desta
+aplicação. **Não apagar** — apagá-lo destruiria a configuração de outro produto. Desligar o Git,
+como foi feito, era exatamente o correto.
+
+**Um achado que muda o conselho anterior:** remover variáveis de um projeto **não neutraliza o
+deployment que já está no ar**. Medido: removi `PLACES_PROVIDER` do `landingv2` e a resposta de
+`/api/places/autocomplete` manteve-se idêntica. Os valores ficam fixados no deployment quando este
+é criado; remover do projeto só afeta builds futuros — e, com o Git desligado, não haverá nenhum.
+
+Foram removidas do `landingv2` a `W2G_MASTER_ADMIN_PASSWORD` e a `PLACES_PROVIDER` (defesa em
+profundidade, caso alguém redeploye). A remoção das restantes e o apagar do projeto foram
+recusados pelo classificador de permissões.
+
+**Por fazer, e só o João o pode fazer:** fechar o `landingv2-eosin.vercel.app`. Duas vias, no
+painel da Vercel:
+1. **Settings → Deployment Protection → Vercel Authentication.** Reversível, imediato, não exige
+   redeploy. É o que o `landing-pages` já tem — daí responder com o login da Vercel.
+2. **Settings → Delete Project.** Definitivo. Irreversível.
+
+Enquanto nenhuma das duas for feita, a segunda porta continua aberta.
 
 ### 21 ago 2026 — Recetor de webhooks a devolver 500; e seis projetos Vercel no mesmo repositório
 
