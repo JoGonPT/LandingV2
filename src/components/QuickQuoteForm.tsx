@@ -9,6 +9,18 @@ import { useState, useMemo, useRef, useEffect, useId } from "react";
 type Lang = "pt" | "en";
 type VehicleType = "berlina" | "van" | "doubleVan" | "onRequest";
 
+/** Classe de veículo tal como o CRM a publica. Tudo — nome, preço, foto — vem de lá. */
+type CrmClass = {
+  code: string;
+  name: string;
+  description?: string;
+  photoUrl?: string;
+  seats?: number;
+  seatsAvailable?: number;
+  estimatedPrice?: number;
+  currency?: string;
+};
+
 interface FormState {
   pickup: string;
   dropoff: string;
@@ -71,6 +83,10 @@ const DICT = {
     flightOrTrain:    "Número de Voo / Comboio",
     observations:     "Observações",
     optional:         "opcional",
+    vehicleGroup:     "Escolha o veículo",
+    seatsUpTo:        "Até {n} lugares",
+    pricesLoading:    "A calcular preços…",
+    pricesUnavailable: "Não foi possível calcular o preço agora. Envie o pedido e respondemos com o valor.",
 
     pickupPlaceholder:       "Ex: Aeroporto de Lisboa (LIS)",
     dropoffPlaceholder:      "Ex: Four Seasons Hotel, Lisboa",
@@ -151,6 +167,10 @@ const DICT = {
     flightOrTrain:    "Flight / Train Number",
     observations:     "Observations",
     optional:         "optional",
+    vehicleGroup:     "Choose your vehicle",
+    seatsUpTo:        "Up to {n} seats",
+    pricesLoading:    "Calculating prices…",
+    pricesUnavailable: "We could not calculate the price right now. Send your request and we will reply with the amount.",
 
     pickupPlaceholder:        "e.g. Lisbon Airport (LIS)",
     dropoffPlaceholder:       "e.g. Four Seasons Hotel, Lisbon",
@@ -750,6 +770,13 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
 
   // Honeypot anti-bot: invisível para pessoas, preenchido por bots que
   // submetem todos os campos do formulário. Ver /api/send-budget.
+  // Catálogo do CRM para esta viagem. Só é pedido quando o trajeto está
+  // completo — sem origem, destino e data não há preço para calcular.
+  const [crmClasses, setCrmClasses]     = useState<CrmClass[]>([]);
+  const [classCode, setClassCode]       = useState<string>("");
+  const [classesLoading, setClassesLoading] = useState(false);
+  const [classesError, setClassesError] = useState<string | null>(null);
+
   const [website, setWebsite]         = useState("");
   const [submitting, setSubmitting]   = useState(false);
   const [submitted, setSubmitted]     = useState(false);
@@ -758,6 +785,83 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
 
   const t           = DICT[lang];
   const vehicleType = useMemo(() => inferVehicle(form.passengers, form.luggage), [form.passengers, form.luggage]);
+
+  /**
+   * Pede ao CRM os veículos disponíveis para esta viagem, com preço.
+   *
+   * Debounce de 600 ms: o trajeto muda a cada tecla e cada pedido custa uma
+   * chamada ao CRM. Cancela-se o anterior para uma resposta lenta não
+   * sobrepor-se a uma mais recente.
+   */
+  useEffect(() => {
+    const { pickup, dropoff, date, time, passengers } = form;
+    if (!pickup.trim() || !dropoff.trim() || !date || !time) {
+      setCrmClasses([]);
+      setClassCode("");
+      setClassesError(null);
+      return;
+    }
+
+    let cancelado = false;
+    const timer = setTimeout(async () => {
+      setClassesLoading(true);
+      setClassesError(null);
+      try {
+        const res = await fetch("/api/booking/vehicles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // A rota espera o payload dentro de `payload`, e valida sem exigir
+          // contacto — dá para cotar antes de o cliente se identificar.
+          body: JSON.stringify({
+            payload: {
+              locale: lang,
+              route: { pickup, dropoff, date, time, childSeat: false },
+              details: { passengers, luggage: form.luggage },
+            },
+          }),
+        });
+        if (cancelado) return;
+
+        const body = (await res.json().catch(() => null)) as
+          | { success?: boolean; vehicleClasses?: CrmClass[]; message?: string }
+          | null;
+
+        if (!res.ok || !body?.success || !Array.isArray(body.vehicleClasses)) {
+          setCrmClasses([]);
+          setClassesError(body?.message ?? null);
+          return;
+        }
+
+        setCrmClasses(body.vehicleClasses);
+        // Pré-seleciona o mais barato: é o que o cliente esperaria por defeito.
+        const maisBarato = [...body.vehicleClasses]
+          .filter((c) => typeof c.estimatedPrice === "number")
+          .sort((a, b) => (a.estimatedPrice ?? 0) - (b.estimatedPrice ?? 0))[0];
+        setClassCode((atual) =>
+          body.vehicleClasses!.some((c) => c.code === atual)
+            ? atual
+            : (maisBarato?.code ?? body.vehicleClasses![0]?.code ?? ""),
+        );
+      } catch {
+        if (!cancelado) {
+          setCrmClasses([]);
+          setClassesError(null);
+        }
+      } finally {
+        if (!cancelado) setClassesLoading(false);
+      }
+    }, 600);
+
+    return () => {
+      cancelado = true;
+      clearTimeout(timer);
+    };
+  }, [form, lang]);
+
+  const classeEscolhida = useMemo(
+    () => crmClasses.find((c) => c.code === classCode),
+    [crmClasses, classCode],
+  );
   const isOnRequest = vehicleType === "onRequest";
   const todayISO    = new Date().toISOString().split("T")[0];
 
@@ -811,7 +915,17 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
       cadeiraCrianca: extras.cadeiraCrianca,
       assentoBooster: extras.assentoBooster,
       veiculo:        vehicleType,
-      veiculoLabel:   vehicleDisplay.name,
+      veiculoLabel:   classeEscolhida?.name ?? vehicleDisplay.name,
+      // O código da classe é o que identifica o veículo no CRM; o preço é o
+      // que o cliente viu ao submeter, e fica registado no pedido.
+      ...(classeEscolhida
+        ? {
+            vehicleClassCode: classeEscolhida.code,
+            ...(typeof classeEscolhida.estimatedPrice === "number"
+              ? { precoEstimado: classeEscolhida.estimatedPrice, moeda: classeEscolhida.currency ?? "EUR" }
+              : {}),
+          }
+        : {}),
       name:           form.name,
       email:          form.email,
       phone:          form.phone,
@@ -842,7 +956,7 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
         cadeiraBebe:    extras.cadeiraBebe,
         cadeiraCrianca: extras.cadeiraCrianca,
         assentoBooster: extras.assentoBooster,
-        veiculoLabel:   vehicleDisplay.name,
+        veiculoLabel:   classeEscolhida?.name ?? vehicleDisplay.name,
         name:           form.name,
         email:          form.email,
         phone:          form.phone,
@@ -1050,7 +1164,59 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
               </p>
             </div>
           </div>
+        ) : crmClasses.length > 0 ? (
+          /* Catálogo do CRM: nomes, fotos e preços vêm todos de lá. */
+          <ul className="space-y-2" role="radiogroup" aria-label={t.vehicleGroup}>
+            {crmClasses.map((c) => {
+              const activo = classCode === c.code;
+              const lugares = c.seatsAvailable ?? c.seats;
+              return (
+                <li key={c.code}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={activo}
+                    onClick={() => setClassCode(c.code)}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
+                      activo ? "border-black bg-white ring-1 ring-black" : "border-neutral-200 bg-white hover:border-neutral-400"
+                    }`}
+                  >
+                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-black">
+                      {c.code.includes("van") ? <IconVan /> : <IconSedan />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-black">{c.name}</span>
+                      {lugares ? (
+                        <span className="block text-xs text-neutral-500">
+                          {t.seatsUpTo.replace("{n}", String(lugares))}
+                        </span>
+                      ) : null}
+                    </span>
+                    {typeof c.estimatedPrice === "number" ? (
+                      <span className="flex-shrink-0 text-right">
+                        <span className="block text-lg font-semibold tabular-nums text-black">
+                          {new Intl.NumberFormat(lang === "en" ? "en-GB" : "pt-PT", {
+                            style: "currency",
+                            currency: c.currency ?? "EUR",
+                          }).format(c.estimatedPrice)}
+                        </span>
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : classesLoading ? (
+          <p className="text-sm text-neutral-500">{t.pricesLoading}</p>
+        ) : classesError ? (
+          /* O CRM não conseguiu calcular. Diz-se, em vez de mostrar um veículo
+             sugerido sem preço como se estivesse tudo bem — o pedido segue na
+             mesma e a equipa responde com o valor. */
+          <p className="text-sm text-neutral-600">{t.pricesUnavailable}</p>
         ) : (
+          /* Sem catálogo: mostra o veículo sugerido, como antes. Acontece
+             quando o trajeto ainda não está completo ou o CRM não respondeu. */
           <div className="flex items-center gap-3">
             <div className="flex flex-shrink-0 items-center gap-1">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black transition-all duration-300">
