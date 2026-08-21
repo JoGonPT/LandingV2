@@ -1,7 +1,23 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { useState } from "react";
+
 import { QuickQuoteForm } from "./QuickQuoteForm";
+
+/**
+ * O funil só é descarregado quando está ligado.
+ *
+ * O `BookingForm` traz o Stripe Elements atrás dele. Importá-lo normalmente
+ * punha esse peso no bundle da página inicial mesmo com o funil desligado — e
+ * esta é a página cuja velocidade de carregamento mais custa ao negócio.
+ * `ssr: false` porque o Stripe só existe no browser.
+ */
+const BookingForm = dynamic(() => import("./BookingForm"), {
+    ssr: false,
+    loading: () => <div className="min-h-[420px] animate-pulse rounded-xl bg-neutral-100" />,
+});
 
 interface HeroSectionProps {
     dict: {
@@ -10,11 +26,22 @@ interface HeroSectionProps {
         subtitle: string;
         cta: string;
     };
+    /** Dicionário do funil. Só é necessário quando o modo é `funnel`. */
+    bookingDict?: Record<string, unknown>;
+    /** Resolvido no servidor, para não ficar gravado no bundle do browser. */
+    bookingUiMode?: "quote" | "funnel";
     locale: string;
 }
 
-export default function HeroSection({ dict, locale }: HeroSectionProps) {
+export default function HeroSection({ dict, bookingDict, bookingUiMode, locale }: HeroSectionProps) {
     const isPT = locale === "pt";
+
+    // O funil ocupa a página a partir do momento em que o cliente escolhe
+    // veículo: a partir daí está a comprar, e o título e a imagem passam a
+    // distrair de uma decisão já tomada.
+    const [formPhase, setFormPhase] = useState<"form" | "vehicles" | "payment">("form");
+    const useFunnel = bookingUiMode === "funnel" && bookingDict !== undefined;
+    const bookingOnlyMode = useFunnel && formPhase !== "form";
 
     // A copy vem do dicionário nos dois idiomas. Havia aqui uma sobreposição em
     // português hardcoded que ignorava `dict.title`/`dict.subtitle`: o PT falava
@@ -24,15 +51,23 @@ export default function HeroSection({ dict, locale }: HeroSectionProps) {
     const mainSubtitle = dict.subtitle;
 
     return (
-        <section className="relative min-h-screen overflow-hidden bg-white px-6 py-20 pt-32">
-            <div className="relative mx-auto w-full max-w-7xl">
-                <div className="flex flex-col items-stretch gap-12 lg:flex-row lg:gap-20">
+        <section
+            className={`relative min-h-screen overflow-hidden bg-white ${
+                bookingOnlyMode ? "px-4 py-10 pt-24 lg:px-6" : "px-6 py-20 pt-32"
+            }`}
+        >
+            <div className={`relative mx-auto w-full ${bookingOnlyMode ? "max-w-6xl" : "max-w-7xl"}`}>
+                <div
+                    className={`flex flex-col items-stretch ${
+                        bookingOnlyMode ? "gap-0" : "gap-12 lg:flex-row lg:gap-20"
+                    }`}
+                >
 
                     {/* ── ESQUERDA: Título + Formulário de Orçamento ────────────── */}
-                    <div className="flex w-full flex-col justify-between lg:w-1/2">
+                    <div className={`flex w-full flex-col justify-between ${bookingOnlyMode ? "" : "lg:w-1/2"}`}>
                         <div>
                             {/* Título da Hero */}
-                            <div className="mb-8 text-center lg:text-left">
+                            <div className={`mb-8 text-center lg:text-left ${bookingOnlyMode ? "hidden" : ""}`}>
                                 <h1
                                     className="font-bold leading-tight tracking-tight text-black"
                                     style={{ fontSize: "clamp(1.5rem, 6vw, 3.2rem)" }}
@@ -47,14 +82,22 @@ export default function HeroSection({ dict, locale }: HeroSectionProps) {
                                 </p>
                             </div>
 
-                            {/* Formulário de Orçamento Rápido Bilingue */}
+                            {/* Formulário: orçamento por omissão, funil completo quando ligado */}
                             <div className="w-full rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm md:p-6">
-                                <QuickQuoteForm locale={locale} />
+                                {useFunnel ? (
+                                    <BookingForm
+                                        dict={bookingDict as never}
+                                        locale={locale}
+                                        onPhaseChange={setFormPhase}
+                                    />
+                                ) : (
+                                    <QuickQuoteForm locale={locale} />
+                                )}
                             </div>
                         </div>
 
                         {/* Trustpilot */}
-                        <div className="mt-8 flex justify-center lg:justify-start">
+                        <div className={`mt-8 flex justify-center lg:justify-start ${bookingOnlyMode ? "hidden" : ""}`}>
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-bold">EXCELLENT</span>
                                 <div className="flex gap-0.5">
@@ -77,7 +120,7 @@ export default function HeroSection({ dict, locale }: HeroSectionProps) {
                     </div>
 
                     {/* ── DIREITA: Painel visual premium ───────────────────────── */}
-                    <div className="relative hidden w-full lg:block lg:w-1/2">
+                    <div className={`relative w-full lg:w-1/2 ${bookingOnlyMode ? "hidden" : "hidden lg:block"}`}>
                         <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-neutral-900 shadow-2xl">
                             {/* Fotografia de fundo */}
                             <Image
