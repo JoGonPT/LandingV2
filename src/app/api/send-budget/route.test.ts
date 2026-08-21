@@ -210,3 +210,35 @@ describe("escapeHtml", () => {
         expect(html).not.toContain("O'Brien");
     });
 });
+
+describe("preço e classe escolhida", () => {
+    const email = () => sendMail.mock.calls[0][0] as { html: string };
+    const discord = () =>
+        JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string);
+
+    it("aceita o pedido sem preço — o CRM pode não ter conseguido cotar", async () => {
+        expect((await post(VALID)).status).toBe(200);
+    });
+
+    it("regista o preço que o cliente viu, no email e no Discord", async () => {
+        await post({
+            ...VALID,
+            vehicleClassCode: "premium-van",
+            precoEstimado: 79.97,
+            moeda: "EUR",
+        });
+
+        // Sem isto, quem responde ao lead não sabe que valor foi mostrado e
+        // arrisca cotar outro.
+        expect(email().html).toContain("79,97");
+        const campos = discord().embeds[0].fields as { name: string; value: string }[];
+        const preco = campos.find((f) => f.name.includes("Preço Mostrado"));
+        expect(preco?.value).toContain("79,97");
+        expect(preco?.value).toContain("premium-van");
+    });
+
+    it("recusa um preço negativo", async () => {
+        const res = await post({ ...VALID, precoEstimado: -10 });
+        expect(res.status).toBe(400);
+    });
+});

@@ -86,6 +86,10 @@ export async function POST(request: Request) {
         requestId,
         available: result.available,
         vehicles: quotedVehicles,
+        // O catálogo do CRM já traz o preço de cada classe na disponibilidade —
+        // não é preciso cotar uma a uma. É esta a lista a mostrar ao cliente:
+        // `vehicles` é por categoria e não distingue standard de premium.
+        vehicleClasses: result.vehicleClasses,
         pickupLocation: result.pickupLocation,
         dropoffLocation: result.dropoffLocation,
         pickupDate: result.pickupDate,

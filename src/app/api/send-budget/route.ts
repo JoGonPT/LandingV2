@@ -24,6 +24,11 @@ const schema = z.object({
   assentoBooster: z.number().int().min(0).max(20),
   veiculo:        z.string().min(1).max(60),
   veiculoLabel:   z.string().min(1).max(120),
+  /** Classe do catálogo do CRM escolhida pelo cliente, quando houve preço. */
+  vehicleClassCode: z.string().max(60).optional(),
+  /** Preço que o cliente viu ao submeter — fica no registo do pedido. */
+  precoEstimado:  z.number().nonnegative().max(1_000_000).optional(),
+  moeda:          z.string().max(8).optional(),
   name:           z.string().min(1).max(120),
   email:          z.string().email().max(254),
   phone:          z.string().min(1).max(40),
@@ -229,6 +234,18 @@ function formatDateTime(dateTime: string, locale: "pt" | "en" = "pt"): string {
   return `${date} ${locale === "en" ? "at" : "às"} ${timePart}`;
 }
 
+/** O preço é o que o cliente viu; formatá-lo mal seria pior do que não o mostrar. */
+function formatPrice(amount: number, currency: string | undefined, locale: "pt" | "en"): string {
+  try {
+    return new Intl.NumberFormat(locale === "en" ? "en-GB" : "pt-PT", {
+      style: "currency",
+      currency: currency || "EUR",
+    }).format(amount);
+  } catch {
+    return `${amount} ${currency || "EUR"}`;
+  }
+}
+
 function summaryRow(label: string, value: string): string {
   return `
   <tr>
@@ -267,6 +284,7 @@ const CLIENT_EMAIL_COPY = {
       vehicle:   "Viatura Sugerida",
       extras:    "Extras",
       flight:    "Voo / Comboio",
+      price:     "Preço Estimado",
     },
     bag:  (n: number) => `${n} mala${n !== 1 ? "s" : ""}`,
     seats: { baby: "Cadeira de Bebé", child: "Cadeira de Criança", booster: "Assento Elevatório" },
@@ -291,6 +309,7 @@ const CLIENT_EMAIL_COPY = {
       vehicle:   "Suggested Vehicle",
       extras:    "Extras",
       flight:    "Flight / Train",
+      price:     "Estimated Price",
     },
     bag:  (n: number) => `${n} bag${n !== 1 ? "s" : ""}`,
     seats: { baby: "Baby Seat", child: "Child Seat", booster: "Booster Seat" },
@@ -313,6 +332,9 @@ function buildClientHtml(d: BudgetPayload): string {
     summaryRow(t.rows.luggage, t.bag(d.bagagem)),
     summaryRow(t.rows.vehicle, escapeHtml(d.veiculoLabel)),
     ...(extraLines.length > 0 ? [summaryRow(t.rows.extras, extraLines.join("<br/>"))] : []),
+    ...(d.precoEstimado !== undefined
+      ? [summaryRow(t.rows.price, formatPrice(d.precoEstimado, d.moeda, d.idioma))]
+      : []),
     ...(d.flightOrTrain ? [summaryRow(t.rows.flight, escapeHtml(d.flightOrTrain))] : []),
   ].join("");
 
@@ -527,8 +549,18 @@ function buildDiscordPayload(d: BudgetPayload) {
     { name: "👥 Passageiros", value: String(d.passageiros),       inline: true },
     { name: "🧳 Bagagem",     value: `${d.bagagem} mala${d.bagagem !== 1 ? "s" : ""}`, inline: true },
 
-    { name: "🚗 Veículo Sugerido", value: d.veiculoLabel, inline: false },
+    { name: "🚗 Veículo Escolhido", value: d.veiculoLabel, inline: false },
   ];
+
+  if (d.precoEstimado !== undefined) {
+    // O preço que o cliente viu. Sem isto, quem responde não sabe o que foi
+    // mostrado e arrisca cotar um valor diferente.
+    fields.push({
+      name: "💶 Preço Mostrado",
+      value: `${formatPrice(d.precoEstimado, d.moeda, d.idioma)}${d.vehicleClassCode ? ` · ${d.vehicleClassCode}` : ""}`,
+      inline: false,
+    });
+  }
 
   const extraLines: string[] = [];
   if (d.cadeiraBebe    > 0) extraLines.push(`Cadeira de Bebé: ${d.cadeiraBebe}`);
