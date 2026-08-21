@@ -14,6 +14,11 @@ export interface BookingRequestDto {
   datetime: string;
   passengers: number;
   vehicleType: string;
+  /**
+   * Código do catálogo do CRM. Sem ele, a cotação que gera o pagamento aplica
+   * a tarifa mínima — o cliente veria um preço e seria cobrado outro.
+   */
+  vehicleClassCode?: string;
   customer: {
     name: string;
     email: string;
@@ -79,6 +84,8 @@ export function parseBookingRequestDto(body: unknown): { ok: true; data: Booking
   const fiscalVat = typeof b.fiscalVat === "string" && b.fiscalVat.trim() ? b.fiscalVat.trim() : undefined;
   const distanceKm =
     typeof b.distanceKm === "number" && Number.isFinite(b.distanceKm) && b.distanceKm > 0 ? b.distanceKm : undefined;
+  const vehicleClassCode =
+    typeof b.vehicleClassCode === "string" && b.vehicleClassCode.trim() ? b.vehicleClassCode.trim() : undefined;
 
   return {
     ok: true,
@@ -88,6 +95,7 @@ export function parseBookingRequestDto(body: unknown): { ok: true; data: Booking
       datetime: b.datetime.trim(),
       passengers: b.passengers,
       vehicleType: b.vehicleType.trim(),
+      ...(vehicleClassCode ? { vehicleClassCode } : {}),
       customer: {
         name: c.name.trim(),
         email: c.email.trim(),
@@ -131,6 +139,8 @@ export function buildBookingPayloadFromBookingRequestDto(dto: BookingRequestDto)
       ...(dto.notes?.trim() ? { notes: dto.notes.trim() } : {}),
     },
     vehicleType: dto.vehicleType.trim(),
+    // Chega ao mapeador como `vehicle_class_code` e decide o preço.
+    ...(dto.vehicleClassCode ? { vehicleClassCode: dto.vehicleClassCode } : {}),
     contact: {
       fullName: dto.customer.name.trim(),
       email: dto.customer.email.trim(),
