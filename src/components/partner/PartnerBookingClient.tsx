@@ -11,6 +11,7 @@ import type {
   BookingLocale,
   CheckoutCompleteSuccess,
   PartnerPricingSummary,
+  TransferCrmVehicleClass,
   TransferCrmVehicleOption,
 } from "@/lib/transfercrm/types";
 import type { QuoteResponse } from "@/lib/transfercrm/openapi.types";
@@ -53,6 +54,21 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
   const [phase, setPhase] = useState<Phase>("form");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [vehicleClasses, setVehicleClasses] = useState<TransferCrmVehicleClass[]>([]);
+
+  /**
+   * O valor selecionado pode ser um código do catálogo do CRM ou, quando não há
+   * catálogo, uma categoria. Envia-se no campo certo: só o `vehicle_class_code`
+   * faz o CRM aplicar o nível de serviço — a categoria sozinha resulta na
+   * tarifa mínima para todos os veículos.
+   */
+  const vehicleFields = useCallback(
+    (value: string) =>
+      vehicleClasses.some((c) => c.code === value)
+        ? { vehicleClassCode: value, vehicleType: undefined }
+        : { vehicleType: value, vehicleClassCode: undefined },
+    [vehicleClasses],
+  );
   const [vehicleOptions, setVehicleOptions] = useState<TransferCrmVehicleOption[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [pendingPayload, setPendingPayload] = useState<BookingPayload | null>(null);
@@ -178,7 +194,7 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
         body: JSON.stringify({
           slug,
           payload: pendingPayload,
-          vehicleType: selectedVehicle,
+          ...vehicleFields(selectedVehicle),
           internalReference: internalReference.trim() || undefined,
           vipRequests: vipRequests.trim() || undefined,
         }),
@@ -223,7 +239,7 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
     return () => {
       cancelled = true;
     };
-  }, [authenticated, phase, pendingPayload, selectedVehicle, slug, internalReference, vipRequests]);
+  }, [authenticated, phase, pendingPayload, selectedVehicle, slug, internalReference, vipRequests, vehicleFields]);
 
   useEffect(() => {
     if (!eligibility?.success || !payOnAccount) return;
@@ -400,7 +416,12 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
         body: JSON.stringify({ slug, payload }),
       });
       const body = (await response.json().catch(() => null)) as
-        | { success?: boolean; vehicles?: TransferCrmVehicleOption[]; message?: string }
+        | {
+            success?: boolean;
+            vehicles?: TransferCrmVehicleOption[];
+            vehicleClasses?: TransferCrmVehicleClass[];
+            message?: string;
+          }
         | null;
 
       if (response.status === 401) {
@@ -418,8 +439,11 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
         return;
       }
 
+      const classes = Array.isArray(body.vehicleClasses) ? body.vehicleClasses : [];
       setVehicleOptions(body.vehicles);
-      setSelectedVehicle(body.vehicles[0]?.vehicleType ?? "");
+      setVehicleClasses(classes);
+      // O catálogo do CRM manda: o `code` é o que faz cotar o nível certo.
+      setSelectedVehicle(classes[0]?.code ?? body.vehicles[0]?.vehicleType ?? "");
       setPendingPayload(payload);
       setPhase("vehicles");
     } catch {
@@ -453,7 +477,7 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
           body: JSON.stringify({
             slug,
             payload: pendingPayload,
-            vehicleType: selectedVehicle,
+            ...vehicleFields(selectedVehicle),
             internalReference: internalReference.trim() || undefined,
             vipRequests: vipRequests.trim() || undefined,
           }),
@@ -497,7 +521,7 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
         body: JSON.stringify({
           slug,
           payload: pendingPayload,
-          vehicleType: selectedVehicle,
+          ...vehicleFields(selectedVehicle),
           internalReference: internalReference.trim() || undefined,
           vipRequests: vipRequests.trim() || undefined,
         }),
@@ -543,7 +567,7 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
           checkoutStorageKey(slug),
           JSON.stringify({
             payload: pendingPayload,
-            vehicleType: selectedVehicle,
+            ...vehicleFields(selectedVehicle),
             paymentIntentId: body.paymentIntentId,
             internalReference,
             vipRequests,
@@ -873,6 +897,7 @@ export function PartnerBookingClient({ slug, displayName }: { slug: string; disp
           ) : null}
           <VehicleClassSelector
             options={vehicleOptions}
+            classes={vehicleClasses}
             selected={selectedVehicle}
             onSelect={setSelectedVehicle}
             locale={bookingLocale}

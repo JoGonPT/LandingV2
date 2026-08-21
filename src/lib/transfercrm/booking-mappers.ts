@@ -75,15 +75,28 @@ export function mapBookingPayloadToAvailabilityQuery(payload: BookingPayload): A
   return q;
 }
 
-export function mapBookingPayloadToQuoteRequest(payload: BookingPayload, vehicleType?: string): QuoteRequest {
+/**
+ * Constrói o pedido de cotação.
+ *
+ * `vehicleClassCode` é o que determina o preço — a API declara que ganha sobre
+ * `vehicle_type`. Enviam-se ambos quando existem: o código decide, e o tipo
+ * fica como contexto. Sem código, o CRM aplica a tarifa mínima a tudo.
+ */
+export function mapBookingPayloadToQuoteRequest(
+  payload: BookingPayload,
+  vehicleType?: string,
+  vehicleClassCode?: string,
+): QuoteRequest {
   const base = mapBookingPayloadToAvailabilityQuery(payload);
   const distance = payload.details.distanceKm;
   const vt = vehicleType ?? payload.vehicleType;
+  const code = vehicleClassCode ?? payload.vehicleClassCode;
   return {
     pickup_location: base.pickup_location,
     dropoff_location: base.dropoff_location,
     pickup_date: base.pickup_date,
     ...(distance !== undefined && distance !== null && !Number.isNaN(distance) ? { distance_km: distance } : {}),
+    ...(code ? { vehicle_class_code: code } : {}),
     ...(vt ? { vehicle_type: vt } : {}),
     ...(base.passengers !== undefined ? { passengers: base.passengers } : {}),
   };
@@ -183,6 +196,11 @@ export function mapBookingPayloadToBookingRequest(
   const vehicle = paid?.vehicleType?.trim() || payload.vehicleType?.trim();
   if (vehicle) {
     request.vehicle_type = vehicle;
+  }
+  const classCode = payload.vehicleClassCode?.trim();
+  if (classCode) {
+    // Ganha sobre `vehicle_type` no CRM — é o que distingue níveis de serviço.
+    request.vehicle_class_code = classCode;
   }
 
   if (paid) {

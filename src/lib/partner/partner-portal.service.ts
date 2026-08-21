@@ -36,6 +36,8 @@ type ParsedPartnerBody = {
     slug: string;
     payload: unknown;
     vehicleType?: string;
+    /** Código do catálogo do CRM; ganha sobre `vehicleType` para efeitos de preço. */
+    vehicleClassCode?: string;
     internalReference?: string;
     vipRequests?: string;
 };
@@ -47,12 +49,15 @@ function parsePartnerBody(body: unknown, requireVehicleType: boolean): ParsedPar
     if (b.payload === undefined) return null;
 
     const vehicleType = typeof b.vehicleType === "string" ? b.vehicleType : undefined;
-    if (requireVehicleType && !vehicleType?.trim()) return null;
+    const vehicleClassCode = typeof b.vehicleClassCode === "string" ? b.vehicleClassCode : undefined;
+    // Basta um dos dois: o código é o preferido, o tipo é a alternativa.
+    if (requireVehicleType && !vehicleType?.trim() && !vehicleClassCode?.trim()) return null;
 
     return {
         slug: b.slug.trim(),
         payload: b.payload,
         vehicleType: vehicleType?.trim(),
+        vehicleClassCode: vehicleClassCode?.trim(),
         internalReference: typeof b.internalReference === "string" ? b.internalReference : undefined,
         vipRequests: typeof b.vipRequests === "string" ? b.vipRequests : undefined,
     };
@@ -112,10 +117,13 @@ export async function partnerQuote(body: unknown, cookieHeader: string | undefin
         throw new ApiHttpError(400, { success: false, message: validated.message, requestId });
     }
 
-    const merged = attachPartnerToPayload(validated.data, displayName, parsed.slug, {
+    const comClasse = attachPartnerToPayload(validated.data, displayName, parsed.slug, {
         internalReference: parsed.internalReference,
         vipRequests: parsed.vipRequests,
     });
+    const merged = parsed.vehicleClassCode
+        ? { ...comClasse, vehicleClassCode: parsed.vehicleClassCode }
+        : comClasse;
 
     try {
         const { data, partnerPricing } = await quoteForPartnerPortal(
@@ -163,13 +171,16 @@ export async function partnerBookAccount(
         throw new ApiHttpError(400, { success: false, message: validated.message, requestId });
     }
 
-    const merged = attachPartnerToPayload(validated.data, displayName, parsed.slug, {
+    const comContexto = attachPartnerToPayload(validated.data, displayName, parsed.slug, {
         internalReference: parsed.internalReference,
         vipRequests: parsed.vipRequests,
         paymentMethod: "account",
     });
+    const merged = parsed.vehicleClassCode
+        ? { ...comContexto, vehicleClassCode: parsed.vehicleClassCode }
+        : comContexto;
 
-    const vehicleType = parsed.vehicleType;
+    const vehicleType = parsed.vehicleType ?? parsed.vehicleClassCode ?? "";
 
     let quote;
     try {

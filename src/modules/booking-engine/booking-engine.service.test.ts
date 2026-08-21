@@ -34,6 +34,7 @@ function providerStub(overrides?: Partial<IBookingProvider>): IBookingProvider {
     getVehicleOptions: vi.fn(async () => ({
       available: true,
       vehicleOptions: [],
+      vehicleClasses: [],
       pickupLocation: "Lisboa",
       dropoffLocation: "Porto",
       pickupDate: "2026-04-21T09:30:00",

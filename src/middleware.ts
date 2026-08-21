@@ -5,6 +5,12 @@ import { match as matchLocale } from "@formatjs/intl-localematcher";
 import Negotiator from "negotiator";
 
 import { applySupabaseSessionToResponse } from "@/lib/supabase/middleware";
+import {
+  isComingSoonEnabled,
+  PREVIEW_SESSION_COOKIE,
+  getPreviewSessionSecret,
+  verifyPreviewSession,
+} from "@/lib/preview/session";
 import { LOCALE_HEADER } from "@/lib/site";
 
 const locales = ["pt", "en"] as const;
@@ -43,8 +49,36 @@ function copyCookies(from: NextResponse, to: NextResponse) {
   });
 }
 
+/**
+ * Portão "Em breve": esconde o site público até haver sessão de pré-visualização.
+ *
+ * Só tranca o site público. As áreas internas — parceiros, motoristas, admin —
+ * já têm autenticação própria e ficam de fora: trancá-las duas vezes só serviria
+ * para impedir quem tem de lá entrar.
+ *
+ * Falha fechada: se o segredo não estiver configurado, ninguém passa. O
+ * contrário deixaria o site aberto por um erro de configuração.
+ */
+async function shouldGate(request: NextRequest): Promise<boolean> {
+  if (!isComingSoonEnabled()) return false;
+
+  try {
+    const secret = getPreviewSessionSecret();
+    return !(await verifyPreviewSession(secret, request.cookies.get(PREVIEW_SESSION_COOKIE)?.value));
+  } catch {
+    return true;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // O ecrã de "Em breve" é servido tal e qual: não leva prefixo de idioma nem
+  // passa pelo portão. Sem isto, a lógica de locale reescrevia-o para
+  // `/pt/em-breve`, que voltava a ser trancado — um ciclo.
+  if (pathname === "/em-breve" || pathname.startsWith("/em-breve/")) {
+    return NextResponse.next();
+  }
 
   if (
     pathname.startsWith("/drivers-pwa") ||
@@ -56,6 +90,15 @@ export async function middleware(request: NextRequest) {
       return applySupabaseSessionToResponse(request);
     }
     return NextResponse.next();
+  }
+
+  if (await shouldGate(request)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/em-breve/";
+    url.search = "";
+    // Reescrita, não redirecionamento: o visitante mantém o URL que pediu, e
+    // quando o portão for desligado o mesmo endereço passa a servir o site.
+    return NextResponse.rewrite(url);
   }
 
   if (isDriversHost(request)) {

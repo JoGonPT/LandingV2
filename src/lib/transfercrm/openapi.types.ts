@@ -18,6 +18,34 @@ export interface AvailabilityQuery {
   distance_km?: number;
 }
 
+/**
+ * Classe de veículo do catálogo do operador — `GET /v2/vehicle-classes`.
+ *
+ * O `code` é o identificador estável a enviar em `vehicle_class_code`. É ele
+ * que determina o preço: a API declara que "wins over `vehicle_type` for
+ * pricing when set". O `vehicle_type` é só a categoria grosseira (sedan/van) e
+ * **não distingue níveis de serviço** — `sedan` cobre standard e premium.
+ */
+export interface VehicleClass {
+  code: string;
+  name?: string;
+  vehicle_type?: string;
+  service_class?: string;
+  tier?: number;
+  seats?: number;
+  seats_available?: number;
+  estimated_price?: number | null;
+  currency?: string;
+  includes_distance?: boolean;
+  description?: string | null;
+  photo_url?: string | null;
+  vehicles_available?: number;
+}
+
+export interface VehicleClassesResponse {
+  vehicle_classes?: VehicleClass[];
+}
+
 export interface VehicleTypeAvailability {
   vehicle_type: string;
   seats_available?: number;
@@ -33,6 +61,8 @@ export interface AvailabilityResponse {
   pickup_date?: Iso8601DateTime;
   passengers?: number;
   vehicle_types?: VehicleTypeAvailability[];
+  /** Classes com preço para esta rota — a fonte de verdade para escolher veículo. */
+  vehicle_classes?: VehicleClass[];
 }
 
 /** POST /v2/quote */
@@ -43,6 +73,8 @@ export interface QuoteRequest {
   /** When omitted, TransferCRM may derive distance from pickup/dropoff. */
   distance_km?: number;
   vehicle_type?: string | null;
+  /** Preferido sobre `vehicle_type`: é o que distingue níveis de serviço no preço. */
+  vehicle_class_code?: string | null;
   passengers?: number | null;
 }
 
@@ -60,6 +92,8 @@ export interface QuoteResponse {
   currency?: string;
   distance_km?: number;
   vehicle_type?: string | null;
+  /** Classe efetivamente aplicada. Vem vazia quando o CRM não reconheceu o pedido. */
+  vehicle_class?: { code?: string; name?: string; service_class?: string; tier?: number };
   breakdown?: QuoteBreakdown;
   valid_until?: Iso8601DateTime;
 }
@@ -74,6 +108,8 @@ export interface BookingRequest {
   passenger_email?: string | null;
   flight_number?: string | null;
   vehicle_type?: string | null;
+  /** Preferido sobre `vehicle_type`; ganha quando ambos são enviados. */
+  vehicle_class_code?: string | null;
   passengers_count?: number | null;
   distance_km?: number | null;
   price?: number | null;

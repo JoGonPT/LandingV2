@@ -1,5 +1,5 @@
 import type { BookingLocale } from "@/lib/transfercrm/types";
-import type { TransferCrmVehicleOption } from "@/lib/transfercrm/types";
+import type { TransferCrmVehicleClass, TransferCrmVehicleOption } from "@/lib/transfercrm/types";
 import { formatMoneyAmount } from "@/lib/checkout/format-money";
 import { inferVehicleBrandLane } from "@/lib/booking/vehicle-brand";
 import { VehicleClassVisual } from "@/components/booking/VehicleClassVisual";
@@ -28,19 +28,80 @@ function brandHint(lane: ReturnType<typeof inferVehicleBrandLane>, L: VehicleCla
   return L.businessHint;
 }
 
+/**
+ * Seleção de veículo.
+ *
+ * Quando o CRM devolve o catálogo (`classes`), é esse que manda: nome,
+ * descrição, lugares e preço vêm de lá, e o valor selecionado é o `code` — que
+ * é o único campo que faz o CRM cotar o nível de serviço certo.
+ *
+ * `options` fica como alternativa para quando não há catálogo (motor nativo).
+ * Nesse caso o rótulo é derivado do tipo, como antes.
+ */
 export function VehicleClassSelector({
   options,
+  classes,
   selected,
   onSelect,
   locale,
   labels,
 }: {
   options: TransferCrmVehicleOption[];
+  classes?: TransferCrmVehicleClass[];
   selected: string;
-  onSelect: (vehicleType: string) => void;
+  onSelect: (value: string) => void;
   locale: BookingLocale;
   labels: VehicleClassSelectorLabels;
 }) {
+  if (classes && classes.length > 0) {
+    return (
+      <ul className="grid grid-cols-1 gap-4">
+        {classes.map((c) => {
+          const active = selected === c.code;
+          const price = c.guestRetailPrice ?? c.estimatedPrice;
+          const seats = c.seatsAvailable ?? c.seats;
+          return (
+            <li key={c.code}>
+              <button
+                type="button"
+                onClick={() => onSelect(c.code)}
+                className={`group flex w-full items-center gap-4 overflow-hidden rounded-2xl border p-4 text-left transition-colors ${
+                  active ? "border-black ring-1 ring-black" : "border-neutral-200 hover:border-neutral-400"
+                }`}
+              >
+                {c.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- URL externa do CRM, host desconhecido em build
+                  <img
+                    src={c.photoUrl}
+                    alt=""
+                    className="h-16 w-24 flex-none rounded-lg object-cover"
+                    loading="lazy"
+                  />
+                ) : null}
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium text-black">{c.name}</span>
+                  {c.description ? (
+                    <span className="mt-0.5 block truncate text-sm text-neutral-500">{c.description}</span>
+                  ) : null}
+                  {seats ? (
+                    <span className="mt-1 block text-xs text-neutral-500">
+                      {labels.seats.replace(/\{n\}/g, String(seats))}
+                    </span>
+                  ) : null}
+                </span>
+                {price !== undefined ? (
+                  <span className="flex-none text-right text-lg font-light tabular-nums text-black">
+                    {formatMoneyAmount(price, c.currency ?? "EUR", locale)}
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
   return (
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-1">
       {options.map((v) => {

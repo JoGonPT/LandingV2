@@ -125,6 +125,9 @@ export class Way2GoNativeProvider implements IBookingProvider {
     return {
       available: filtered.length > 0,
       vehicleOptions: filtered.length > 0 ? filtered : options,
+      // O motor nativo cota por rate card, não pelo catálogo de classes do CRM.
+      // Vazio de propósito: quem consome recorre a `vehicleOptions`.
+      vehicleClasses: [],
       pickupLocation: input.payload.route.pickup,
       dropoffLocation: input.payload.route.dropoff,
       pickupDate: `${input.payload.route.date}T${input.payload.route.time}:00`,

@@ -1,5 +1,11 @@
 import { getTransferCrmConfig } from "@/lib/transfercrm/config";
-import type { BookingPayload, TransferCrmAvailabilityResult, TransferCrmBookingResult, TransferCrmVehicleOption } from "@/lib/transfercrm/types";
+import type {
+  BookingPayload,
+  TransferCrmAvailabilityResult,
+  TransferCrmBookingResult,
+  TransferCrmVehicleClass,
+  TransferCrmVehicleOption,
+} from "@/lib/transfercrm/types";
 import type {
   AvailabilityQuery,
   AvailabilityResponse,
@@ -50,9 +56,28 @@ export class TransferCrmApiClient {
       includesDistance: item.includes_distance,
     }));
 
+    // As classes são a fonte de verdade para preço: `vehicle_types` é a
+    // categoria grosseira e não distingue standard de premium.
+    const vehicleClasses: TransferCrmVehicleClass[] = (data.vehicle_classes ?? [])
+      .filter((c) => typeof c.code === "string" && c.code.trim().length > 0)
+      .map((c) => ({
+        code: c.code,
+        name: c.name?.trim() || c.code,
+        description: c.description ?? undefined,
+        photoUrl: c.photo_url ?? undefined,
+        seats: typeof c.seats === "number" ? c.seats : undefined,
+        seatsAvailable: typeof c.seats_available === "number" ? c.seats_available : undefined,
+        serviceClass: c.service_class,
+        tier: typeof c.tier === "number" ? c.tier : undefined,
+        estimatedPrice: typeof c.estimated_price === "number" ? c.estimated_price : undefined,
+        currency: c.currency ?? "EUR",
+        includesDistance: c.includes_distance,
+      }));
+
     return {
       available: Boolean(data.available),
       vehicleOptions,
+      vehicleClasses,
       pickupLocation: data.pickup_location ?? query.pickup_location,
       dropoffLocation: data.dropoff_location ?? query.dropoff_location,
       pickupDate: data.pickup_date ?? query.pickup_date,

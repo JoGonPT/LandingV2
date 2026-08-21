@@ -13,7 +13,9 @@ import { firstTransferCrmValidationMessage } from "@/lib/transfercrm/validation-
 const Body = z.object({
   slug: z.string().min(1),
   payload: z.unknown(),
-  vehicleType: z.string().min(1),
+  vehicleType: z.string().min(1).optional(),
+  /** Código do catálogo do CRM; é o que determina o preço. */
+  vehicleClassCode: z.string().min(1).optional(),
   internalReference: z.string().optional(),
   vipRequests: z.string().optional(),
 });
@@ -38,8 +40,17 @@ export async function POST(req: Request) {
       vipRequests: body.vipRequests,
     });
 
-    const vehicleType = body.vehicleType.trim();
-    const quote = await postQuoteForBooking(merged, vehicleType);
+    const vehicleType = body.vehicleType?.trim();
+    const vehicleClassCode = body.vehicleClassCode?.trim();
+    if (!vehicleType && !vehicleClassCode) {
+      return NextResponse.json(
+        { success: false, message: "vehicleType ou vehicleClassCode é obrigatório.", requestId: rid },
+        { status: 400 },
+      );
+    }
+    // O código entra pelo payload: é lá que o mapeador o lê para `vehicle_class_code`.
+    const comClasse = vehicleClassCode ? { ...merged, vehicleClassCode } : merged;
+    const quote = await postQuoteForBooking(comClasse, vehicleType);
     const price = quote.price;
     const currency = quote.currency?.trim();
 
