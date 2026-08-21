@@ -159,7 +159,7 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 | # | Por confirmar | Porquê não é verificável no código | Como confirmar |
 |---|---|---|---|
 | ✅ **§7-0** | ~~Domínio canónico: www ou raiz?~~ **RESOLVIDO 19 ago** — `way2go.pt` faz 308 para `www.way2go.pt`. `SITE_URL` corrigido em 4 ficheiros | Era verificável com um `curl -I`; estava mal classificado aqui | — |
-| **§7-10** | Se o projeto Supabase de produção foi apagado ou se o identificador está errado | O host não resolve (NXDOMAIN), mas os valores das variáveis da Vercel não são legíveis sem os escrever para ficheiro | Painel do Supabase: o projeto existe? E Vercel → landing-v2 → Settings → Environment Variables → `SUPABASE_URL` |
+| ✅ **§7-10** | ~~Se o projeto Supabase de produção foi apagado ou se o identificador está errado~~ **RESOLVIDO 21 ago** — estava **pausado**. Retomado; DNS e REST verificados, produção a ler a base de dados | — | — |
 | **§7-1** | Que variáveis estão realmente definidas em produção na Vercel | O repositório só contém `.env.example`. Os `.env` locais estão gitignored e divergiram entre si | Painel da Vercel, ou `audit_env.sh` depois de F0-2 |
 | **§7-2** | Se o SMTP e o webhook do Discord estão funcionais em produção | As credenciais não estão no repositório e o código tolera falhas de SMTP em silêncio | Submeter o formulário em produção e confirmar a receção nos dois canais |
 | **§7-3** | Comportamento real em Cloudways | O standalone foi testado localmente (§8), mas o proxy, o DNS do subdomínio `drivers.*`, os limites de RAM e a rotação de logs são do ambiente | Deploy de staging antes do de produção |
