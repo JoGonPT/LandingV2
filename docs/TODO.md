@@ -226,13 +226,28 @@ Foram removidas do `landingv2` a `W2G_MASTER_ADMIN_PASSWORD` e a `PLACES_PROVIDE
 profundidade, caso alguém redeploye). A remoção das restantes e o apagar do projeto foram
 recusados pelo classificador de permissões.
 
-**Por fazer, e só o João o pode fazer:** fechar o `landingv2-eosin.vercel.app`. Duas vias, no
-painel da Vercel:
-1. **Settings → Deployment Protection → Vercel Authentication.** Reversível, imediato, não exige
-   redeploy. É o que o `landing-pages` já tem — daí responder com o login da Vercel.
-2. **Settings → Delete Project.** Definitivo. Irreversível.
+**✅ Fechado no mesmo dia.** O `landingv2` foi apagado pelo João. Verificado: `/`,
+`/master-admin/login/` e `/api/places/autocomplete` respondem **404** em
+`landingv2-eosin.vercel.app`, o projeto saiu da lista da Vercel, e a produção manteve-se
+(`www.way2go.pt` a 200 em `/`, `/pt/` e `/master-admin/login/`).
 
-Enquanto nenhuma das duas for feita, a segunda porta continua aberta.
+A via da proteção não servia, e a razão vale a pena registar: os 7 projetos da equipa estavam
+todos em **Standard Protection**, que cobre URLs gerados e de preview mas **deixa a produção de
+fora**. O `landingv2-eosin.vercel.app` era o alias de produção daquele projeto, por isso continuava
+aberto apesar de a proteção estar "ligada". Foi isso que explicou o contraste observado antes: o
+`landing-pages` responde com o login da Vercel porque o endereço testado
+(`landing-pages-jogonpts-projects.vercel.app`) é um URL gerado, e esses a Standard Protection cobre.
+
+Essa mesma página da Vercel confirmou, por outra via, que o `landing-pages` é outra aplicação:
+aparece como **Vite**, e não Next.js.
+
+**Os três duplicados restantes não exigem ação.** `workspace`, `way2go-landing` e `landing-v3`
+continuam públicos, mas não têm variável nenhuma e servem `<link rel="canonical"
+href="https://www.way2go.pt/pt/">` — verificado nos três. Os motores de busca consolidam no site
+real, por isso nem sequer são um problema de conteúdo duplicado. São cópias estáticas congeladas,
+sem acesso ao CRM, ao Stripe, ao Supabase nem ao painel de administração.
+
+**Estado final: 6 projetos na Vercel, 1 ligado ao Git (`landing-v2` → www.way2go.pt).**
 
 ### 21 ago 2026 — Recetor de webhooks a devolver 500; e seis projetos Vercel no mesmo repositório
 
