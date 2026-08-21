@@ -9,6 +9,34 @@ import {
 } from "@/lib/transfercrm/webhook";
 import { getBookingEngineService } from "@/modules/booking-engine/booking-engine.service";
 
+/**
+ * Eventos já processados, para não repetir trabalho quando o CRM reenvia.
+ *
+ * A API garante que o `event_id` se mantém igual entre tentativas — é o campo
+ * indicado para deduplicar. Em memória: um reenvio chega tipicamente segundos
+ * depois, e o custo de perder o registo num reinício é reprocessar um evento,
+ * o que é inofensivo. Persistir isto exigiria uma tabela para pouco ganho.
+ */
+const eventosVistos = new Map<string, number>();
+const JANELA_DEDUPE_MS = 10 * 60 * 1000;
+
+function jaProcessado(eventId: string | undefined): boolean {
+  if (!eventId) return false;
+  const agora = Date.now();
+
+  if (eventosVistos.size > 500) {
+    for (const [k, t] of eventosVistos) {
+      if (agora - t > JANELA_DEDUPE_MS) eventosVistos.delete(k);
+    }
+  }
+
+  const visto = eventosVistos.get(eventId);
+  if (visto !== undefined && agora - visto < JANELA_DEDUPE_MS) return true;
+
+  eventosVistos.set(eventId, agora);
+  return false;
+}
+
 export async function POST(request: Request) {
   const eventHeader = request.headers.get("X-Webhook-Event")?.trim() ?? "";
   const secret = process.env.TRANSFERCRM_WEBHOOK_SECRET?.trim();
@@ -78,6 +106,16 @@ export async function POST(request: Request) {
     (dataObj?.external_reference as string | number | undefined) ??
     event.id;
 
+  const eventId =
+    request.headers.get("X-Webhook-Event-Id")?.trim() ||
+    (typeof (event as { event_id?: unknown }).event_id === "string"
+      ? String((event as { event_id?: unknown }).event_id)
+      : undefined);
+
+  if (jaProcessado(eventId)) {
+    return NextResponse.json({ ok: true, duplicate: true }, { status: 200 });
+  }
+
   if (bookingIdCandidate !== undefined && bookingIdCandidate !== null) {
     const providerBookingId = String(bookingIdCandidate);
     const statusCandidate =
@@ -89,16 +127,30 @@ export async function POST(request: Request) {
         ? (event.data as { travel_status?: string }).travel_status
         : undefined;
 
-    await getBookingEngineService().recordStatusEvent({
-      providerBookingId,
-      status: statusCandidate || eventName || "EVENT_RECEIVED",
-      travelStatus: travelStatusCandidate,
-      actor: "webhook.transfercrm",
-      payload: {
+    // Nunca deixar uma falha aqui rejeitar a entrega. O evento **já** foi
+    // recebido e a assinatura verificada; devolver 500 faz o CRM reenviar o
+    // mesmo evento indefinidamente, sem que a repetição resolva o problema.
+    // O `getCrmProvider()` chama o cliente do CRM, que lança se a configuração
+    // faltar — foi assim que este handler passou a devolver 500 em produção.
+    try {
+      await getBookingEngineService().recordStatusEvent({
+        providerBookingId,
+        status: statusCandidate || eventName || "EVENT_RECEIVED",
+        travelStatus: travelStatusCandidate,
+        actor: "webhook.transfercrm",
+        payload: {
+          event: eventName,
+          webhookId: event.id ? String(event.id) : undefined,
+        },
+      });
+    } catch (error) {
+      console.error("[transfercrm-webhook] falha ao registar o evento", {
         event: eventName,
-        webhookId: event.id ? String(event.id) : undefined,
-      },
-    });
+        eventId,
+        bookingId: providerBookingId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   console.info("[transfercrm-webhook]", {
