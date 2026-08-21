@@ -11,6 +11,15 @@ export interface QuoteRequestDto {
   datetime: string;
   passengers: number;
   vehicleType?: string;
+  /**
+   * Código da classe do CRM (ex.: `premium-van`).
+   *
+   * É isto que decide o preço. Sem ele, o CRM cota no escalão base — uma Van
+   * Premium de 58,88 € seria cotada a 45 €, e o cliente veria menos do que
+   * viria a ser cobrado. O `vehicleType` sozinho não chega: distingue carro de
+   * carrinha, não distingue standard de premium.
+   */
+  vehicleClassCode?: string;
 }
 
 /** Public quote API response — CRM details hidden behind this shape. */
@@ -76,6 +85,10 @@ export function parseQuoteRequestDto(body: unknown): { ok: true; data: QuoteRequ
       : typeof b.vehicleType === "string"
         ? b.vehicleType.trim() || undefined
         : undefined;
+  const vehicleClassCode =
+    typeof b.vehicleClassCode === "string" && b.vehicleClassCode.trim()
+      ? b.vehicleClassCode.trim()
+      : undefined;
   return {
     ok: true,
     data: {
@@ -84,6 +97,7 @@ export function parseQuoteRequestDto(body: unknown): { ok: true; data: QuoteRequ
       datetime: b.datetime.trim(),
       passengers: b.passengers,
       ...(vehicleType !== undefined ? { vehicleType } : {}),
+      ...(vehicleClassCode !== undefined ? { vehicleClassCode } : {}),
     },
   };
 }
@@ -116,6 +130,7 @@ export function buildBookingPayloadFromQuoteRequest(dto: QuoteRequestDto): Booki
     contact: { ...QUOTE_DUMMY_CONTACT },
     gdprAccepted: true,
     ...(dto.vehicleType?.trim() ? { vehicleType: dto.vehicleType.trim() } : {}),
+    ...(dto.vehicleClassCode?.trim() ? { vehicleClassCode: dto.vehicleClassCode.trim() } : {}),
   };
 }
 
