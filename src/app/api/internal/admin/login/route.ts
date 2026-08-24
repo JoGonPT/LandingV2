@@ -4,9 +4,8 @@ import { z } from "zod";
 import { clientKey } from "@/lib/rate-limit";
 import { checkLoginAllowed, clearLoginFailures, registerLoginFailure } from "@/lib/login-throttle";
 
-import { constantTimeEqualUtf8 } from "@/lib/partner/credentials";
+import { verifyAdminPassword } from "@/lib/site-settings/credentials";
 import {
-  getMasterAdminPassword,
   getMasterAdminSessionMaxAgeSec,
   getMasterAdminSessionSecret,
   MASTER_ADMIN_SESSION_COOKIE,
@@ -35,11 +34,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Master admin is not configured." }, { status: 503 });
   }
 
-  const configuredPassword = getMasterAdminPassword();
-  if (!configuredPassword) {
-    return NextResponse.json({ ok: false, message: "W2G_MASTER_ADMIN_PASSWORD is not set." }, { status: 503 });
-  }
-
   let body: z.infer<typeof Body>;
   try {
     body = Body.parse(await req.json());
@@ -47,7 +41,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Invalid body." }, { status: 400 });
   }
 
-  if (!constantTimeEqualUtf8(body.password, configuredPassword)) {
+  // Existindo password rodada no painel, é essa que manda; enquanto não existir,
+  // vale a W2G_MASTER_ADMIN_PASSWORD, para que a primeira entrada seja possível.
+  const check = await verifyAdminPassword(body.password);
+  if (check.source === "unconfigured") {
+    return NextResponse.json(
+      { ok: false, message: "Nenhuma password de administração está configurada." },
+      { status: 503 },
+    );
+  }
+  if (!check.ok) {
     registerLoginFailure(throttleKey);
     return NextResponse.json({ ok: false, message: "Invalid password." }, { status: 401 });
   }
