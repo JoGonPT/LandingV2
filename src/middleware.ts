@@ -60,7 +60,7 @@ function copyCookies(from: NextResponse, to: NextResponse) {
  * contrário deixaria o site aberto por um erro de configuração.
  */
 async function shouldGate(request: NextRequest): Promise<boolean> {
-  if (!isComingSoonEnabled()) return false;
+  if (!(await isComingSoonEnabled())) return false;
 
   try {
     const secret = getPreviewSessionSecret();
