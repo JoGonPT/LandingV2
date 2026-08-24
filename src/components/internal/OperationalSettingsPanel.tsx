@@ -75,6 +75,134 @@ const NO_PASTE = {
     spellCheck: false,
 };
 
+const EMERGENCY_CONFIRMATION = "PARAR TUDO AGORA";
+
+/**
+ * Paragem de emergência.
+ *
+ * Corta a cobrança automática e a faturação real de uma vez. Num incidente
+ * ninguém deve ter de se lembrar de quais são os dois interruptores nem em que
+ * ordem — e são a mesma decisão quando alguma coisa correu mal.
+ *
+ * Continua a exigir a frase escrita: uma paragem acidental fecha a receita.
+ */
+function EmergencyStop({ degraded, onDone }: { degraded: boolean; onDone: () => Promise<void> }) {
+    const [aberto, setAberto] = useState(false);
+    const [frase, setFrase] = useState("");
+    const [operador, setOperador] = useState("");
+    const [erro, setErro] = useState<string | null>(null);
+    const [aParar, setAParar] = useState(false);
+
+    async function parar(event: FormEvent) {
+        event.preventDefault();
+        if (aParar) return;
+        setAParar(true);
+        setErro(null);
+        try {
+            const res = await fetch("/api/master-admin/settings/emergency-stop", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirmationTyped: frase, actorLabel: operador }),
+            });
+            const data = (await res.json()) as { ok: boolean; message?: string };
+            if (!data.ok) {
+                setErro(data.message ?? "Não foi possível parar.");
+                return;
+            }
+            setAberto(false);
+            setFrase("");
+            await onDone();
+        } catch {
+            setErro("Falha de ligação ao servidor.");
+        } finally {
+            setAParar(false);
+        }
+    }
+
+    return (
+        <section className="rounded-xl border-2 border-red-600 bg-white p-5">
+            <h2 className="font-semibold text-red-800">Paragem de emergência</h2>
+            <p className="mt-1 text-sm leading-relaxed text-neutral-700">
+                Desliga de uma vez a cobrança automática e a faturação real. Deixa o sistema nos
+                estados seguros: pagamento manual e faturação em ensaio. As reservas continuam a
+                entrar.
+            </p>
+
+            {erro ? (
+                <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {erro}
+                </p>
+            ) : null}
+
+            {!aberto ? (
+                <button
+                    type="button"
+                    disabled={degraded}
+                    onClick={() => {
+                        setAberto(true);
+                        setFrase("");
+                        setErro(null);
+                    }}
+                    className="mt-3 rounded-lg border border-red-600 px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                    Parar tudo
+                </button>
+            ) : (
+                <form onSubmit={parar} className="mt-3 rounded-lg bg-red-50 p-4">
+                    <label
+                        htmlFor="frase-emergencia"
+                        className="block text-xs font-medium uppercase tracking-wider text-red-700"
+                    >
+                        Escreva para confirmar (não é possível colar)
+                    </label>
+                    <p className="mt-1 select-none font-mono text-sm font-bold tracking-wide text-red-900">
+                        {EMERGENCY_CONFIRMATION}
+                    </p>
+                    <input
+                        id="frase-emergencia"
+                        value={frase}
+                        onChange={(e) => setFrase(e.target.value)}
+                        {...NO_PASTE}
+                        className="mt-2 min-h-[44px] w-full rounded-lg border border-red-300 px-3 font-mono text-sm outline-none focus:border-red-700"
+                    />
+                    <label
+                        htmlFor="operador-emergencia"
+                        className="mt-3 block text-xs font-medium uppercase tracking-wider text-red-700"
+                    >
+                        Quem está a fazer isto
+                    </label>
+                    <input
+                        id="operador-emergencia"
+                        value={operador}
+                        onChange={(e) => setOperador(e.target.value)}
+                        placeholder="nome ou iniciais"
+                        className="mt-1 min-h-[44px] w-full rounded-lg border border-red-300 px-3 text-sm outline-none focus:border-red-700"
+                    />
+                    <div className="mt-4 flex gap-2">
+                        <button
+                            type="submit"
+                            disabled={aParar || frase.trim().replace(/\s+/g, " ") !== EMERGENCY_CONFIRMATION}
+                            className="min-h-[44px] rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:opacity-30"
+                        >
+                            {aParar ? "A parar…" : "Parar tudo"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAberto(false);
+                                setFrase("");
+                            }}
+                            className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-neutral-600 hover:text-black"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            )}
+        </section>
+    );
+}
+
 export function OperationalSettingsPanel() {
     const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
     const [erro, setErro] = useState<string | null>(null);
@@ -317,6 +445,8 @@ export function OperationalSettingsPanel() {
                     );
                 })}
             </section>
+
+            <EmergencyStop degraded={snapshot?.degraded ?? false} onDone={carregar} />
 
             <section className="rounded-xl border border-neutral-200 bg-white p-5">
                 <h2 className="font-semibold text-black">Password de administração</h2>

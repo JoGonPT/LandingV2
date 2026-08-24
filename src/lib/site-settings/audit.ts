@@ -14,6 +14,51 @@ import { confirmationMatches, getDefinition, getOption } from "./registry";
 import { getSettingsSnapshot, invalidateSettingsCache } from "./resolve";
 import { appendAudit, getConn, writeSetting } from "./store";
 
+/**
+ * Paragem de emergência: corta todo o movimento automático de dinheiro.
+ *
+ * Existe porque, num incidente, ninguém deve ter de se lembrar de quais são os
+ * dois interruptores nem em que ordem — e porque parar a cobrança e parar a
+ * faturação são a mesma decisão quando alguma coisa correu mal.
+ *
+ * Leva o sistema aos estados seguros, os mesmos a que se chega quando tudo
+ * falha: pagamento manual e faturação em ensaio.
+ */
+export const EMERGENCY_STOP_CONFIRMATION = "PARAR TUDO AGORA";
+
+const EMERGENCY_TARGETS = [
+    { key: "payments.stripe_automatic", value: "off" },
+    { key: "invoicing.vendus_live", value: "mock" },
+] as const;
+
+export async function applyEmergencyStop(
+    input: Omit<ApplyChangeInput, "key" | "value" | "confirmationTyped"> & { confirmationTyped: string },
+): Promise<{ ok: boolean; changed: string[]; message?: string }> {
+    if (!confirmationMatches(EMERGENCY_STOP_CONFIRMATION, input.confirmationTyped)) {
+        return { ok: false, changed: [], message: "A frase de confirmação não coincide." };
+    }
+
+    const changed: string[] = [];
+    for (const target of EMERGENCY_TARGETS) {
+        const result = await applySettingChange({
+            key: target.key,
+            value: target.value,
+            // Já confirmado uma vez, para a paragem inteira. Repetir a frase de
+            // cada interruptor faria uma emergência demorar mais do que deve.
+            confirmationTyped: getOption(target.key, target.value)?.confirmation ?? "",
+            actorLabel: input.actorLabel,
+            ip: input.ip,
+            userAgent: input.userAgent,
+        });
+        if (result.ok) changed.push(target.key);
+        // `NO_CHANGE` significa que já estava seguro: não é falha.
+        else if (result.code !== "NO_CHANGE") {
+            return { ok: false, changed, message: result.message };
+        }
+    }
+    return { ok: true, changed };
+}
+
 export interface ApplyChangeInput {
     key: string;
     value: string;

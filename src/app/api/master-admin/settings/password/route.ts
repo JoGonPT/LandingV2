@@ -5,10 +5,7 @@ import { MasterAdminAuthError, requireMasterAdminSession } from "@/lib/internal-
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { rotateAdminPassword } from "@/lib/site-settings/credentials";
 import { checkPasswordStrength, generateStrongPassword } from "@/lib/site-settings/password";
-import { confirmationMatches } from "@/lib/site-settings/registry";
-
-/** A frase que tem de ser escrita à mão para trocar a password. */
-export const ROTATE_CONFIRMATION = "TROCAR A PASSWORD DE ADMINISTRACAO";
+import { ROTATE_PASSWORD_CONFIRMATION, confirmationMatches } from "@/lib/site-settings/registry";
 
 const Body = z.object({
     password: z.string().min(1).max(200),
@@ -30,7 +27,7 @@ export async function GET() {
     return NextResponse.json({
         ok: true as const,
         password: generateStrongPassword(),
-        confirmation: ROTATE_CONFIRMATION,
+        confirmation: ROTATE_PASSWORD_CONFIRMATION,
     });
 }
 
@@ -59,7 +56,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, message: "Pedido inválido." }, { status: 400 });
     }
 
-    if (!confirmationMatches(ROTATE_CONFIRMATION, body.confirmationTyped)) {
+    if (!confirmationMatches(ROTATE_PASSWORD_CONFIRMATION, body.confirmationTyped)) {
         return NextResponse.json(
             { ok: false, code: "CONFIRMATION_MISMATCH", message: "A frase de confirmação não coincide." },
             { status: 400 },

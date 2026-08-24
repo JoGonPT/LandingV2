@@ -147,6 +147,14 @@ export const SETTINGS: readonly SettingDefinition[] = [
 
 export type SettingKey = (typeof SETTINGS)[number]["key"];
 
+/**
+ * Frase para trocar a password de administração.
+ *
+ * Vive aqui e não na rota porque os ficheiros de rota do App Router só podem
+ * exportar handlers HTTP — exportar uma constante de lá faz o build falhar.
+ */
+export const ROTATE_PASSWORD_CONFIRMATION = "TROCAR A PASSWORD DE ADMINISTRACAO";
+
 const BY_KEY = new Map(SETTINGS.map((s) => [s.key, s]));
 
 export function getDefinition(key: string): SettingDefinition | null {
