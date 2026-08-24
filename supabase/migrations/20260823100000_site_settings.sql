@@ -26,6 +26,14 @@ create policy site_settings_service_role_all
   using (true)
   with check (true);
 
+
+-- Sem GRANT, o PostgREST não inclui a tabela no esquema que expõe e a API
+-- responde PGRST205 mesmo com a tabela criada. `anon` e `authenticated` não
+-- recebem nada de propósito: estas tabelas guardam interruptores operacionais e
+-- o hash da password de administração, e não têm de ser alcançáveis a partir da
+-- API pública.
+grant all on public.site_settings to service_role;
+
 comment on table public.site_settings is
   'Interruptores operacionais. Fonte de verdade em tempo de execução; o ambiente é o recurso.';
 
@@ -63,6 +71,9 @@ create policy site_settings_audit_service_role_all
   to service_role
   using (true)
   with check (true);
+
+
+grant all on public.site_settings_audit to service_role;
 
 comment on table public.site_settings_audit is
   'Histórico imutável de alterações aos interruptores. Nunca apagar.';
@@ -103,6 +114,9 @@ create policy admin_credentials_service_role_all
   to service_role
   using (true)
   with check (true);
+
+
+grant all on public.admin_credentials to service_role;
 
 comment on table public.admin_credentials is
   'Hash scrypt da password de administração. Sem linha corrente, o login usa W2G_MASTER_ADMIN_PASSWORD.';
