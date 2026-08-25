@@ -159,6 +159,7 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 | # | Por confirmar | Porquê não é verificável no código | Como confirmar |
 |---|---|---|---|
 | ✅ **§7-0** | ~~Domínio canónico: www ou raiz?~~ **RESOLVIDO 19 ago** — `way2go.pt` faz 308 para `www.way2go.pt`. `SITE_URL` corrigido em 4 ficheiros | Era verificável com um `curl -I`; estava mal classificado aqui | — |
+| ✅ **§7-10** | ~~Se o projeto Supabase de produção foi apagado ou se o identificador está errado~~ **RESOLVIDO 21 ago** — estava **pausado**. Retomado; DNS e REST verificados, produção a ler a base de dados | — | — |
 | **§7-1** | Que variáveis estão realmente definidas em produção na Vercel | O repositório só contém `.env.example`. Os `.env` locais estão gitignored e divergiram entre si | Painel da Vercel, ou `audit_env.sh` depois de F0-2 |
 | **§7-2** | Se o SMTP e o webhook do Discord estão funcionais em produção | As credenciais não estão no repositório e o código tolera falhas de SMTP em silêncio | Submeter o formulário em produção e confirmar a receção nos dois canais |
 | **§7-3** | Comportamento real em Cloudways | O standalone foi testado localmente (§8), mas o proxy, o DNS do subdomínio `drivers.*`, os limites de RAM e a rotação de logs são do ambiente | Deploy de staging antes do de produção |
@@ -301,6 +302,59 @@ real, por isso nem sequer são um problema de conteúdo duplicado. São cópias 
 sem acesso ao CRM, ao Stripe, ao Supabase nem ao painel de administração.
 
 **Estado final: 6 projetos na Vercel, 1 ligado ao Git (`landing-v2` → www.way2go.pt).**
+
+### 21 ago 2026 — "fetch failed" ao criar parceiro: o projeto Supabase estava **pausado**
+
+Sintoma relatado: criar um parceiro no painel devolve `fetch failed`.
+
+A rota `POST /api/internal/admin/partners` devolve a mensagem da exceção tal como vem, por isso
+`fetch failed` é literal — é o Node a não conseguir alcançar o destino. Não é validação, não é
+autenticação, e não é "Supabase is not configured" (mensagem distinta, emitida quando `SUPABASE_URL`
+ou `SUPABASE_SERVICE_ROLE_KEY` faltam; ambas estão definidas em produção).
+
+**Causa medida:** o host do projeto Supabase não resolvia em DNS.
+
+| Host | Resolvedor local | Google 8.8.8.8 |
+|---|---|---|
+| `supabase.com` | resolve | resolve |
+| `otzmdqpqpacvirbxpmgu.supabase.co` | não resolvia | **NXDOMAIN** |
+
+**Correção a uma afirmação minha.** Escrevi que um projeto apenas *pausado* continuaria a resolver,
+e que NXDOMAIN implicava projeto apagado. **Está errado.** O Supabase retira o registo DNS enquanto
+o projeto está pausado, por isso o NXDOMAIN não distingue pausado de apagado — só o painel distingue.
+
+Nota para quem repita a análise: o placeholder `https://xxxx.supabase.co` está no `.env.example`
+(linhas 77 e 115), não nos ficheiros reais. E nem o `.env` nem o `.env.local` definem `SUPABASE_URL`
+— só `NEXT_PUBLIC_SUPABASE_URL`. Localmente o erro seria "Supabase is not configured"; o
+`fetch failed` é específico de produção, onde a variável existe mas o destino estava morto.
+
+**✅ Resolvido no mesmo dia.** O João retomou o projeto. Verificado depois: DNS resolve
+(`172.64.149.246`), `/rest/v1/` devolve **401** sem chave — a resposta correta — e a produção voltou
+a ler a base de dados.
+
+O `/partner` deixou de dizer *"no configured partners"* e passou a listar parceiros reais. Ou seja,
+**os parceiros já existiam**; faltava a base de dados estar acessível. Dois parceiros ativos, as
+quatro superfícies a responder 200:
+
+| Parceiro | Reserva | Painel |
+|---|---|---|
+| `hotel-maia-vip` | `/partner/hotel-maia-vip/book/` | `/partner/hotel-maia-vip/dashboard/` |
+| `way2go-demo` | `/partner/way2go-demo/book/` | `/partner/way2go-demo/dashboard/` |
+
+Isto corrige também o que eu tinha dito ao João no dia anterior: o *"no configured partners"* **não**
+era base de dados vazia.
+
+**O que isto tinha em baixo, e voltou:** portal de parceiros, login de motoristas (Supabase Auth),
+persistência de reservas do motor nativo e o `recordStatusEvent` do recetor de webhooks — que
+falhava em silêncio e devolvia 200, exatamente como projetado depois da correção do próprio dia.
+
+**Lição a reter:** um projeto Supabase no plano gratuito pausa sozinho ao fim de um período de
+inatividade, e o sintoma é `fetch failed` em tudo o que dele dependa — sem sinal nenhum no site
+público, porque este não usa Supabase (os preços vêm do CRM e o formulário envia email). Antes de
+investigar código, confirmar o estado do projeto no painel.
+
+O TransferCRM não é afetado: continua a responder ao vivo (`standard-sedan` 45 €, `standard-van`
+45 €, `premium-van` 58,88 €, medido no mesmo dia).
 
 ### 21 ago 2026 — Recetor de webhooks a devolver 500; e seis projetos Vercel no mesmo repositório
 
