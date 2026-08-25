@@ -98,6 +98,16 @@ export function validateBookingPayload(
     ...(candidate.vehicleType?.trim()
       ? { vehicleType: candidate.vehicleType.trim() }
       : {}),
+    // Sem esta linha o código da classe é descartado aqui, em silêncio.
+    //
+    // Este validador reconstrói o objeto campo a campo, e o que não estiver
+    // listado desaparece. Fica entre quem constrói o payload e quem o mapeia
+    // para o CRM, portanto anulava as correções feitas nas duas pontas: a
+    // cotação e a reserva enviavam sempre sem classe, e o CRM cotava tudo no
+    // escalão base.
+    ...(candidate.vehicleClassCode?.trim()
+      ? { vehicleClassCode: candidate.vehicleClassCode.trim() }
+      : {}),
     ...(candidate.quotedPrice
       ? {
           quotedPrice: {
