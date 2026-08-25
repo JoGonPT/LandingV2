@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import CookieConsent from "@/components/CookieConsent";
 import Navbar from "@/components/Navbar";
 import { getDictionary } from "@/get-dictionaries";
+import { getBookingUiMode } from "@/lib/booking/ui-mode";
 
 export function generateStaticParams() {
     return [{ locale: "pt" }, { locale: "en" }];
@@ -21,7 +22,12 @@ export default async function Home({
         <main className="min-h-screen bg-white">
             <Navbar dict={dict.common} locale={locale} />
             <div id="booking">
-                <HeroSection dict={dict.hero} locale={locale} />
+                <HeroSection
+                    dict={dict.hero}
+                    bookingDict={dict.booking}
+                    bookingUiMode={getBookingUiMode()}
+                    locale={locale}
+                />
             </div>
             <FAQSection dict={dict.faq} />
             <Footer dict={dict.footer} locale={locale} />

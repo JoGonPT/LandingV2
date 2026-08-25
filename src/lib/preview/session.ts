@@ -13,6 +13,8 @@
  *
  * A password nunca está no código. Vem de `SITE_PREVIEW_PASSWORD`.
  */
+import { getSetting } from "@/lib/site-settings/resolve";
+
 export const PREVIEW_SESSION_COOKIE = "w2g_preview";
 
 const SEP = ".";
@@ -109,13 +111,18 @@ export function getPreviewPassword(): string {
 }
 
 /**
- * O portão só está ativo quando `SITE_COMING_SOON=1`.
+ * O portão está ativo quando o interruptor `site.coming_soon` está ligado.
  *
- * Desligar o "Em breve" é mudar uma variável — não exige deploy nem reverter
- * um commit.
+ * Vem do painel de administração, com `SITE_COMING_SOON=1` como valor de
+ * recurso. Ligar ou desligar faz efeito em segundos e não exige deploy.
+ *
+ * **É lido no middleware, a cada pedido.** O resolvedor tem cache de 30 s
+ * precisamente por causa deste sítio; sem ela seria uma ida à base de dados por
+ * pedido. E como nunca lança, uma base de dados em baixo mantém o site no
+ * estado em que estava — nunca o fecha sozinho.
  */
-export function isComingSoonEnabled(): boolean {
-    return process.env.SITE_COMING_SOON?.trim() === "1";
+export async function isComingSoonEnabled(): Promise<boolean> {
+    return (await getSetting("site.coming_soon")) === "on";
 }
 
 export function getPreviewSessionMaxAgeSec(): number {

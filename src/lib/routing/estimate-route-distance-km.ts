@@ -33,7 +33,9 @@ function normalizeForMatch(raw: string): string {
 type LatLon = { lat: number; lon: number };
 
 const KNOWN_PLACE_COORDS: Array<{ aliases: string[]; coords: LatLon }> = [
-  { aliases: ["aeroporto do porto", "aeroporto francisco sa carneiro", "porto airport", "opo airport", " opo "], coords: { lat: 41.2421, lon: -8.6781 } },
+  // OPO: terminal de passageiros. Ver a nota em `knownPlaceCoords` — esta
+  // tabela duplica as coordenadas dos aeroportos e as duas têm de concordar.
+  { aliases: ["aeroporto do porto", "aeroporto francisco sa carneiro", "porto airport", "opo airport", " opo "], coords: { lat: 41.2365, lon: -8.67154 } },
   { aliases: ["aeroporto de lisboa", "aeroporto humberto delgado", "lis airport", " lis "], coords: { lat: 38.7742, lon: -9.1342 } },
   { aliases: ["aeroporto de faro", "faro airport", " fao "], coords: { lat: 37.0144, lon: -7.9659 } },
   { aliases: ["aveiro"], coords: { lat: 40.6405, lon: -8.6538 } },
@@ -60,7 +62,13 @@ function knownPlaceCoords(address: string): LatLon | null {
     n.includes(" porto airport ") ||
     /\bopo\b/.test(n)
   ) {
-    return { lat: 41.2421, lon: -8.6781 };
+    // Terminal de passageiros (OSM `aeroway=terminal`, via Overpass, 22 ago 2026).
+    // A coordenada anterior — 41.2421, -8.6781 — era a "Apron S", `aeroway=apron`:
+    // a placa de estacionamento de aeronaves, do lado ar e sem acesso rodoviário.
+    // Nenhum motorista pode ser despachado para ali, e o router tinha de a
+    // encostar a uma via arbitrária do perímetro. Como esta coordenada entra no
+    // cálculo da distância, entra no preço.
+    return { lat: 41.2365, lon: -8.67154 };
   }
   if (
     n.includes(" aeroporto de lisboa ") ||

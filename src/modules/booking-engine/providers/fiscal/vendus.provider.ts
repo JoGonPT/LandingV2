@@ -1,3 +1,4 @@
+import { getSetting } from "@/lib/site-settings/resolve";
 import type { FiscalIssueInvoiceInput, FiscalIssueInvoiceResult, IFiscalProvider } from "@/modules/booking-engine/services/fiscal.service";
 
 type VendusMode = "PRODUCTION" | "MOCK";
@@ -31,11 +32,15 @@ interface VendusDocumentPayload {
   observations?: string;
 }
 
-function getVendusMode(): VendusMode {
-  const raw = String(process.env.VENDUS_MODE ?? "MOCK")
-    .trim()
-    .toUpperCase();
-  return raw === "PRODUCTION" ? "PRODUCTION" : "MOCK";
+/**
+ * Modo em vigor agora, vindo do painel de administração.
+ *
+ * `VENDUS_MODE` continua a valer como recurso, e MOCK continua a ser a omissão:
+ * emitir uma factura verdadeira por engano não se desfaz facilmente, por isso o
+ * estado seguro tem de ser aquele a que se chega quando tudo o resto falha.
+ */
+async function getVendusMode(): Promise<VendusMode> {
+  return (await getSetting("invoicing.vendus_live")) === "live" ? "PRODUCTION" : "MOCK";
 }
 
 function getApiKey(): string {
@@ -158,7 +163,7 @@ export class VendusFiscalProvider implements IFiscalProvider {
   readonly name = "VENDUS";
 
   async issueInvoice(input: FiscalIssueInvoiceInput): Promise<FiscalIssueInvoiceResult> {
-    const mode = getVendusMode();
+    const mode = await getVendusMode();
     if (mode === "MOCK") {
       console.info(
         `[Vendus Mock] Seria emitida fatura para o cliente ${input.customerName} com o valor ${input.amount.toFixed(2)} ${input.currency}.`,

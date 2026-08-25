@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { PaymentsAppHttpError, paymentsCreatePendingBooking } from "@/lib/payments/payments-app-service";
-import { IS_MANUAL_PAYMENT } from "@/lib/payments/payment-flags";
+import { isManualPayment } from "@/lib/payments/payment-flags";
 
 /** B2C manual payment mode: confirms reservation immediately as pending payment. */
 export async function POST(request: Request) {
-  if (!IS_MANUAL_PAYMENT) {
+  if (!(await isManualPayment())) {
     return NextResponse.json(
       {
         success: false as const,

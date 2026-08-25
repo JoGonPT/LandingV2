@@ -85,6 +85,7 @@ const DICT = {
     optional:         "opcional",
     vehicleGroup:     "Escolha o veículo",
     seatsUpTo:        "Até {n} lugares",
+    seatsUpToOne:     "Até {n} lugar",
     pricesLoading:    "A calcular preços…",
     pricesUnavailable: "Não foi possível calcular o preço agora. Envie o pedido e respondemos com o valor.",
 
@@ -169,6 +170,7 @@ const DICT = {
     optional:         "optional",
     vehicleGroup:     "Choose your vehicle",
     seatsUpTo:        "Up to {n} seats",
+    seatsUpToOne:     "Up to {n} seat",
     pricesLoading:    "Calculating prices…",
     pricesUnavailable: "We could not calculate the price right now. Send your request and we will reply with the amount.",
 
@@ -1169,7 +1171,12 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
           <ul className="space-y-2" role="radiogroup" aria-label={t.vehicleGroup}>
             {crmClasses.map((c) => {
               const activo = classCode === c.code;
-              const lugares = c.seatsAvailable ?? c.seats;
+              // `seats` é a capacidade da classe. `seatsAvailable` espelha o
+              // `vehicles_available` do catálogo do CRM — é uma contagem de
+              // viaturas livres, não de lugares, e não varia com o número de
+              // passageiros pedido. Mostrá-lo anunciava uma Van de 7 lugares
+              // como "até 2 lugares".
+              const lugares = c.seats ?? c.seatsAvailable;
               return (
                 <li key={c.code}>
                   <button
@@ -1188,7 +1195,7 @@ export function QuickQuoteForm({ locale }: { locale: string }) {
                       <span className="block font-semibold text-black">{c.name}</span>
                       {lugares ? (
                         <span className="block text-xs text-neutral-500">
-                          {t.seatsUpTo.replace("{n}", String(lugares))}
+                          {(lugares === 1 ? t.seatsUpToOne : t.seatsUpTo).replace("{n}", String(lugares))}
                         </span>
                       ) : null}
                     </span>
