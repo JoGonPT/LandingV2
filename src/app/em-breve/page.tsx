@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 import { ComingSoonScreen } from "@/components/ComingSoonScreen";
+import { detectComingSoonLanguage } from "@/lib/coming-soon/language";
 
 /**
  * Ecrã público enquanto o site está em preparação.
@@ -15,6 +17,16 @@ export const metadata: Metadata = {
     robots: { index: false, follow: false },
 };
 
-export default function ComingSoonPage() {
-    return <ComingSoonScreen />;
+/**
+ * Renderizada a pedido, e é isso que queremos: o idioma sai do `Accept-Language`
+ * de quem chega, não do momento do build.
+ *
+ * Resolver no servidor evita o piscar de quem carrega em português e vê o texto
+ * trocar para inglês meio segundo depois.
+ */
+export const dynamic = "force-dynamic";
+
+export default async function ComingSoonPage() {
+    const cabecalhos = await headers();
+    return <ComingSoonScreen idiomaInicial={detectComingSoonLanguage(cabecalhos.get("accept-language"))} />;
 }
