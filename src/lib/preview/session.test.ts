@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { __resetSettingsCache } from "@/lib/site-settings/resolve";
+
 import {
     getPreviewSessionSecret,
     isComingSoonEnabled,
@@ -71,7 +73,12 @@ describe("segredo", () => {
 });
 
 describe("interruptor do portão", () => {
-    it("só está ativo com SITE_COMING_SOON=1", () => {
+    /**
+     * O portão passou a vir do painel de administração. Sem base de dados
+     * configurada — que é o caso aqui — o resolvedor recorre a
+     * `SITE_COMING_SOON`, e este teste continua a valer para essa via.
+     */
+    it("sem base de dados, só está ativo com SITE_COMING_SOON=1", async () => {
         for (const [valor, esperado] of [
             ["1", true],
             ["0", false],
@@ -79,7 +86,16 @@ describe("interruptor do portão", () => {
             ["", false],
         ] as const) {
             vi.stubEnv("SITE_COMING_SOON", valor);
-            expect(isComingSoonEnabled(), `valor=${valor}`).toBe(esperado);
+            __resetSettingsCache();
+            await expect(isComingSoonEnabled(), `valor=${valor}`).resolves.toBe(esperado);
         }
+    });
+
+    it("por omissão o site fica aberto", async () => {
+        vi.stubEnv("SITE_COMING_SOON", "");
+        __resetSettingsCache();
+
+        // Um erro de configuração nunca pode fechar o site sozinho.
+        await expect(isComingSoonEnabled()).resolves.toBe(false);
     });
 });
