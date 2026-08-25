@@ -82,7 +82,15 @@ export function generateStrongPassword(length = GENERATED_PASSWORD_LENGTH): stri
         const j = randomInt(i + 1);
         [chars[i], chars[j]] = [chars[j]!, chars[i]!];
     }
-    return chars.join("");
+
+    const candidata = chars.join("");
+
+    // Garantir as quatro classes não chega: `checkPasswordStrength` também
+    // recusa três caracteres iguais seguidos, e o acaso produz isso em cerca de
+    // meio por cento das passwords. O gerador tem de concordar sempre com o
+    // verificador — caso contrário o sistema recusa o que ele próprio gerou, e
+    // o sintoma aparece uma vez em cada tantas, sem padrão aparente.
+    return checkPasswordStrength(candidata).ok ? candidata : generateStrongPassword(length);
 }
 
 export interface HashedPassword {
