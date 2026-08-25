@@ -120,16 +120,16 @@ function EmergencyStop({ degraded, onDone }: { degraded: boolean; onDone: () => 
     }
 
     return (
-        <section className="rounded-xl border-2 border-red-600 bg-white p-5">
-            <h2 className="font-semibold text-red-800">Paragem de emergência</h2>
-            <p className="mt-1 text-sm leading-relaxed text-neutral-700">
+        <section className="rounded-xl border-2 border-red-700 bg-neutral-950 p-5">
+            <h2 className="font-semibold text-red-300">Paragem de emergência</h2>
+            <p className="mt-1 text-sm leading-relaxed text-neutral-300">
                 Desliga de uma vez a cobrança automática e a faturação real. Deixa o sistema nos
                 estados seguros: pagamento manual e faturação em ensaio. As reservas continuam a
                 entrar.
             </p>
 
             {erro ? (
-                <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p role="alert" className="mt-3 rounded-lg border border-red-900 bg-red-950/40 p-3 text-sm text-red-300">
                     {erro}
                 </p>
             ) : null}
@@ -143,15 +143,15 @@ function EmergencyStop({ degraded, onDone }: { degraded: boolean; onDone: () => 
                         setFrase("");
                         setErro(null);
                     }}
-                    className="mt-3 rounded-lg border border-red-600 px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="mt-3 rounded-lg border border-red-700 px-3 py-2 text-sm font-semibold text-red-300 transition-colors hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     Parar tudo
                 </button>
             ) : (
-                <form onSubmit={parar} className="mt-3 rounded-lg bg-red-50 p-4">
+                <form onSubmit={parar} className="mt-3 rounded-lg bg-red-950/40 p-4">
                     <label
                         htmlFor="frase-emergencia"
-                        className="block text-xs font-medium uppercase tracking-wider text-red-700"
+                        className="block text-xs font-medium uppercase tracking-wider text-red-300"
                     >
                         Escreva para confirmar (não é possível colar)
                     </label>
@@ -163,11 +163,11 @@ function EmergencyStop({ degraded, onDone }: { degraded: boolean; onDone: () => 
                         value={frase}
                         onChange={(e) => setFrase(e.target.value)}
                         {...NO_PASTE}
-                        className="mt-2 min-h-[44px] w-full rounded-lg border border-red-300 px-3 font-mono text-sm outline-none focus:border-red-700"
+                        className="mt-2 min-h-[44px] w-full rounded-lg border border-red-800 bg-neutral-900 px-3 font-mono text-sm outline-none focus:border-red-500"
                     />
                     <label
                         htmlFor="operador-emergencia"
-                        className="mt-3 block text-xs font-medium uppercase tracking-wider text-red-700"
+                        className="mt-3 block text-xs font-medium uppercase tracking-wider text-red-300"
                     >
                         Quem está a fazer isto
                     </label>
@@ -176,7 +176,7 @@ function EmergencyStop({ degraded, onDone }: { degraded: boolean; onDone: () => 
                         value={operador}
                         onChange={(e) => setOperador(e.target.value)}
                         placeholder="nome ou iniciais"
-                        className="mt-1 min-h-[44px] w-full rounded-lg border border-red-300 px-3 text-sm outline-none focus:border-red-700"
+                        className="mt-1 min-h-[44px] w-full rounded-lg border border-red-800 bg-neutral-900 px-3 text-sm outline-none focus:border-red-500"
                     />
                     <div className="mt-4 flex gap-2">
                         <button
@@ -192,7 +192,7 @@ function EmergencyStop({ degraded, onDone }: { degraded: boolean; onDone: () => 
                                 setAberto(false);
                                 setFrase("");
                             }}
-                            className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-neutral-600 hover:text-black"
+                            className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-neutral-400 hover:text-white"
                         >
                             Cancelar
                         </button>
@@ -279,29 +279,29 @@ export function OperationalSettingsPanel() {
     return (
         <div className="space-y-8">
             <header>
-                <h1 className="text-2xl font-bold tracking-tight text-black">Controlo operacional</h1>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600">
+                <h1 className="text-2xl font-bold tracking-tight text-white">Controlo operacional</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-400">
                     Cada alteração aqui muda o comportamento do site em segundos, sem deploy. Nenhuma
                     acontece com um clique: é preciso escrever a frase de confirmação à mão.
                 </p>
             </header>
 
             {snapshot?.degraded ? (
-                <div role="alert" className="rounded-xl border-2 border-red-600 bg-red-50 p-4">
-                    <p className="font-semibold text-red-800">A base de dados não está a responder.</p>
-                    <p className="mt-1 text-sm text-red-700">
+                <div role="alert" className="rounded-xl border-2 border-red-700 bg-red-950/40 p-4">
+                    <p className="font-semibold text-red-300">A base de dados não está a responder.</p>
+                    <p className="mt-1 text-sm text-red-300">
                         Os valores abaixo são os de ambiente ou os últimos conhecidos, e{" "}
                         <strong>nenhuma alteração é aceite</strong> neste estado. O site mantém-se como
                         estava — nada foi desligado sozinho.
                     </p>
                     {snapshot.degradedReason ? (
-                        <p className="mt-2 font-mono text-xs text-red-600">{snapshot.degradedReason}</p>
+                        <p className="mt-2 font-mono text-xs text-red-400">{snapshot.degradedReason}</p>
                     ) : null}
                 </div>
             ) : null}
 
             {erro ? (
-                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p role="alert" className="rounded-lg border border-red-900 bg-red-950/40 p-3 text-sm text-red-300">
                     {erro}
                 </p>
             ) : null}
@@ -312,23 +312,23 @@ export function OperationalSettingsPanel() {
                     return (
                         <article
                             key={setting.key}
-                            className={`rounded-xl border bg-white p-5 ${
-                                setting.critical ? "border-neutral-300" : "border-neutral-200"
+                            className={`rounded-xl border bg-neutral-950 p-5 ${
+                                setting.critical ? "border-neutral-700" : "border-neutral-800"
                             }`}
                         >
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="min-w-0 flex-1">
-                                    <h2 className="font-semibold text-black">{setting.label}</h2>
-                                    <p className="mt-1 text-sm leading-relaxed text-neutral-600">
+                                    <h2 className="font-semibold text-white">{setting.label}</h2>
+                                    <p className="mt-1 text-sm leading-relaxed text-neutral-400">
                                         {setting.description}
                                     </p>
                                 </div>
-                                <span className="rounded-md bg-black px-2.5 py-1 text-xs font-semibold text-white">
+                                <span className="rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-black">
                                     {actual?.label ?? setting.value}
                                 </span>
                             </div>
 
-                            <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 border-t border-neutral-100 pt-3 text-xs text-neutral-500">
+                            <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 border-t border-neutral-800 pt-3 text-xs text-neutral-500">
                                 <div className="flex gap-1.5">
                                     <dt>Valor vem de:</dt>
                                     <dd className="font-medium text-neutral-800">{SOURCE_LABEL[setting.source]}</dd>
@@ -360,19 +360,19 @@ export function OperationalSettingsPanel() {
                                                             setFrase("");
                                                             setErro(null);
                                                         }}
-                                                        className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-black transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+                                                        className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:border-white disabled:cursor-not-allowed disabled:opacity-40"
                                                     >
                                                         Mudar para: {option.label}
                                                     </button>
                                                 ) : (
                                                     <form
                                                         onSubmit={(e) => aplicar(e, setting, option)}
-                                                        className="rounded-lg border-2 border-black bg-neutral-50 p-4"
+                                                        className="rounded-lg border-2 border-white bg-neutral-900 p-4"
                                                     >
-                                                        <p className="text-sm font-semibold text-black">
+                                                        <p className="text-sm font-semibold text-white">
                                                             {option.label}
                                                         </p>
-                                                        <p className="mt-1 text-sm leading-relaxed text-neutral-700">
+                                                        <p className="mt-1 text-sm leading-relaxed text-neutral-300">
                                                             {option.consequence}
                                                         </p>
 
@@ -384,7 +384,7 @@ export function OperationalSettingsPanel() {
                                                                 >
                                                                     Escreva para confirmar (não é possível colar)
                                                                 </label>
-                                                                <p className="mt-1 select-none font-mono text-sm font-bold tracking-wide text-black">
+                                                                <p className="mt-1 select-none font-mono text-sm font-bold tracking-wide text-white">
                                                                     {option.confirmation}
                                                                 </p>
                                                                 <input
@@ -392,7 +392,7 @@ export function OperationalSettingsPanel() {
                                                                     value={frase}
                                                                     onChange={(e) => setFrase(e.target.value)}
                                                                     {...NO_PASTE}
-                                                                    className="mt-2 min-h-[44px] w-full rounded-lg border border-neutral-300 px-3 font-mono text-sm outline-none focus:border-black"
+                                                                    className="mt-2 min-h-[44px] w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 font-mono text-sm outline-none focus:border-white"
                                                                 />
                                                             </>
                                                         ) : null}
@@ -408,7 +408,7 @@ export function OperationalSettingsPanel() {
                                                             value={operador}
                                                             onChange={(e) => setOperador(e.target.value)}
                                                             placeholder="nome ou iniciais"
-                                                            className="mt-1 min-h-[44px] w-full rounded-lg border border-neutral-300 px-3 text-sm outline-none focus:border-black"
+                                                            className="mt-1 min-h-[44px] w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 text-sm outline-none focus:border-white"
                                                         />
 
                                                         <div className="mt-4 flex gap-2">
@@ -420,7 +420,7 @@ export function OperationalSettingsPanel() {
                                                                         frase.trim().replace(/\s+/g, " ") !==
                                                                             option.confirmation)
                                                                 }
-                                                                className="min-h-[44px] rounded-lg bg-black px-5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 disabled:opacity-30"
+                                                                className="min-h-[44px] rounded-lg bg-white px-5 text-sm font-semibold text-black transition-colors hover:bg-neutral-200 disabled:opacity-30"
                                                             >
                                                                 {aGravar ? "A aplicar…" : "Aplicar"}
                                                             </button>
@@ -430,7 +430,7 @@ export function OperationalSettingsPanel() {
                                                                     setAConfirmar(null);
                                                                     setFrase("");
                                                                 }}
-                                                                className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-neutral-600 hover:text-black"
+                                                                className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-neutral-400 hover:text-white"
                                                             >
                                                                 Cancelar
                                                             </button>
@@ -448,16 +448,16 @@ export function OperationalSettingsPanel() {
 
             <EmergencyStop degraded={snapshot?.degraded ?? false} onDone={carregar} />
 
-            <section className="rounded-xl border border-neutral-200 bg-white p-5">
-                <h2 className="font-semibold text-black">Password de administração</h2>
-                <p className="mt-1 text-sm text-neutral-600">
+            <section className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
+                <h2 className="font-semibold text-white">Password de administração</h2>
+                <p className="mt-1 text-sm text-neutral-400">
                     {snapshot?.passwordInDatabase
                         ? "Está definida no painel. A variável de ambiente já não serve para entrar."
                         : "Ainda vem da variável de ambiente, guardada em claro na configuração. Convém trocá-la."}
                 </p>
                 <Link
                     href="/master-admin/settings/password/"
-                    className="mt-3 inline-block rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-black hover:border-black"
+                    className="mt-3 inline-block rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:border-white"
                 >
                     Gerar uma password forte
                 </Link>
@@ -468,14 +468,14 @@ export function OperationalSettingsPanel() {
                     <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-neutral-500">
                         Últimas alterações
                     </h2>
-                    <ul className="divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white text-sm">
+                    <ul className="divide-y divide-neutral-800 rounded-xl border border-neutral-800 bg-neutral-950 text-sm">
                         {snapshot.audit.map((a, i) => (
                             <li key={`${a.created_at}-${i}`} className="flex flex-wrap gap-x-3 gap-y-1 px-4 py-2.5">
                                 <span className="font-mono text-xs text-neutral-500">
                                     {new Date(a.created_at).toLocaleString("pt-PT")}
                                 </span>
-                                <span className="font-medium text-black">{a.key}</span>
-                                <span className="font-mono text-xs text-neutral-600">
+                                <span className="font-medium text-white">{a.key}</span>
+                                <span className="font-mono text-xs text-neutral-400">
                                     {a.old_value ?? "—"} → {a.new_value}
                                 </span>
                                 <span className="text-xs text-neutral-500">{a.actor_label ?? "sem identificação"}</span>
