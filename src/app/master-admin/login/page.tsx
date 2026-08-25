@@ -1,10 +1,26 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+
+/**
+ * Para onde ir depois de entrar.
+ *
+ * Só aceita caminhos dentro de `/master-admin/`. Sem esta verificação, um
+ * `?next=` apontado para fora transformava a página de entrada num
+ * redirecionador aberto, útil a quem quisesse disfarçar um endereço alheio
+ * atrás do domínio da Way2Go.
+ */
+function destinoSeguro(next: string | null): string {
+  if (!next) return "/master-admin/finance/";
+  if (!next.startsWith("/master-admin/")) return "/master-admin/finance/";
+  if (next.startsWith("//") || next.includes("..")) return "/master-admin/finance/";
+  return next;
+}
 
 export default function MasterAdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +40,9 @@ export default function MasterAdminLoginPage() {
         setError(data?.message || "Could not sign in.");
         return;
       }
-      router.replace("/master-admin/finance/");
+      // Antes ia sempre para o crédito de parceiros, mesmo para quem tinha
+      // pedido outra página — comportamento herdado de quando havia um painel só.
+      router.replace(destinoSeguro(searchParams.get("next")));
       router.refresh();
     } catch {
       setError("Could not sign in.");

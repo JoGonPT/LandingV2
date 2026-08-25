@@ -21,10 +21,10 @@ export default async function AdminPasswordPage() {
     const jar = await cookies();
     const token = jar.get(MASTER_ADMIN_SESSION_COOKIE)?.value;
     if (!verifyMasterAdminSession(secret, token)) {
-      redirect("/master-admin/login/");
+      redirect("/master-admin/login/?next=/master-admin/settings/password/");
     }
   } catch {
-    redirect("/master-admin/login/");
+    redirect("/master-admin/login/?next=/master-admin/settings/password/");
   }
 
   return (
