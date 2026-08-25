@@ -13,7 +13,7 @@ import {
   assertPaymentIntentAmountMatchesMetadata,
   finalizePaidBookingCore,
 } from "@/lib/checkout/finalize-paid-booking-core";
-import { MANUAL_PAYMENT_PENDING_NOTE, IS_MANUAL_PAYMENT } from "@/lib/payments/payment-flags";
+import { MANUAL_PAYMENT_PENDING_NOTE, isManualPayment } from "@/lib/payments/payment-flags";
 import {
   createDriverAssignmentUpsertFromEnv,
   createPublicBookingsStoreFromEnv,
@@ -498,7 +498,7 @@ export async function paymentsHandleStripeWebhook(
     console.info(LOG_PREFIX, `webhook completed session=${sessionId} crm=${booking.bookingId}`);
 
     // Best-effort fiscal automation: log failures but do not fail customer flow/webhook ACK.
-    if (IS_MANUAL_PAYMENT) {
+    if (await isManualPayment()) {
       console.info(LOG_PREFIX, `fiscal invoice skipped session=${sessionId} reason=manual_payment_mode`);
     } else {
       try {

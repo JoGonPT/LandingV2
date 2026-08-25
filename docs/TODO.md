@@ -175,6 +175,59 @@ a terceiros ou a dados de negócio. Nada aqui deve ser tratado como facto até s
 
 Cada entrada regista o que mudou, como foi verificado, e o que se descobriu pelo caminho.
 
+### 23-24 ago 2026 — Painel de controlo operacional: os interruptores passam a ser reais
+
+O João pediu um sítio onde ligar e desligar o que afeta o funcionamento do site,
+a começar pelo pagamento Stripe, com password forte e sem que nada mude com um
+clique.
+
+**O trabalho real não era o painel.** As definições viviam em variáveis de
+ambiente, e está medido nesta mesma semana que **alterar uma variável não afeta o
+deployment que já está no ar** — os valores ficam fixados quando o deployment é
+criado. Um painel que escrevesse em variáveis mostraria "desligado" com o site a
+cobrar cartões. Foi preciso passar os interruptores de constantes de build para
+leitura em tempo de execução.
+
+Dois obstáculos concretos, ambos resolvidos:
+
+- `IS_MANUAL_PAYMENT` era uma **constante de módulo**, avaliada uma vez na
+  importação, e usada dentro de `BookingForm.tsx`, que é componente de cliente.
+  Deu lugar a `isManualPayment()`; a constante fica marcada como obsoleta e serve
+  só para o cliente, que recebe o valor por propriedade.
+- `isComingSoonEnabled()` é lido no **middleware**, em Edge, a cada pedido. Passou
+  a assíncrona com cache de 30 s no resolvedor. Verificado no build: o middleware
+  passou de 98 kB para 100 kB e compila para Edge sem problema.
+
+**A regra que o resolvedor protege** vem do Supabase pausado a 21 de agosto: uma
+falha de leitura **nunca lança nem inverte um estado** — mantém o último valor
+conhecido e assinala degradação. Sem isso, uma base de dados em baixo desligaria
+a cobrança sozinha. As omissões são todas o estado seguro.
+
+**Confirmação escrita.** Cada alteração exige uma frase escrita à mão, com o
+colar, o arrastar e o menu de contexto bloqueados. As frases dizem o que vai
+acontecer — `DESLIGAR PAGAMENTO STRIPE`, `EMITIR FACTURAS REAIS` — porque uma
+frase genérica seria executada de cor à terceira vez. O servidor valida a frase
+outra vez: o bloqueio no browser é ergonomia, não é o controlo.
+
+**Password.** Gerador de 24 caracteres, guardada como hash `scrypt` com sal. Um
+teste apanhou um erro meu: confiando no acaso, cerca de **4% das passwords saíam
+sem símbolo** e eram recusadas pelo próprio sistema — passou a garantir uma de
+cada classe por construção. Havendo hash na base de dados, o
+`W2G_MASTER_ADMIN_PASSWORD` deixa de servir para entrar.
+
+**Também incluído:** auditoria de quem mudou o quê, aviso no Discord a cada
+alteração, indicação de **de onde vem cada valor** (base de dados, ambiente ou
+omissão) — a ambiguidade que custou horas de diagnóstico esta semana — e uma
+paragem de emergência que corta cobrança e faturação de uma vez.
+
+Um erro que só o build apanhou e o `tsc` não: **ficheiros de rota do App Router
+só podem exportar handlers HTTP**. A frase de confirmação da password estava
+exportada de uma rota e fazia o build falhar; passou para o registo.
+
+Estado: 180 testes em 22 ficheiros, lint limpo, build a compilar e a gerar 62
+páginas. **Nada disto foi ainda exercitado contra a base de dados real** — a
+migração tem de ser aplicada e o percurso completo testado no painel.
+
 ### 21 ago 2026 — Recetor de webhooks a devolver 500; e seis projetos Vercel no mesmo repositório
 
 **O 500 do recetor de webhooks** (PR #7, `fix/recetor-de-webhooks`)
