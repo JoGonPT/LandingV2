@@ -35,8 +35,20 @@ describe("gerador", () => {
     });
 
     it("o que gera passa sempre as exigências de força", () => {
-        for (let i = 0; i < 50; i++) {
-            expect(checkPasswordStrength(generateStrongPassword()).ok).toBe(true);
+        // 3000 amostras, não 50. O defeito que este teste apanhou aparecia em
+        // cerca de meio por cento das passwords — com 50 falhava uma vez em
+        // cada quatro execuções, o que se lê como teste instável e não como
+        // defeito. Com esta amostragem, ou está certo ou falha sempre.
+        for (let i = 0; i < 3000; i++) {
+            const p = generateStrongPassword();
+            const r = checkPasswordStrength(p);
+            expect(r.ok, `${p} → ${r.problems.join(" ")}`).toBe(true);
+        }
+    });
+
+    it("nunca gera três caracteres iguais seguidos", () => {
+        for (let i = 0; i < 3000; i++) {
+            expect(/(.){2,}/.test(generateStrongPassword())).toBe(false);
         }
     });
 });

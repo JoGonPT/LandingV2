@@ -45,12 +45,30 @@ export const GENERATED_PASSWORD_LENGTH = 24;
  * múltiplo do tamanho do alfabeto, e o resto daria mais probabilidade aos
  * primeiros caracteres.
  */
+/**
+ * Reservatório de entropia.
+ *
+ * Pedir bytes ao sistema é caro por chamada, e cada password precisa de umas
+ * cinquenta amostras — uma por carácter, mais o baralhar. Pedir 64 bytes de
+ * cada vez que se quer **um** número tornava a geração lenta ao ponto de
+ * esgotar o tempo limite dos testes. Enche-se de uma vez e serve-se daí.
+ */
+let pool = randomBytes(1024);
+let poolPos = 0;
+
+function nextByte(): number {
+    if (poolPos >= pool.length) {
+        pool = randomBytes(1024);
+        poolPos = 0;
+    }
+    return pool[poolPos++]!;
+}
+
 function randomInt(max: number): number {
     const limit = 256 - (256 % max);
     for (;;) {
-        for (const byte of randomBytes(64)) {
-            if (byte < limit) return byte % max;
-        }
+        const byte = nextByte();
+        if (byte < limit) return byte % max;
     }
 }
 
@@ -82,7 +100,15 @@ export function generateStrongPassword(length = GENERATED_PASSWORD_LENGTH): stri
         const j = randomInt(i + 1);
         [chars[i], chars[j]] = [chars[j]!, chars[i]!];
     }
-    return chars.join("");
+
+    const candidata = chars.join("");
+
+    // Garantir as quatro classes não chega: `checkPasswordStrength` também
+    // recusa três caracteres iguais seguidos, e o acaso produz isso em cerca de
+    // meio por cento das passwords. O gerador tem de concordar sempre com o
+    // verificador — caso contrário o sistema recusa o que ele próprio gerou, e
+    // o sintoma aparece uma vez em cada tantas, sem padrão aparente.
+    return checkPasswordStrength(candidata).ok ? candidata : generateStrongPassword(length);
 }
 
 export interface HashedPassword {
