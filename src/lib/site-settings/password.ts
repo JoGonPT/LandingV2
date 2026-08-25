@@ -45,12 +45,30 @@ export const GENERATED_PASSWORD_LENGTH = 24;
  * múltiplo do tamanho do alfabeto, e o resto daria mais probabilidade aos
  * primeiros caracteres.
  */
+/**
+ * Reservatório de entropia.
+ *
+ * Pedir bytes ao sistema é caro por chamada, e cada password precisa de umas
+ * cinquenta amostras — uma por carácter, mais o baralhar. Pedir 64 bytes de
+ * cada vez que se quer **um** número tornava a geração lenta ao ponto de
+ * esgotar o tempo limite dos testes. Enche-se de uma vez e serve-se daí.
+ */
+let pool = randomBytes(1024);
+let poolPos = 0;
+
+function nextByte(): number {
+    if (poolPos >= pool.length) {
+        pool = randomBytes(1024);
+        poolPos = 0;
+    }
+    return pool[poolPos++]!;
+}
+
 function randomInt(max: number): number {
     const limit = 256 - (256 % max);
     for (;;) {
-        for (const byte of randomBytes(64)) {
-            if (byte < limit) return byte % max;
-        }
+        const byte = nextByte();
+        if (byte < limit) return byte % max;
     }
 }
 
