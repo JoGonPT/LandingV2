@@ -14,3 +14,9 @@ tsconfig.tsbuildinfo
 .env.*
 !.env.example
 coverage
+
+# CMS (Payload) — projeto npm independente, com o seu próprio Next
+cms/node_modules/
+cms/.next/
+cms/.env.local
+cms/.env*.local
