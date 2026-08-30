@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    destinations: Destination;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -76,6 +77,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    destinations: DestinationsSelect<false> | DestinationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -158,6 +160,94 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Uma página por cidade. Ainda não são visíveis no site.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "destinations".
+ */
+export interface Destination {
+  id: number;
+  /**
+   * O que aparece no URL: «porto» dá /pt/transferes/porto. Minúsculas, sem acentos nem espaços. Mudar isto depois de a página estar indexada parte as ligações.
+   */
+  slug: string;
+  /**
+   * O título grande no topo. Ex.: «Transfer Aeroporto do Porto → Guimarães».
+   */
+  title: string;
+  /**
+   * O nome só por si, para listagens e migalhas. Ex.: «Guimarães».
+   */
+  city?: string | null;
+  subtitle?: string | null;
+  /**
+   * Duas ou três linhas, para cartões e listagens. Não é a meta-descrição.
+   */
+  summary?: string | null;
+  /**
+   * O conteúdo próprio deste destino: o que há para ver, particularidades da recolha, o que distingue esta rota. Texto genérico com o nome trocado não serve — o Google trata páginas assim como páginas-porta.
+   */
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Frases curtas. Ex.: «Motorista espera 60 minutos sem custo».
+   */
+  highlights?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Valores indicativos, para o visitante saber o que esperar. Não alimentam o motor de preços — esse continua a ser o TransferCRM.
+   */
+  route?: {
+    /**
+     * Ex.: «Aeroporto Francisco Sá Carneiro (OPO)».
+     */
+    origin?: string | null;
+    distanceKm?: number | null;
+    durationMin?: number | null;
+    /**
+     * Só indicativo. O preço real vem sempre do orçamento.
+     */
+    priceFrom?: number | null;
+  };
+  /**
+   * Específicas desta rota. As gerais estão no global «FAQ».
+   */
+  faq?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * O que o Google mostra nos resultados. Se ficar vazio, usa-se o título e o resumo.
+   */
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -180,10 +270,15 @@ export interface PayloadKv {
  */
 export interface PayloadLockedDocument {
   id: number;
-  document?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  document?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'destinations';
+        value: number | Destination;
+      } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
@@ -248,6 +343,48 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "destinations_select".
+ */
+export interface DestinationsSelect<T extends boolean = true> {
+  slug?: T;
+  title?: T;
+  city?: T;
+  subtitle?: T;
+  summary?: T;
+  body?: T;
+  highlights?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  route?:
+    | T
+    | {
+        origin?: T;
+        distanceKm?: T;
+        durationMin?: T;
+        priceFrom?: T;
+      };
+  faq?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -8,6 +8,7 @@ import { pt } from "@payloadcms/translations/languages/pt";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import { Destinations } from "./src/collections/Destinations";
 import { Users } from "./src/collections/Users";
 import { Booking } from "./src/globals/Booking";
 import { Common } from "./src/globals/Common";
@@ -49,7 +50,7 @@ export default buildConfig({
     admin: {
         user: Users.slug,
     },
-    collections: [Users],
+    collections: [Users, Destinations],
     // Um global por secção do dicionário do site, com os nomes dos campos iguais
     // às chaves de `src/dictionaries/*.json`. A forma dos dados mantém-se, para
     // que ligar o site ao CMS não obrigue a mexer nos componentes.
