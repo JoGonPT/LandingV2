@@ -14,7 +14,8 @@
     "generate:types": "payload generate:types",
     "migrate:create": "payload migrate:create",
     "migrate": "payload migrate",
-    "migrate:status": "payload migrate:status"
+    "migrate:status": "payload migrate:status",
+    "importar": "payload run src/scripts/importar-dicionarios.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",

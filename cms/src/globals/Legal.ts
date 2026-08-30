@@ -20,22 +20,54 @@ import type { Field, GlobalConfig } from "payload";
  * frequente, o texto rico é a mudança certa a fazer — e o custo dela é o
  * renderizador, não os dados.
  *
- * ## Listas de texto
+ * ## Listas de texto, e porque são de duas formas diferentes
  *
- * `intro`, `list` e `subsections[].list` são arrays de strings. Um campo `array`
- * do Payload envolveria cada linha num objecto e daria `{texto: string}[]`, o
- * que quebraria a forma. Um `text` com `hasMany` guarda `string[]` directamente.
+ * Nos dicionários, `intro` e `list` são ambos `string[]`. Aqui não são, e a
+ * diferença não é arbitrária — foi medida.
+ *
+ * O `intro` usa `text` com `hasMany`, que guarda `string[]` directamente e
+ * mantém a forma original. Funciona porque está ao nível do grupo.
+ *
+ * O `list` **não pode** usar `hasMany`, porque está dentro de arrays. Nessa
+ * posição o Payload 3.88 grava bem e lê mal: os valores vão parar às posições
+ * erradas do array, ou desaparecem. Verificado contra a base de dados — os
+ * caminhos gravados (`privacy.sections.1.list`, com as suas cinco linhas) estão
+ * correctos, e `findGlobal` devolve zero para eles enquanto inventa uma lista
+ * para uma secção que não tem nenhuma.
+ *
+ * Por isso o `list` é um `array` com um campo `valor`. Custa a tradução
+ * `string[] ⇄ [{valor}]` na fronteira — está no importador, e terá de estar no
+ * adaptador que ligar o site. É o preço de uma leitura que funciona.
  */
 
-/** Sub-secção numerada (ex.: «A. Execução Contratual», «4.2. Serviços Adicionais»). */
-const subsecoes: Field = {
+/**
+ * Os pontos de uma lista. Ver a nota sobre listas no topo do ficheiro: dentro de
+ * um array isto não pode ser `text` com `hasMany`.
+ */
+const listaDeTextos = (name: string, label: string): Field => ({
+    name,
+    type: "array",
+    label,
+    admin: { initCollapsed: true },
+    fields: [{ name: "valor", type: "textarea", label: "Texto", required: true }],
+});
+
+/**
+ * Sub-secção numerada (ex.: «A. Execução Contratual», «4.2. Serviços Adicionais»).
+ *
+ * É uma função, e não uma constante partilhada, de propósito: o Payload muta as
+ * configurações de campo quando as sanitiza, anotando-lhes o caminho e o pai.
+ * Reutilizar o mesmo objecto em três sítios dava a todos o caminho do último a
+ * ser processado.
+ */
+const subsecoes = (): Field => ({
     name: "subsections",
     type: "array",
     label: "Sub-secções",
     admin: { initCollapsed: true },
     fields: [
         { name: "title", type: "text", label: "Título", required: true },
-        { name: "list", type: "text", hasMany: true, label: "Pontos" },
+        listaDeTextos("list", "Pontos"),
         {
             name: "legalBasis",
             type: "text",
@@ -43,7 +75,7 @@ const subsecoes: Field = {
             admin: { description: "Usado na política de privacidade. Deixar vazio nos termos." },
         },
     ],
-};
+});
 
 /**
  * A forma de uma secção. Todos os campos além do título são opcionais, porque
@@ -57,9 +89,9 @@ const seccoes = (label: string): Field => ({
     fields: [
         { name: "title", type: "text", label: "Título", required: true },
         { name: "content", type: "textarea", label: "Texto" },
-        { name: "list", type: "text", hasMany: true, label: "Pontos" },
-        subsecoes,
-        { name: "afterList", type: "textarea", label: "Texto depois da lista" },
+        listaDeTextos("list", "Pontos"),
+        subsecoes(),
+        listaDeTextos("afterList", "Texto depois da lista"),
         { name: "footer", type: "textarea", label: "Nota final" },
     ],
 });

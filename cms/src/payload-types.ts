@@ -508,11 +508,21 @@ export interface Legal {
       | {
           title: string;
           content?: string | null;
-          list?: string[] | null;
+          list?:
+            | {
+                valor: string;
+                id?: string | null;
+              }[]
+            | null;
           subsections?:
             | {
                 title: string;
-                list?: string[] | null;
+                list?:
+                  | {
+                      valor: string;
+                      id?: string | null;
+                    }[]
+                  | null;
                 /**
                  * Usado na política de privacidade. Deixar vazio nos termos.
                  */
@@ -520,7 +530,12 @@ export interface Legal {
                 id?: string | null;
               }[]
             | null;
-          afterList?: string | null;
+          afterList?:
+            | {
+                valor: string;
+                id?: string | null;
+              }[]
+            | null;
           footer?: string | null;
           id?: string | null;
         }[]
@@ -543,11 +558,21 @@ export interface Legal {
             | {
                 title: string;
                 content?: string | null;
-                list?: string[] | null;
+                list?:
+                  | {
+                      valor: string;
+                      id?: string | null;
+                    }[]
+                  | null;
                 subsections?:
                   | {
                       title: string;
-                      list?: string[] | null;
+                      list?:
+                        | {
+                            valor: string;
+                            id?: string | null;
+                          }[]
+                        | null;
                       /**
                        * Usado na política de privacidade. Deixar vazio nos termos.
                        */
@@ -555,7 +580,12 @@ export interface Legal {
                       id?: string | null;
                     }[]
                   | null;
-                afterList?: string | null;
+                afterList?:
+                  | {
+                      valor: string;
+                      id?: string | null;
+                    }[]
+                  | null;
                 footer?: string | null;
                 id?: string | null;
               }[]
@@ -792,16 +822,31 @@ export interface LegalSelect<T extends boolean = true> {
           | {
               title?: T;
               content?: T;
-              list?: T;
+              list?:
+                | T
+                | {
+                    valor?: T;
+                    id?: T;
+                  };
               subsections?:
                 | T
                 | {
                     title?: T;
-                    list?: T;
+                    list?:
+                      | T
+                      | {
+                          valor?: T;
+                          id?: T;
+                        };
                     legalBasis?: T;
                     id?: T;
                   };
-              afterList?: T;
+              afterList?:
+                | T
+                | {
+                    valor?: T;
+                    id?: T;
+                  };
               footer?: T;
               id?: T;
             };
@@ -821,16 +866,31 @@ export interface LegalSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     content?: T;
-                    list?: T;
+                    list?:
+                      | T
+                      | {
+                          valor?: T;
+                          id?: T;
+                        };
                     subsections?:
                       | T
                       | {
                           title?: T;
-                          list?: T;
+                          list?:
+                            | T
+                            | {
+                                valor?: T;
+                                id?: T;
+                              };
                           legalBasis?: T;
                           id?: T;
                         };
-                    afterList?: T;
+                    afterList?:
+                      | T
+                      | {
+                          valor?: T;
+                          id?: T;
+                        };
                     footer?: T;
                     id?: T;
                   };
