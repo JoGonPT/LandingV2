@@ -47,6 +47,13 @@ export default buildConfig({
     db: postgresAdapter({
         // Marcada como experimental no adaptador. Ver a nota acima.
         schemaName: "payload",
+        // Em desenvolvimento o adaptador liga o "push" do Drizzle por omissão:
+        // ao arrancar, compara o esquema com as coleções e altera a base de
+        // dados sozinho, sem gerar ficheiro nenhum para rever. Como este
+        // projeto passou a usar migrações, isso significaria duas fontes de
+        // verdade — e a que ninguém vê ganharia. Desligado de propósito:
+        // qualquer alteração ao esquema passa por `payload migrate:create`.
+        push: false,
         pool: {
             connectionString: process.env.DATABASE_URL ?? "",
         },
