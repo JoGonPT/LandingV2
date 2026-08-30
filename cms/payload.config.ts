@@ -9,6 +9,13 @@ import { buildConfig } from "payload";
 import sharp from "sharp";
 
 import { Users } from "./src/collections/Users";
+import { Booking } from "./src/globals/Booking";
+import { Common } from "./src/globals/Common";
+import { Cookies } from "./src/globals/Cookies";
+import { Faq } from "./src/globals/Faq";
+import { Footer } from "./src/globals/Footer";
+import { Hero } from "./src/globals/Hero";
+import { Legal } from "./src/globals/Legal";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -43,6 +50,25 @@ export default buildConfig({
         user: Users.slug,
     },
     collections: [Users],
+    // Um global por secção do dicionário do site, com os nomes dos campos iguais
+    // às chaves de `src/dictionaries/*.json`. A forma dos dados mantém-se, para
+    // que ligar o site ao CMS não obrigue a mexer nos componentes.
+    globals: [Common, Hero, Booking, Faq, Footer, Cookies, Legal],
+    // Os dois idiomas que o site serve — ver `LOCALES` em `src/lib/site.ts` e o
+    // matcher em `src/middleware.ts`. Não são os cinco da página "Em breve", que
+    // é um componente à parte com traduções próprias e não passa por aqui.
+    //
+    // `fallback` faz o inglês por preencher cair no português em vez de mostrar
+    // um vazio: num site que vende viagens, texto em falta é pior do que texto
+    // no idioma errado.
+    localization: {
+        locales: [
+            { code: "pt", label: "Português" },
+            { code: "en", label: "English" },
+        ],
+        defaultLocale: "pt",
+        fallback: true,
+    },
     editor: lexicalEditor(),
     db: postgresAdapter({
         // Marcada como experimental no adaptador. Ver a nota acima.

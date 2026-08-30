@@ -84,10 +84,26 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
-  locale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('pt' | 'en') | ('pt' | 'en')[];
+  globals: {
+    common: Common;
+    hero: Hero;
+    booking: Booking;
+    faq: Faq;
+    footer: Footer;
+    cookies: Cooky;
+    legal: Legal;
+  };
+  globalsSelect: {
+    common: CommonSelect<false> | CommonSelect<true>;
+    hero: HeroSelect<false> | HeroSelect<true>;
+    booking: BookingSelect<false> | BookingSelect<true>;
+    faq: FaqSelect<false> | FaqSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
+    cookies: CookiesSelect<false> | CookiesSelect<true>;
+    legal: LegalSelect<false> | LegalSelect<true>;
+  };
+  locale: 'pt' | 'en';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -272,6 +288,571 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Rótulos partilhados por várias páginas.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "common".
+ */
+export interface Common {
+  id: number;
+  back?: string | null;
+  reserve?: string | null;
+  faq?: string | null;
+  privacy?: string | null;
+  contact?: string | null;
+  loading?: string | null;
+  copyright?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * O bloco de topo da página inicial.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hero".
+ */
+export interface Hero {
+  id: number;
+  badge?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+  cta?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Formulário de reserva, escolha de viatura, pagamento e erros.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "booking".
+ */
+export interface Booking {
+  id: number;
+  title?: string | null;
+  route?: string | null;
+  pickup?: string | null;
+  dropoff?: string | null;
+  datetime?: string | null;
+  date?: string | null;
+  time?: string | null;
+  details?: string | null;
+  passengers?: string | null;
+  luggage?: string | null;
+  distanceKm?: string | null;
+  flight?: string | null;
+  flightPlaceholder?: string | null;
+  childSeat?: string | null;
+  contactInfo?: string | null;
+  name?: string | null;
+  email?: string | null;
+  confirmEmail?: string | null;
+  whatsapp?: string | null;
+  gdpr?: {
+    text?: string | null;
+    link?: string | null;
+  };
+  submit?: string | null;
+  checkout?: {
+    chooseVehicle?: string | null;
+    vehicleStepTitle?: string | null;
+    continueFromForm?: string | null;
+    continueToPay?: string | null;
+    loadingVehicles?: string | null;
+    loadingCheckout?: string | null;
+    totalToPay?: string | null;
+    confirmPay?: string | null;
+    processing?: string | null;
+    back?: string | null;
+    noVehicles?: string | null;
+    stripeMissing?: string | null;
+    breakdownTitle?: string | null;
+    summary?: {
+      title?: string | null;
+      route?: string | null;
+      when?: string | null;
+      vehicle?: string | null;
+      extras?: string | null;
+      childSeat?: string | null;
+      luggage?: string | null;
+      seats?: string | null;
+      total?: string | null;
+      updating?: string | null;
+      pendingPrice?: string | null;
+      none?: string | null;
+    };
+    vehicles?: {
+      businessClass?: string | null;
+      firstClass?: string | null;
+      businessVan?: string | null;
+      businessHint?: string | null;
+      firstHint?: string | null;
+      vanHint?: string | null;
+      seats?: string | null;
+    };
+    routePreview?: {
+      title?: string | null;
+      loading?: string | null;
+      suggested?: string | null;
+      from?: string | null;
+      distanceEta?: string | null;
+      distanceOnly?: string | null;
+      etaNote?: string | null;
+      availabilityNote?: string | null;
+    };
+    breakdown?: {
+      baseFee?: string | null;
+      perKm?: string | null;
+      perMin?: string | null;
+      vehicleMultiplier?: string | null;
+      timeSurcharge?: string | null;
+      minimumFare?: string | null;
+    };
+  };
+  success?: {
+    title?: string | null;
+    message?: string | null;
+    orderLabel?: string | null;
+    referenceHint?: string | null;
+    close?: string | null;
+  };
+  /**
+   * São o que o cliente lê quando alguma coisa corre mal. Devem dizer o que aconteceu e o que fazer a seguir.
+   */
+  errors?: {
+    generic?: string | null;
+    gdpr?: string | null;
+    emailMismatch?: string | null;
+    distanceRequired?: string | null;
+    distancePending?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Título da secção e as perguntas frequentes.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faq".
+ */
+export interface Faq {
+  id: number;
+  title?: string | null;
+  items?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Títulos das colunas e ligações do rodapé.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  contacts?: string | null;
+  legal?: string | null;
+  privacy?: string | null;
+  terms?: string | null;
+  cookies?: string | null;
+  about?: string | null;
+  aboutText?: string | null;
+  explore?: string | null;
+  airportTransfers?: string | null;
+  byTheHour?: string | null;
+  copyright?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * O aviso de cookies e os seus dois botões.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cookies".
+ */
+export interface Cooky {
+  id: number;
+  text?: string | null;
+  policy?: string | null;
+  accept?: string | null;
+  reject?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Privacidade, termos e cookies. Alterar com cuidado — são documentos vinculativos.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal".
+ */
+export interface Legal {
+  id: number;
+  privacy?: {
+    title?: string | null;
+    /**
+     * Texto livre, como aparece na página. Ex.: «Última atualização: Maio de 2026».
+     */
+    updated?: string | null;
+    /**
+     * Um parágrafo por linha. É um campo de linha única porque `hasMany` só existe em `text` — guardar como array de strings mantém a forma que a página já lê.
+     */
+    intro?: string[] | null;
+    sections?:
+      | {
+          title: string;
+          content?: string | null;
+          list?: string[] | null;
+          subsections?:
+            | {
+                title: string;
+                list?: string[] | null;
+                /**
+                 * Usado na política de privacidade. Deixar vazio nos termos.
+                 */
+                legalBasis?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          afterList?: string | null;
+          footer?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  terms?: {
+    title?: string | null;
+    updated?: string | null;
+    /**
+     * Um parágrafo por linha. É um campo de linha única porque `hasMany` só existe em `text` — guardar como array de strings mantém a forma que a página já lê.
+     */
+    intro?: string[] | null;
+    /**
+     * Os termos estão divididos em partes, cada uma com as suas secções.
+     */
+    parts?:
+      | {
+          title: string;
+          sections?:
+            | {
+                title: string;
+                content?: string | null;
+                list?: string[] | null;
+                subsections?:
+                  | {
+                      title: string;
+                      list?: string[] | null;
+                      /**
+                       * Usado na política de privacidade. Deixar vazio nos termos.
+                       */
+                      legalBasis?: string | null;
+                      id?: string | null;
+                    }[]
+                  | null;
+                afterList?: string | null;
+                footer?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  cookies?: {
+    title?: string | null;
+    updated?: string | null;
+    sections?:
+      | {
+          title: string;
+          content?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "common_select".
+ */
+export interface CommonSelect<T extends boolean = true> {
+  back?: T;
+  reserve?: T;
+  faq?: T;
+  privacy?: T;
+  contact?: T;
+  loading?: T;
+  copyright?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hero_select".
+ */
+export interface HeroSelect<T extends boolean = true> {
+  badge?: T;
+  title?: T;
+  subtitle?: T;
+  cta?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "booking_select".
+ */
+export interface BookingSelect<T extends boolean = true> {
+  title?: T;
+  route?: T;
+  pickup?: T;
+  dropoff?: T;
+  datetime?: T;
+  date?: T;
+  time?: T;
+  details?: T;
+  passengers?: T;
+  luggage?: T;
+  distanceKm?: T;
+  flight?: T;
+  flightPlaceholder?: T;
+  childSeat?: T;
+  contactInfo?: T;
+  name?: T;
+  email?: T;
+  confirmEmail?: T;
+  whatsapp?: T;
+  gdpr?:
+    | T
+    | {
+        text?: T;
+        link?: T;
+      };
+  submit?: T;
+  checkout?:
+    | T
+    | {
+        chooseVehicle?: T;
+        vehicleStepTitle?: T;
+        continueFromForm?: T;
+        continueToPay?: T;
+        loadingVehicles?: T;
+        loadingCheckout?: T;
+        totalToPay?: T;
+        confirmPay?: T;
+        processing?: T;
+        back?: T;
+        noVehicles?: T;
+        stripeMissing?: T;
+        breakdownTitle?: T;
+        summary?:
+          | T
+          | {
+              title?: T;
+              route?: T;
+              when?: T;
+              vehicle?: T;
+              extras?: T;
+              childSeat?: T;
+              luggage?: T;
+              seats?: T;
+              total?: T;
+              updating?: T;
+              pendingPrice?: T;
+              none?: T;
+            };
+        vehicles?:
+          | T
+          | {
+              businessClass?: T;
+              firstClass?: T;
+              businessVan?: T;
+              businessHint?: T;
+              firstHint?: T;
+              vanHint?: T;
+              seats?: T;
+            };
+        routePreview?:
+          | T
+          | {
+              title?: T;
+              loading?: T;
+              suggested?: T;
+              from?: T;
+              distanceEta?: T;
+              distanceOnly?: T;
+              etaNote?: T;
+              availabilityNote?: T;
+            };
+        breakdown?:
+          | T
+          | {
+              baseFee?: T;
+              perKm?: T;
+              perMin?: T;
+              vehicleMultiplier?: T;
+              timeSurcharge?: T;
+              minimumFare?: T;
+            };
+      };
+  success?:
+    | T
+    | {
+        title?: T;
+        message?: T;
+        orderLabel?: T;
+        referenceHint?: T;
+        close?: T;
+      };
+  errors?:
+    | T
+    | {
+        generic?: T;
+        gdpr?: T;
+        emailMismatch?: T;
+        distanceRequired?: T;
+        distancePending?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faq_select".
+ */
+export interface FaqSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  contacts?: T;
+  legal?: T;
+  privacy?: T;
+  terms?: T;
+  cookies?: T;
+  about?: T;
+  aboutText?: T;
+  explore?: T;
+  airportTransfers?: T;
+  byTheHour?: T;
+  copyright?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cookies_select".
+ */
+export interface CookiesSelect<T extends boolean = true> {
+  text?: T;
+  policy?: T;
+  accept?: T;
+  reject?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal_select".
+ */
+export interface LegalSelect<T extends boolean = true> {
+  privacy?:
+    | T
+    | {
+        title?: T;
+        updated?: T;
+        intro?: T;
+        sections?:
+          | T
+          | {
+              title?: T;
+              content?: T;
+              list?: T;
+              subsections?:
+                | T
+                | {
+                    title?: T;
+                    list?: T;
+                    legalBasis?: T;
+                    id?: T;
+                  };
+              afterList?: T;
+              footer?: T;
+              id?: T;
+            };
+      };
+  terms?:
+    | T
+    | {
+        title?: T;
+        updated?: T;
+        intro?: T;
+        parts?:
+          | T
+          | {
+              title?: T;
+              sections?:
+                | T
+                | {
+                    title?: T;
+                    content?: T;
+                    list?: T;
+                    subsections?:
+                      | T
+                      | {
+                          title?: T;
+                          list?: T;
+                          legalBasis?: T;
+                          id?: T;
+                        };
+                    afterList?: T;
+                    footer?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+      };
+  cookies?:
+    | T
+    | {
+        title?: T;
+        updated?: T;
+        sections?:
+          | T
+          | {
+              title?: T;
+              content?: T;
+              id?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
