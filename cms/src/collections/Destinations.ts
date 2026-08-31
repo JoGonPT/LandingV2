@@ -69,6 +69,16 @@ export const Destinations: CollectionConfig = {
             localized: true,
         },
         {
+            name: "image",
+            type: "upload",
+            relationTo: "media",
+            label: "Imagem principal",
+            admin: {
+                description:
+                    "A fotografia do topo. Não é localizada — a mesma serve os dois idiomas; o texto alternativo é que muda, e esse vive na imagem.",
+            },
+        },
+        {
             name: "summary",
             type: "textarea",
             label: "Resumo",

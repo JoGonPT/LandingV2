@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     destinations: Destination;
+    media: Media;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +79,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     destinations: DestinationsSelect<false> | DestinationsSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -181,6 +183,10 @@ export interface Destination {
   city?: string | null;
   subtitle?: string | null;
   /**
+   * A fotografia do topo. Não é localizada — a mesma serve os dois idiomas; o texto alternativo é que muda, e esse vive na imagem.
+   */
+  image?: (number | null) | Media;
+  /**
    * Duas ou três linhas, para cartões e listagens. Não é a meta-descrição.
    */
   summary?: string | null;
@@ -248,6 +254,60 @@ export interface Destination {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Fotografias do site. São convertidas e redimensionadas ao carregar.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * Descreve a imagem para quem não a vê — leitores de ecrã e o Google. «Ponte D. Luís ao fim da tarde», não «foto1». É obrigatório de propósito.
+   */
+  alt: string;
+  /**
+   * Autor ou origem, se a licença o exigir.
+   */
+  credit?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    miniatura?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    movel?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    destaque?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -278,6 +338,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'destinations';
         value: number | Destination;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -353,6 +417,7 @@ export interface DestinationsSelect<T extends boolean = true> {
   title?: T;
   city?: T;
   subtitle?: T;
+  image?: T;
   summary?: T;
   body?: T;
   highlights?:
@@ -385,6 +450,59 @@ export interface DestinationsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  credit?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        miniatura?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        movel?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        destaque?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

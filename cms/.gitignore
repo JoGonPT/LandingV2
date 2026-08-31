@@ -2,3 +2,9 @@ node_modules/
 .next/
 .env.local
 .env*.local
+
+# Ficheiros carregados no painel. Vivem no disco do servidor, não no git — são
+# conteúdo, e o repositório não é sítio para binários que crescem sem limite.
+# Contrapartida: não estão na base de dados nem no repositório, por isso têm de
+# entrar na rotina de cópias do alojamento.
+media/
