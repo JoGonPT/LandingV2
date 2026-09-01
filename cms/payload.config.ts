@@ -2,7 +2,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { nodemailerAdapter } from "@payloadcms/email-nodemailer";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import { s3Storage } from "@payloadcms/storage-s3";
 import { en } from "@payloadcms/translations/languages/en";
 import { pt } from "@payloadcms/translations/languages/pt";
 import { buildConfig } from "payload";
@@ -20,6 +22,98 @@ import { Hero } from "./src/globals/Hero";
 import { Legal } from "./src/globals/Legal";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const env = (nome: string) => process.env[nome]?.trim() || undefined;
+
+/**
+ * O endereço público do painel.
+ *
+ * Serve para as ligações absolutas nos emails de recuperação de password. Sem
+ * ele, atrás do proxy da Vercel, saem endereços errados — e um link de
+ * recuperação errado só se descobre quando alguém precisa dele a sério.
+ *
+ * O `VERCEL_URL` é a alternativa automática para as pré-visualizações, que têm
+ * endereço diferente a cada deploy.
+ */
+const serverURL =
+    env("PAYLOAD_PUBLIC_SERVER_URL") ??
+    (env("VERCEL_URL") ? `https://${env("VERCEL_URL")}` : undefined);
+
+/**
+ * Envio de email, se houver SMTP configurado.
+ *
+ * Reaproveita as credenciais que o site já usa. Sem isto, o Payload escreve os
+ * emails na consola e **a recuperação de password deixa de funcionar** — o que
+ * em desenvolvimento é irrelevante e em produção significa ficar fechado de
+ * fora sem forma de voltar a entrar.
+ *
+ * Devolve `undefined` quando falta configuração, em vez de rebentar: um painel
+ * que não arranca por não conseguir enviar email é pior do que um painel sem
+ * recuperação de password. O aviso do Payload continua a aparecer, e é esse o
+ * sinal de que falta configurar.
+ */
+function adaptadorDeEmail() {
+    const host = env("SMTP_HOST");
+    const user = env("SMTP_USER");
+    const pass = env("SMTP_PASS");
+    const from = env("SMTP_FROM") ?? user;
+
+    if (!host || !user || !pass || !from) return undefined;
+
+    const port = Number(env("SMTP_PORT") ?? 587);
+
+    return nodemailerAdapter({
+        defaultFromAddress: from,
+        defaultFromName: env("SMTP_FROM_NAME") ?? "Way2Go CMS",
+        transportOptions: {
+            host,
+            port,
+            // 465 é TLS implícito; tudo o resto negoceia STARTTLS.
+            secure: port === 465,
+            auth: { user, pass },
+        },
+    });
+}
+
+/**
+ * Armazenamento das imagens no Supabase Storage, pelo protocolo S3.
+ *
+ * ## Porque não é o disco local
+ *
+ * Em Vercel não há disco: o ficheiro é escrito e desaparece entre pedidos, sem
+ * dar erro. O disco local só voltará a ser opção quando isto correr no
+ * Cloudways — e a vantagem de usar o Storage é precisamente não ter de migrar
+ * nada nesse dia.
+ *
+ * ## Porque é condicional
+ *
+ * Sem as variáveis definidas, o Payload usa o disco local e o desenvolvimento
+ * continua a funcionar como sempre funcionou. Ligar isto exige configurar,
+ * nunca acontece por acidente.
+ */
+function armazenamento() {
+    const bucket = env("S3_BUCKET");
+    const endpoint = env("S3_ENDPOINT");
+    const accessKeyId = env("S3_ACCESS_KEY_ID");
+    const secretAccessKey = env("S3_SECRET_ACCESS_KEY");
+
+    if (!bucket || !endpoint || !accessKeyId || !secretAccessKey) return [];
+
+    return [
+        s3Storage({
+            collections: { [Media.slug]: true },
+            bucket,
+            config: {
+                endpoint,
+                region: env("S3_REGION") ?? "eu-west-1",
+                credentials: { accessKeyId, secretAccessKey },
+                // O Supabase serve por caminho (`/bucket/objecto`), não por
+                // subdomínio do balde como a AWS.
+                forcePathStyle: true,
+            },
+        }),
+    ];
+}
 
 /**
  * Configuração do CMS da Way2Go.
@@ -84,6 +178,14 @@ export default buildConfig({
         push: false,
         pool: {
             connectionString: process.env.DATABASE_URL ?? "",
+            // Em serverless cada invocação tem o seu pool. Sem tecto, dezenas de
+            // instâncias em paralelo esgotam as ligações do Supabase e o painel
+            // começa a falhar sob carga — que é quando menos convém.
+            //
+            // Nota para quem mexer na cadeia de ligação: tem de ser o *session
+            // pooler* (5432). O de transacções (6543) não suporta prepared
+            // statements, e o Drizzle depende deles.
+            max: Number(env("DATABASE_POOL_MAX") ?? 4),
         },
     }),
     // Assina os tokens de sessão do painel. Sem valor por omissão de propósito:
@@ -99,8 +201,9 @@ export default buildConfig({
         supportedLanguages: { pt, en },
         fallbackLanguage: "pt",
     },
-    // O Payload usa o sharp para redimensionar imagens carregadas. Ainda não há
-    // coleção de media, mas passá-lo agora evita a surpresa de o primeiro upload
-    // falhar por uma dependência que já estava instalada e não estava ligada.
+    // O Payload usa o sharp para redimensionar as imagens carregadas.
     sharp,
+    serverURL,
+    email: adaptadorDeEmail(),
+    plugins: armazenamento(),
 });
