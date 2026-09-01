@@ -99,9 +99,28 @@ function armazenamento() {
 
     if (!bucket || !endpoint || !accessKeyId || !secretAccessKey) return [];
 
+    // O endereço público do Supabase deriva do endpoint S3:
+    //   …/storage/v1/s3  →  …/storage/v1/object/public
+    const baseriPublica =
+        env("S3_PUBLIC_BASE_URL") ?? `${endpoint.replace(/\/s3\/?$/, "")}/object/public`;
+
     return [
         s3Storage({
-            collections: { [Media.slug]: true },
+            collections: {
+                [Media.slug]: {
+                    // O balde é público, e servir as imagens através do Payload
+                    // significaria uma invocação da Vercel por cada fotografia,
+                    // a transportar bytes que o CDN do Supabase entrega melhor e
+                    // de graça. O controlo de acesso não se perde por isto: já
+                    // não existia, porque o balde é público de propósito — é
+                    // assim que o site as vai poder mostrar.
+                    disablePayloadAccessControl: true,
+                    // A chave é calculada (`[Media.slug]`), o que impede o
+                    // TypeScript de inferir a assinatura a partir do plugin.
+                    generateFileURL: ({ filename, prefix }: { filename: string; prefix?: string }) =>
+                        [baseriPublica, bucket, prefix, filename].filter(Boolean).join("/"),
+                },
+            },
             bucket,
             config: {
                 endpoint,
