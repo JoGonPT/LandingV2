@@ -1,3 +1,4 @@
+import { convertLexicalToHTML, defaultHTMLConverters } from "@payloadcms/richtext-lexical/html";
 import type { CollectionConfig } from "payload";
 
 /**
@@ -93,6 +94,49 @@ export const Destinations: CollectionConfig = {
             admin: {
                 description:
                     "O conteúdo próprio deste destino: o que há para ver, particularidades da recolha, o que distingue esta rota. Texto genérico com o nome trocado não serve — o Google trata páginas assim como páginas-porta.",
+            },
+        },
+        {
+            name: "bodyHtml",
+            type: "textarea",
+            label: "Texto em HTML",
+            virtual: true,
+            admin: {
+                hidden: true,
+                readOnly: true,
+            },
+            hooks: {
+                /**
+                 * Converte o texto rico para HTML na leitura.
+                 *
+                 * ## Porque isto vive no CMS e não no site
+                 *
+                 * O `body` é guardado no formato do Lexical, que não é HTML. Para
+                 * o site o desenhar teria de instalar o renderizador do Payload —
+                 * e isso puxaria o CMS para dentro do site, desfazendo o
+                 * isolamento que é a razão de ser desta arquitetura.
+                 *
+                 * Convertendo aqui, o site recebe HTML pronto e continua a não
+                 * conhecer o Payload. O campo é virtual: não ocupa coluna nenhuma
+                 * na base de dados, é calculado a cada leitura.
+                 */
+                afterRead: [
+                    ({ data }) => {
+                        const body = (data as Record<string, unknown> | undefined)?.body;
+                        if (!body) return "";
+                        try {
+                            return convertLexicalToHTML({
+                                converters: defaultHTMLConverters,
+                                data: body as never,
+                            });
+                        } catch {
+                            // Um texto que não converte não deve derrubar a
+                            // leitura do destino inteiro: o site fica sem corpo,
+                            // com o resto no sítio.
+                            return "";
+                        }
+                    },
+                ],
             },
         },
         {

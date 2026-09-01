@@ -144,6 +144,9 @@ export interface User {
   name?: string | null;
   updatedAt: string;
   createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -208,6 +211,7 @@ export interface Destination {
     };
     [k: string]: unknown;
   } | null;
+  bodyHtml?: string | null;
   /**
    * Frases curtas. Ex.: «Motorista espera 60 minutos sem custo».
    */
@@ -393,6 +397,9 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   updatedAt?: T;
   createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
   email?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
@@ -420,6 +427,7 @@ export interface DestinationsSelect<T extends boolean = true> {
   image?: T;
   summary?: T;
   body?: T;
+  bodyHtml?: T;
   highlights?:
     | T
     | {

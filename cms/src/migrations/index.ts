@@ -4,6 +4,7 @@ import * as migration_20260830_191336_listas from './20260830_191336_listas';
 import * as migration_20260830_194206_afterlist from './20260830_194206_afterlist';
 import * as migration_20260830_210302_destinos from './20260830_210302_destinos';
 import * as migration_20260831_081642_imagens from './20260831_081642_imagens';
+import * as migration_20260901_225040_chave_api from './20260901_225040_chave_api';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20260831_081642_imagens.up,
     down: migration_20260831_081642_imagens.down,
-    name: '20260831_081642_imagens'
+    name: '20260831_081642_imagens',
+  },
+  {
+    up: migration_20260901_225040_chave_api.up,
+    down: migration_20260901_225040_chave_api.down,
+    name: '20260901_225040_chave_api'
   },
 ];
