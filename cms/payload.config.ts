@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { nodemailerAdapter } from "@payloadcms/email-nodemailer";
+import { resendAdapter } from "@payloadcms/email-resend";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import { en } from "@payloadcms/translations/languages/en";
@@ -40,31 +41,51 @@ const serverURL =
     (env("VERCEL_URL") ? `https://${env("VERCEL_URL")}` : undefined);
 
 /**
- * Envio de email, se houver SMTP configurado.
+ * Envio de email.
  *
- * Reaproveita as credenciais que o site já usa. Sem isto, o Payload escreve os
- * emails na consola e **a recuperação de password deixa de funcionar** — o que
- * em desenvolvimento é irrelevante e em produção significa ficar fechado de
- * fora sem forma de voltar a entrar.
+ * Sem isto, o Payload escreve os emails na consola e **a recuperação de
+ * password deixa de funcionar** — irrelevante em desenvolvimento, e em
+ * produção significa poder ficar fechado de fora sem forma de voltar a entrar.
  *
- * Devolve `undefined` quando falta configuração, em vez de rebentar: um painel
- * que não arranca por não conseguir enviar email é pior do que um painel sem
- * recuperação de password. O aviso do Payload continua a aparecer, e é esse o
- * sinal de que falta configurar.
+ * ## Porque há dois caminhos
+ *
+ * O Resend é o escolhido. Ao preparar isto descobriu-se que as variáveis SMTP
+ * do site existem na Vercel há 98 dias **com os valores vazios**, e que não há
+ * Resend nem SendGrid configurados: o site não consegue enviar email nenhum.
+ * Não havia portanto credenciais para reaproveitar.
+ *
+ * O caminho SMTP fica escrito à mesma, e é usado se existir configuração. No
+ * dia em que o email do site for corrigido com SMTP, o CMS aproveita sem
+ * precisar de tocar em nada.
+ *
+ * Devolve `undefined` quando não há nem um nem outro, em vez de rebentar: um
+ * painel que não arranca por não conseguir enviar email é pior do que um painel
+ * sem recuperação de password. O aviso do Payload continua a aparecer, e é esse
+ * o sinal de que falta configurar.
  */
 function adaptadorDeEmail() {
+    const remetente = env("EMAIL_FROM") ?? env("SMTP_FROM") ?? env("SMTP_USER");
+    const nome = env("EMAIL_FROM_NAME") ?? env("SMTP_FROM_NAME") ?? "Way2Go CMS";
+
+    const resend = env("RESEND_API_KEY");
+    if (resend && remetente) {
+        return resendAdapter({
+            apiKey: resend,
+            defaultFromAddress: remetente,
+            defaultFromName: nome,
+        });
+    }
+
     const host = env("SMTP_HOST");
     const user = env("SMTP_USER");
     const pass = env("SMTP_PASS");
-    const from = env("SMTP_FROM") ?? user;
-
-    if (!host || !user || !pass || !from) return undefined;
+    if (!host || !user || !pass || !remetente) return undefined;
 
     const port = Number(env("SMTP_PORT") ?? 587);
 
     return nodemailerAdapter({
-        defaultFromAddress: from,
-        defaultFromName: env("SMTP_FROM_NAME") ?? "Way2Go CMS",
+        defaultFromAddress: remetente,
+        defaultFromName: nome,
         transportOptions: {
             host,
             port,
