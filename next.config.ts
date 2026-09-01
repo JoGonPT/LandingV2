@@ -64,6 +64,21 @@ const nextConfig: NextConfig = {
   /** Otimização ativa: o `sharp` está nas dependências, necessário em self-hosted (Cloudways). */
   images: {
     formats: ["image/avif", "image/webp"],
+    /**
+     * As fotografias dos destinos vivem no Storage do Supabase, servidas pelo
+     * seu CDN. O `next/image` recusa domínios que não estejam declarados — e
+     * bem: sem esta lista, qualquer URL num campo de conteúdo poderia pôr o
+     * servidor a redimensionar imagens de terceiros à custa desta conta.
+     *
+     * Restrito ao caminho público do balde, não ao domínio inteiro.
+     */
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "nigyygbxuoxrwltbcosg.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
   trailingSlash: true,
   /** Evita 308 de `/api/...` → `/api/.../` (Stripe e outros clientes POST podem não seguir redirect ou invalidar o corpo). */
