@@ -20,6 +20,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      // `server-only` é um guarda de compilação do Next: importá-lo faz falhar
+      // o build se alguém puxar o módulo para um componente de cliente. Não
+      // existe fora do Next, e sem este alias qualquer módulo que o use fica
+      // impossível de testar — o que seria trocar uma garantia por outra.
+      "server-only": path.resolve(__dirname, "src/test/server-only-stub.ts"),
     },
   },
 });
