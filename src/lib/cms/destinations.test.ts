@@ -22,7 +22,19 @@ const DESTINO_CRU = {
     title: "Transfer do Aeroporto do Porto para a cidade",
     city: "Porto",
     subtitle: "Do terminal à porta do seu alojamento.",
-    bodyHtml: "<h2>Do terminal ao centro</h2><p>Quinze quilómetros.</p>",
+    body: [
+        {
+            blockType: "richText",
+            html: "<h2>Do terminal ao centro</h2><p>Quinze quilómetros.</p>",
+        },
+        {
+            blockType: "callToAction",
+            buttonText: "Reservar transfer",
+            linkType: "bookingForm",
+            variant: "primary",
+            alignment: "center",
+        },
+    ],
     highlights: [{ text: "Uma hora de espera gratuita" }, { text: "Wi-Fi e água" }],
     faq: [{ question: "Quanto demora?", answer: "Cerca de 25 minutos." }],
     route: { origin: "Aeroporto (OPO)", distanceKm: 15, durationMin: 25, priceFrom: 40 },
@@ -77,7 +89,9 @@ describe("obterDestino", () => {
 
         expect(d).not.toBeNull();
         expect(d!.slug).toBe("porto");
-        expect(d!.bodyHtml).toContain("<h2>");
+        expect(d!.blocos).toHaveLength(2);
+        expect(d!.blocos[0]).toMatchObject({ tipo: "texto" });
+        expect(d!.blocos[1]).toMatchObject({ tipo: "cta", texto: "Reservar transfer" });
         expect(d!.highlights).toEqual(["Uma hora de espera gratuita", "Wi-Fi e água"]);
         expect(d!.faq).toHaveLength(1);
         expect(d!.rota.precoDesde).toBe(40);
@@ -154,7 +168,7 @@ describe("obterDestino", () => {
         responde({ docs: [{ slug: "braga", title: "Transfer para Braga" }] });
         const d = await obterDestino("braga", "pt");
         expect(d!.title).toBe("Transfer para Braga");
-        expect(d!.bodyHtml).toBe("");
+        expect(d!.blocos).toEqual([]);
         expect(d!.highlights).toEqual([]);
         expect(d!.faq).toEqual([]);
         expect(d!.imagem).toBeUndefined();

@@ -194,7 +194,13 @@ Cancellations made more than 24 hours ahead are free of charge.`,
 const payload = await getPayload({ config });
 const editorConfig = await editorConfigFactory.default({ config: payload.config });
 
-const corpo = (markdown: string) => convertMarkdownToLexical({ editorConfig, markdown });
+/** O corpo é uma lista de blocos; o texto vai dentro de um bloco `richText`. */
+const corpo = (markdown: string) => [
+    {
+        blockType: "richText" as const,
+        content: convertMarkdownToLexical({ editorConfig, markdown }),
+    },
+];
 
 const existente = await payload.find({
     collection: "destinations",

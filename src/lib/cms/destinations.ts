@@ -1,5 +1,7 @@
 import "server-only";
 
+import { normalizarBlocos, type Bloco } from "@/lib/cms/blocks";
+
 /**
  * Leitura dos destinos no CMS.
  *
@@ -45,7 +47,8 @@ export interface Destino {
     city?: string;
     subtitle?: string;
     summary?: string;
-    bodyHtml: string;
+    /** O corpo, bloco a bloco: texto já em HTML e chamadas para acção. */
+    blocos: Bloco[];
     highlights: string[];
     faq: DestinoPergunta[];
     rota: {
@@ -170,7 +173,7 @@ function montarImagem(
  * Devolve `null` se faltar o essencial — `slug` e `title`. Um destino sem
  * título não é uma página, é um registo a meio.
  */
-function normalizar(bruto: unknown): Destino | null {
+function normalizar(bruto: unknown, locale: string): Destino | null {
     const d = objecto(bruto);
     if (!d) return null;
 
@@ -190,7 +193,7 @@ function normalizar(bruto: unknown): Destino | null {
         city: texto(d.city),
         subtitle: texto(d.subtitle),
         summary: texto(d.summary),
-        bodyHtml: typeof d.bodyHtml === "string" ? d.bodyHtml : "",
+        blocos: normalizarBlocos(d.body, locale),
         highlights: lista(d.highlights)
             .map((h) => texto(objecto(h)?.text))
             .filter((x): x is string => Boolean(x)),
@@ -231,7 +234,7 @@ export async function obterDestino(slug: string, locale: string): Promise<Destin
     );
     const docs = (json as { docs?: unknown[] } | null)?.docs;
     if (!Array.isArray(docs) || docs.length === 0) return null;
-    return normalizar(docs[0]);
+    return normalizar(docs[0], locale);
 }
 
 /** Converte um documento no resumo que um cartão precisa. `null` se não servir. */

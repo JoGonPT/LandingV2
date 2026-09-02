@@ -1,6 +1,50 @@
 import { convertLexicalToHTML, defaultHTMLConverters } from "@payloadcms/richtext-lexical/html";
 import type { CollectionConfig } from "payload";
 
+import { CallToAction } from "../blocks/CallToAction";
+import { RichText } from "../blocks/RichText";
+
+/**
+ * Converte os blocos de texto rico para HTML, na leitura.
+ *
+ * ## Porque isto vive no CMS e não no site
+ *
+ * O texto é guardado no formato do Lexical, que não é HTML. Para o site o
+ * desenhar teria de instalar o renderizador do Payload — e isso puxaria o CMS
+ * para dentro do site, desfazendo o isolamento que é a razão de ser desta
+ * arquitetura.
+ *
+ * Convertendo aqui, o site recebe uma lista de blocos onde os de texto já
+ * trazem HTML pronto e os de acção trazem JSON simples. O site nunca conhece
+ * o Payload, e continua a poder desenhar os botões como componentes React de
+ * verdade — com o `onClick` do analytics, que HTML injectado não teria.
+ *
+ * Acrescenta `html` a cada bloco de texto. Não toca nos outros.
+ */
+function converterBlocos(body: unknown): unknown {
+    if (!Array.isArray(body)) return body;
+
+    return body.map((bloco) => {
+        if (!bloco || typeof bloco !== "object") return bloco;
+        const b = bloco as Record<string, unknown>;
+        if (b.blockType !== "richText" || !b.content) return bloco;
+
+        try {
+            return {
+                ...b,
+                html: convertLexicalToHTML({
+                    converters: defaultHTMLConverters,
+                    data: b.content as never,
+                }),
+            };
+        } catch {
+            // Um bloco que não converte não deve derrubar a página inteira:
+            // sai vazio, e os restantes seguem.
+            return { ...b, html: "" };
+        }
+    });
+}
+
 /**
  * Destinos — uma página por cidade servida.
  *
@@ -34,6 +78,14 @@ export const Destinations: CollectionConfig = {
         description: "Uma página por cidade. Ainda não são visíveis no site.",
     },
     versions: { drafts: true },
+    hooks: {
+        afterRead: [
+            ({ doc }) => {
+                const d = doc as Record<string, unknown>;
+                return { ...d, body: converterBlocos(d.body) };
+            },
+        ],
+    },
     fields: [
         {
             name: "slug",
@@ -88,55 +140,12 @@ export const Destinations: CollectionConfig = {
         },
         {
             name: "body",
-            type: "richText",
-            label: "Texto da página",
-            localized: true,
+            type: "blocks",
+            label: "Corpo da página",
+            blocks: [RichText, CallToAction],
             admin: {
                 description:
-                    "O conteúdo próprio deste destino: o que há para ver, particularidades da recolha, o que distingue esta rota. Texto genérico com o nome trocado não serve — o Google trata páginas assim como páginas-porta.",
-            },
-        },
-        {
-            name: "bodyHtml",
-            type: "textarea",
-            label: "Texto em HTML",
-            virtual: true,
-            admin: {
-                hidden: true,
-                readOnly: true,
-            },
-            hooks: {
-                /**
-                 * Converte o texto rico para HTML na leitura.
-                 *
-                 * ## Porque isto vive no CMS e não no site
-                 *
-                 * O `body` é guardado no formato do Lexical, que não é HTML. Para
-                 * o site o desenhar teria de instalar o renderizador do Payload —
-                 * e isso puxaria o CMS para dentro do site, desfazendo o
-                 * isolamento que é a razão de ser desta arquitetura.
-                 *
-                 * Convertendo aqui, o site recebe HTML pronto e continua a não
-                 * conhecer o Payload. O campo é virtual: não ocupa coluna nenhuma
-                 * na base de dados, é calculado a cada leitura.
-                 */
-                afterRead: [
-                    ({ data }) => {
-                        const body = (data as Record<string, unknown> | undefined)?.body;
-                        if (!body) return "";
-                        try {
-                            return convertLexicalToHTML({
-                                converters: defaultHTMLConverters,
-                                data: body as never,
-                            });
-                        } catch {
-                            // Um texto que não converte não deve derrubar a
-                            // leitura do destino inteiro: o site fica sem corpo,
-                            // com o resto no sítio.
-                            return "";
-                        }
-                    },
-                ],
+                    "O conteúdo próprio deste destino, em blocos. Intercale chamadas para acção onde fizerem sentido — um botão logo a seguir ao parágrafo que explica porque compensa vale mais do que o mesmo botão no fim da página. Texto genérico com o nome trocado não serve: o Google trata páginas assim como páginas-porta.",
             },
         },
         {

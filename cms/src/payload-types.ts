@@ -194,24 +194,72 @@ export interface Destination {
    */
   summary?: string | null;
   /**
-   * O conteúdo próprio deste destino: o que há para ver, particularidades da recolha, o que distingue esta rota. Texto genérico com o nome trocado não serve — o Google trata páginas assim como páginas-porta.
+   * O conteúdo próprio deste destino, em blocos. Intercale chamadas para acção onde fizerem sentido — um botão logo a seguir ao parágrafo que explica porque compensa vale mais do que o mesmo botão no fim da página. Texto genérico com o nome trocado não serve: o Google trata páginas assim como páginas-porta.
    */
-  body?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  bodyHtml?: string | null;
+  body?:
+    | (
+        | {
+            content: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'richText';
+          }
+        | {
+            /**
+             * Diga o que acontece ao carregar. «Reservar transfer para o Porto» converte mais do que «Saber mais».
+             */
+            buttonText: string;
+            /**
+             * Linha pequena por baixo do botão, para tirar receio. Ex.: «Confirmação imediata · Cancelamento gratuito até 24h».
+             */
+            subtext?: string | null;
+            linkType: 'bookingForm' | 'internal' | 'external' | 'whatsapp';
+            /**
+             * Só existem destinos por agora. Para as páginas fixas — inicial, legais — use o campo de caminho abaixo.
+             */
+            internalDoc?: (number | null) | Destination;
+            /**
+             * Sem o idioma à frente: escreva «legal/terms» e não «/pt/legal/terms». O idioma é acrescentado automaticamente. Ignorado se escolher um destino acima.
+             */
+            internalPath?: string | null;
+            /**
+             * Endereço completo, com https://. Abre em separador novo.
+             */
+            externalUrl?: string | null;
+            /**
+             * Aparece já escrita na conversa. Ex.: «Olá, queria um transfer do aeroporto para Guimarães». Deixando vazio, abre a conversa em branco.
+             */
+            whatsappMessage?: string | null;
+            /**
+             * Acrescentado ao endereço final, para o formulário ou o analytics saberem de onde veio. Ex.: «service=porto-transfer». Sem o ponto de interrogação.
+             */
+            customParams?: string | null;
+            variant: 'primary' | 'secondary' | 'outline';
+            alignment: 'left' | 'center' | 'right';
+            /**
+             * Para contar os cliques. Ex.: «click_cta_porto». Use minúsculas e underscores, e o mesmo nome para o mesmo botão em páginas diferentes, senão os números não se somam.
+             */
+            trackingEvent?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'callToAction';
+          }
+      )[]
+    | null;
   /**
    * Frases curtas. Ex.: «Motorista espera 60 minutos sem custo».
    */
@@ -443,8 +491,34 @@ export interface DestinationsSelect<T extends boolean = true> {
   subtitle?: T;
   image?: T;
   summary?: T;
-  body?: T;
-  bodyHtml?: T;
+  body?:
+    | T
+    | {
+        richText?:
+          | T
+          | {
+              content?: T;
+              id?: T;
+              blockName?: T;
+            };
+        callToAction?:
+          | T
+          | {
+              buttonText?: T;
+              subtext?: T;
+              linkType?: T;
+              internalDoc?: T;
+              internalPath?: T;
+              externalUrl?: T;
+              whatsappMessage?: T;
+              customParams?: T;
+              variant?: T;
+              alignment?: T;
+              trackingEvent?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
   highlights?:
     | T
     | {

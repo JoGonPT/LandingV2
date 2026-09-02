@@ -3,6 +3,7 @@ import type { ComponentProps } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import BlockRenderer from "@/components/blocks/BlockRenderer";
 import CookieConsent from "@/components/CookieConsent";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
@@ -160,20 +161,13 @@ export default function DestinationPage({ destino, locale, dict }: Props) {
                         </ul>
                     )}
 
-                    {destino.bodyHtml && (
-                        /*
-                         * O HTML vem do nosso próprio CMS, convertido lá a partir
-                         * do texto rico, e só quem tem conta no painel o escreve.
-                         * Não é conteúdo de terceiros nem de visitantes.
-                         */
-                        <div
-                            className="prose prose-neutral max-w-none text-gray-700 mb-8
-                                       prose-headings:font-medium prose-headings:text-gray-900
-                                       prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4
-                                       prose-p:leading-relaxed prose-li:marker:text-gray-400"
-                            dangerouslySetInnerHTML={{ __html: destino.bodyHtml }}
-                        />
-                    )}
+                    {/*
+                      * O corpo é uma lista de blocos: texto e chamadas para
+                      * acção, na ordem em que quem escreve os pôs no painel.
+                      */}
+                    <div className="mb-8">
+                        <BlockRenderer blocos={destino.blocos} />
+                    </div>
                 </div>
             </main>
 
