@@ -148,6 +148,45 @@ export const Destinations: CollectionConfig = {
             fields: [{ name: "text", type: "text", label: "Ponto", required: true }],
         },
         {
+            name: "airport",
+            type: "group",
+            label: "Aeroporto",
+            admin: {
+                description:
+                    "Aparece no cartão da página inicial, por baixo do nome da cidade. Não confundir com a origem da rota, aqui em baixo, que é a morada completa de recolha.",
+            },
+            fields: [
+                {
+                    name: "name",
+                    type: "text",
+                    label: "Nome do aeroporto",
+                    localized: true,
+                    admin: { description: "Ex.: «Aeroporto Francisco Sá Carneiro»." },
+                },
+                {
+                    name: "code",
+                    type: "text",
+                    label: "Código IATA",
+                    maxLength: 4,
+                    admin: {
+                        description:
+                            "As três letras: OPO, LIS, FAO. Não é traduzido — é o mesmo em qualquer idioma.",
+                    },
+                },
+            ],
+        },
+        {
+            name: "order",
+            type: "number",
+            label: "Ordem",
+            defaultValue: 100,
+            admin: {
+                position: "sidebar",
+                description:
+                    "Decide a posição do cartão na página inicial: os números mais baixos aparecem primeiro. Deixando tudo igual, ordena-se por nome.",
+            },
+        },
+        {
             name: "route",
             type: "group",
             label: "Dados da rota",

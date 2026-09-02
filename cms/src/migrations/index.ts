@@ -5,6 +5,7 @@ import * as migration_20260830_194206_afterlist from './20260830_194206_afterlis
 import * as migration_20260830_210302_destinos from './20260830_210302_destinos';
 import * as migration_20260831_081642_imagens from './20260831_081642_imagens';
 import * as migration_20260901_225040_chave_api from './20260901_225040_chave_api';
+import * as migration_20260902_010202_aeroporto from './20260902_010202_aeroporto';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20260901_225040_chave_api.up,
     down: migration_20260901_225040_chave_api.down,
-    name: '20260901_225040_chave_api'
+    name: '20260901_225040_chave_api',
+  },
+  {
+    up: migration_20260902_010202_aeroporto.up,
+    down: migration_20260902_010202_aeroporto.down,
+    name: '20260902_010202_aeroporto'
   },
 ];

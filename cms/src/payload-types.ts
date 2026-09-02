@@ -222,6 +222,23 @@ export interface Destination {
       }[]
     | null;
   /**
+   * Aparece no cartão da página inicial, por baixo do nome da cidade. Não confundir com a origem da rota, aqui em baixo, que é a morada completa de recolha.
+   */
+  airport?: {
+    /**
+     * Ex.: «Aeroporto Francisco Sá Carneiro».
+     */
+    name?: string | null;
+    /**
+     * As três letras: OPO, LIS, FAO. Não é traduzido — é o mesmo em qualquer idioma.
+     */
+    code?: string | null;
+  };
+  /**
+   * Decide a posição do cartão na página inicial: os números mais baixos aparecem primeiro. Deixando tudo igual, ordena-se por nome.
+   */
+  order?: number | null;
+  /**
    * Valores indicativos, para o visitante saber o que esperar. Não alimentam o motor de preços — esse continua a ser o TransferCRM.
    */
   route?: {
@@ -434,6 +451,13 @@ export interface DestinationsSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  airport?:
+    | T
+    | {
+        name?: T;
+        code?: T;
+      };
+  order?: T;
   route?:
     | T
     | {
