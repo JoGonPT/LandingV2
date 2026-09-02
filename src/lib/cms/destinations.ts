@@ -54,9 +54,25 @@ export interface Destino {
         duracaoMin?: number;
         precoDesde?: number;
     };
+    aeroporto: { nome?: string; codigo?: string };
     imagem?: DestinoImagem;
     seo: { title?: string; description?: string };
     actualizadoEm?: string;
+}
+
+/**
+ * O que um cartão da página inicial precisa — e mais nada.
+ *
+ * A listagem pede menos campos do que a página do destino: sem corpo, sem
+ * perguntas, sem destaques. Numa página com dezenas de cartões, trazer o texto
+ * todo de cada destino seria carregar quilobytes que ninguém vai ler.
+ */
+export interface DestinoResumo {
+    slug: string;
+    title: string;
+    city: string;
+    aeroporto: { nome?: string; codigo?: string };
+    imagem?: DestinoImagem;
 }
 
 function configuracao(): { base: string; chave: string } | null {
@@ -110,6 +126,45 @@ const objecto = (v: unknown): Record<string, unknown> | undefined =>
 const lista = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 /**
+ * Escolhe o tamanho de imagem adequado ao sítio onde vai ser mostrada.
+ *
+ * O original pode ter 8000px de largura e vários megabytes — a fotografia do
+ * Porto tem. Servir isso a alguém seria pior do que não ter imagem. Cai para o
+ * original só se o tamanho pedido não existir, o que acontece em imagens
+ * carregadas antes de o redimensionamento estar ligado.
+ */
+function escolherImagem(
+    d: Record<string, unknown>,
+    tamanho: "miniatura" | "movel" | "destaque",
+): { url?: string; dados?: Record<string, unknown>; alt?: string } {
+    const img = objecto(d.image);
+    const pedido = objecto(objecto(img?.sizes)?.[tamanho]);
+    const escolhida = texto(pedido?.url) ? pedido : img;
+    return { url: texto(escolhida?.url), dados: escolhida, alt: texto(img?.alt) };
+}
+
+/** A forma de imagem que os componentes recebem, ou `undefined` se não servir. */
+function montarImagem(
+    url: string | undefined,
+    dados: Record<string, unknown> | undefined,
+    alt: string | undefined,
+    credito: string | undefined,
+    larguraOmissao: number,
+    alturaOmissao: number,
+): DestinoImagem | undefined {
+    // Sem texto alternativo não se mostra a imagem: um `alt` vazio é uma falha
+    // de acessibilidade, e o campo é obrigatório no CMS de propósito.
+    if (!url || !alt) return undefined;
+    return {
+        url,
+        width: numero(dados?.width) ?? larguraOmissao,
+        height: numero(dados?.height) ?? alturaOmissao,
+        alt,
+        credit: credito,
+    };
+}
+
+/**
  * Converte a resposta do CMS na forma que as páginas usam.
  *
  * Devolve `null` se faltar o essencial — `slug` e `title`. Um destino sem
@@ -126,13 +181,8 @@ function normalizar(bruto: unknown): Destino | null {
     const rota = objecto(d.route) ?? {};
     const seo = objecto(d.seo) ?? {};
 
-    const img = objecto(d.image);
-    // Prefere-se o tamanho `destaque` (1600px): o original pode ter 8000px de
-    // largura e vários megabytes, e ninguém precisa disso numa página.
-    const destaque = objecto(objecto(img?.sizes)?.destaque);
-    const escolhida = texto(destaque?.url) ? destaque : img;
-    const urlImagem = texto(escolhida?.url);
-    const alt = texto(img?.alt);
+    const aeroporto = objecto(d.airport) ?? {};
+    const { url: urlImagem, dados: escolhida, alt } = escolherImagem(d, "destaque");
 
     return {
         slug,
@@ -156,18 +206,15 @@ function normalizar(bruto: unknown): Destino | null {
             duracaoMin: numero(rota.durationMin),
             precoDesde: numero(rota.priceFrom),
         },
-        // Sem texto alternativo não se mostra a imagem: um `alt` vazio é uma
-        // falha de acessibilidade, e o campo é obrigatório no CMS de propósito.
-        imagem:
-            urlImagem && alt
-                ? {
-                      url: urlImagem,
-                      width: numero(escolhida?.width) ?? 1600,
-                      height: numero(escolhida?.height) ?? 900,
-                      alt,
-                      credit: texto(img?.credit),
-                  }
-                : undefined,
+        aeroporto: { nome: texto(aeroporto.name), codigo: texto(aeroporto.code) },
+        imagem: montarImagem(
+            urlImagem,
+            escolhida,
+            alt,
+            texto(objecto(d.image)?.credit),
+            1600,
+            900,
+        ),
         seo: { title: texto(seo.title), description: texto(seo.description) },
         actualizadoEm: texto(d.updatedAt),
     };
@@ -185,6 +232,52 @@ export async function obterDestino(slug: string, locale: string): Promise<Destin
     const docs = (json as { docs?: unknown[] } | null)?.docs;
     if (!Array.isArray(docs) || docs.length === 0) return null;
     return normalizar(docs[0]);
+}
+
+/** Converte um documento no resumo que um cartão precisa. `null` se não servir. */
+function normalizarResumo(bruto: unknown): DestinoResumo | null {
+    const d = objecto(bruto);
+    if (!d) return null;
+
+    const slug = texto(d.slug);
+    const title = texto(d.title);
+    if (!slug || !title) return null;
+
+    const aeroporto = objecto(d.airport) ?? {};
+    // O cartão mostra o nome da cidade. Sem ele, usa-se o título — que é mais
+    // comprido mas continua a dizer para onde se vai.
+    const city = texto(d.city) ?? title;
+
+    // O `movel` (768px) é a largura de um cartão. Pedir o `destaque` (1600px)
+    // seria mandar quatro vezes mais bytes para um sítio onde não se vê.
+    const { url, dados, alt } = escolherImagem(d, "movel");
+
+    return {
+        slug,
+        title,
+        city,
+        aeroporto: { nome: texto(aeroporto.name), codigo: texto(aeroporto.code) },
+        imagem: montarImagem(url, dados, alt, texto(objecto(d.image)?.credit), 768, 432),
+    };
+}
+
+/**
+ * Os destinos publicados, na ordem definida no painel.
+ *
+ * Alimenta a secção da página inicial. Lista vazia em qualquer falha — a
+ * página inicial é a mais importante do site e não pode depender disto para
+ * servir.
+ */
+export async function listarDestinos(locale: string): Promise<DestinoResumo[]> {
+    const json = await pedir(
+        `/api/destinations?where[_status][equals]=published&locale=${encodeURIComponent(locale)}` +
+            "&depth=1&limit=100&sort=order",
+    );
+    const docs = (json as { docs?: unknown[] } | null)?.docs;
+    if (!Array.isArray(docs)) return [];
+    return docs
+        .map(normalizarResumo)
+        .filter((d): d is DestinoResumo => d !== null);
 }
 
 /**

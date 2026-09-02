@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { listarSlugsPublicados, obterDestino } from "./destinations";
+import { listarDestinos, listarSlugsPublicados, obterDestino } from "./destinations";
 
 /**
  * Estes testes protegem uma regra e uma só: **um CMS em baixo não pode partir
@@ -26,6 +26,7 @@ const DESTINO_CRU = {
     highlights: [{ text: "Uma hora de espera gratuita" }, { text: "Wi-Fi e água" }],
     faq: [{ question: "Quanto demora?", answer: "Cerca de 25 minutos." }],
     route: { origin: "Aeroporto (OPO)", distanceKm: 15, durationMin: 25, priceFrom: 40 },
+    airport: { name: "Aeroporto Francisco Sá Carneiro", code: "OPO" },
     image: {
         alt: "Vista do Porto",
         credit: "Alguém",
@@ -33,6 +34,7 @@ const DESTINO_CRU = {
         width: 8000,
         height: 3429,
         sizes: {
+            movel: { url: "https://exemplo/Porto-768x329.webp", width: 768, height: 329 },
             destaque: { url: "https://exemplo/Porto-1600x686.webp", width: 1600, height: 686 },
         },
     },
@@ -169,6 +171,73 @@ describe("obterDestino", () => {
         });
         const d = await obterDestino("porto", "pt");
         expect(d!.faq).toEqual([{ question: "Boa", answer: "Sim." }]);
+    });
+});
+
+describe("listarDestinos", () => {
+    it("devolve o que um cartão precisa, e não mais", async () => {
+        responde({ docs: [DESTINO_CRU] });
+        const [d] = await listarDestinos("pt");
+
+        expect(d.slug).toBe("porto");
+        expect(d.city).toBe("Porto");
+        expect(d.aeroporto).toEqual({ nome: "Aeroporto Francisco Sá Carneiro", codigo: "OPO" });
+        // O resumo não traz corpo, perguntas nem destaques: numa página com
+        // dezenas de cartões seriam quilobytes que ninguém lê.
+        expect(d).not.toHaveProperty("bodyHtml");
+        expect(d).not.toHaveProperty("faq");
+    });
+
+    it("usa o tamanho de cartão, não o de página", async () => {
+        responde({ docs: [DESTINO_CRU] });
+        const [d] = await listarDestinos("pt");
+        expect(d.imagem?.url).toBe("https://exemplo/Porto-768x329.webp");
+        expect(d.imagem?.width).toBe(768);
+    });
+
+    it("pede os publicados por ordem", async () => {
+        responde({ docs: [] });
+        await listarDestinos("pt");
+        const [url] = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(String(url)).toContain("where[_status][equals]=published");
+        expect(String(url)).toContain("sort=order");
+    });
+
+    it("usa o título quando não há nome de cidade", async () => {
+        responde({ docs: [{ slug: "braga", title: "Transfer para Braga" }] });
+        const [d] = await listarDestinos("pt");
+        expect(d.city).toBe("Transfer para Braga");
+    });
+
+    it("aceita um destino sem fotografia", async () => {
+        // O cartão renderiza só com texto; não é motivo para o esconder.
+        responde({ docs: [{ slug: "braga", title: "Braga", city: "Braga" }] });
+        const [d] = await listarDestinos("pt");
+        expect(d.imagem).toBeUndefined();
+        expect(d.city).toBe("Braga");
+    });
+
+    it("aceita um destino sem aeroporto preenchido", async () => {
+        responde({ docs: [{ slug: "braga", title: "Braga", city: "Braga" }] });
+        const [d] = await listarDestinos("pt");
+        expect(d.aeroporto).toEqual({ nome: undefined, codigo: undefined });
+    });
+
+    it("ignora documentos sem título em vez de os mostrar meios", async () => {
+        responde({ docs: [{ slug: "sem-titulo" }, DESTINO_CRU] });
+        const r = await listarDestinos("pt");
+        expect(r).toHaveLength(1);
+        expect(r[0].slug).toBe("porto");
+    });
+
+    it("devolve lista vazia quando o CMS está em baixo — a página inicial tem de servir na mesma", async () => {
+        rebenta();
+        await expect(listarDestinos("pt")).resolves.toEqual([]);
+    });
+
+    it("devolve lista vazia com a chave errada", async () => {
+        responde({ errors: [] }, 403);
+        await expect(listarDestinos("pt")).resolves.toEqual([]);
     });
 });
 
