@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
+import { traduzirCaminho } from "@/lib/i18n/route-segments";
+
 interface NavbarProps {
     dict: {
         reserve: string;
@@ -27,12 +29,16 @@ export default function Navbar({ dict, locale }: NavbarProps) {
         }
     };
 
-    const redirectedPathname = (targetLocale: string) => {
-        if (!pathname) return "/";
-        const segments = pathname.split("/");
-        segments[1] = targetLocale;
-        return segments.join("/");
-    };
+    /**
+     * O endereço da página actual no outro idioma.
+     *
+     * Não basta trocar o prefixo: as páginas de destino têm o segmento
+     * traduzido — `/pt/transferes/porto/` contra `/en/transfers/porto/` — e a
+     * troca ingénua levava a `/en/transferes/porto/`, que devolve 404 de
+     * propósito. A tradução vive em `@/lib/i18n/route-segments`, com testes.
+     */
+    const redirectedPathname = (targetLocale: string) =>
+        traduzirCaminho(pathname ?? "", targetLocale);
 
     return (
         <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">

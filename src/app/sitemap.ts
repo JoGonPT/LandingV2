@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { caminhoDestino } from "@/lib/cms/destination-routes";
+import { caminhoDestino } from "@/lib/i18n/route-segments";
 import { listarSlugsPublicados } from "@/lib/cms/destinations";
 import { LOCALES, canonicalPath, languageAlternates } from "@/lib/site";
 

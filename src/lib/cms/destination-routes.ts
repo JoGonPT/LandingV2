@@ -1,38 +1,16 @@
 import type { Metadata } from "next";
 
 import { obterDestino } from "@/lib/cms/destinations";
+import { caminhoDestino } from "@/lib/i18n/route-segments";
 import { canonicalPath, DEFAULT_LOCALE, LOCALES, SITE_URL } from "@/lib/site";
 
 /**
- * Os endereços das páginas de destino.
+ * Metadata das páginas de destino.
  *
- * O segmento traduz-se com o idioma — quem procura em inglês escreve
- * «transfer», quem procura em português escreve «transferes», e é isso que
- * decide se a página aparece nas pesquisas. O nome da cidade fica igual nos
- * dois: `porto` é `porto` em qualquer língua.
- *
- * Cada rota só aceita o seu idioma. `/en/transferes/porto` dá 404 em vez de
- * servir a mesma página num segundo endereço, que é o que o Google penaliza
- * como conteúdo duplicado.
+ * A tabela dos segmentos e a tradução de caminhos vivem em
+ * `@/lib/i18n/route-segments`, que não importa nada do servidor — o `Navbar`
+ * precisa delas e é componente de cliente. Aqui fica só o que depende do CMS.
  */
-export const SEGMENTO_POR_LOCALE = {
-    pt: "transferes",
-    en: "transfers",
-} as const;
-
-export type LocaleDestino = keyof typeof SEGMENTO_POR_LOCALE;
-
-export function segmentoDe(locale: string): string | null {
-    return locale in SEGMENTO_POR_LOCALE
-        ? SEGMENTO_POR_LOCALE[locale as LocaleDestino]
-        : null;
-}
-
-/** O caminho relativo de um destino, no idioma dado. Ex.: `transferes/porto`. */
-export function caminhoDestino(locale: string, slug: string): string | null {
-    const segmento = segmentoDe(locale);
-    return segmento ? `${segmento}/${slug}` : null;
-}
 
 /**
  * Mapa `hreflang` de um destino.
