@@ -2,6 +2,7 @@ import { convertLexicalToHTML, defaultHTMLConverters } from "@payloadcms/richtex
 import type { CollectionConfig } from "payload";
 
 import { leemOsDois, ninguemEscrevePorAPI } from "../access/consumidores";
+import { revalidarAppAoApagar, revalidarAppAoMudar } from "../hooks/revalidarApp";
 
 import { CallToAction } from "../blocks/CallToAction";
 import { RichText } from "../blocks/RichText";
@@ -91,6 +92,15 @@ export const Destinations: CollectionConfig = {
     },
     versions: { drafts: true },
     hooks: {
+        /*
+         * A app guarda o que le daqui ate uma hora (`s-maxage`). Sem este aviso,
+         * uma correcao feita aqui so aparece em app.vruum.pt quando a cache
+         * expirar -- e quem a fez fica a olhar para o texto antigo.
+         *
+         * Nunca impede a gravacao: ver o comentario no proprio hook.
+         */
+        afterChange: [revalidarAppAoMudar],
+        afterDelete: [revalidarAppAoApagar],
         afterRead: [
             ({ doc }) => {
                 const d = doc as Record<string, unknown>;
