@@ -1,5 +1,7 @@
 import type { Field, GlobalConfig } from "payload";
 
+import { apenasSite, ninguemEscrevePorAPI } from "../access/consumidores";
+
 /**
  * Os três documentos legais: privacidade, termos e política de cookies.
  *
@@ -98,6 +100,15 @@ const seccoes = (label: string): Field => ({
 
 export const Legal: GlobalConfig = {
     slug: "legal",
+    /**
+     * Estes globals espelham os dicionarios do site institucional. A chave da
+     * aplicacao de reservas nao os le -- tem o seu proprio conteudo, e misturar
+     * os dois seria repetir o erro de ter a mesma frase escrita em dois sitios.
+     */
+    access: {
+        read: apenasSite,
+        update: ninguemEscrevePorAPI,
+    },
     label: "Documentos legais",
     admin: {
         group: "Textos do site",

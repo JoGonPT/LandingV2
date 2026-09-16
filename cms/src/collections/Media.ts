@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 
 import type { CollectionConfig } from "payload";
 
+import { leemOsDois, ninguemEscrevePorAPI } from "../access/consumidores";
+
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /** WebP a 80. É o compromisso habitual: perde-se o que ninguém vê, poupa-se metade. */
@@ -30,6 +32,16 @@ const WEBP = { format: "webp", options: { quality: 80 } } as const;
  */
 export const Media: CollectionConfig = {
     slug: "media",
+    /**
+     * Conteudo partilhado pelos dois consumidores: o painel edita, o site e a
+     * aplicacao leem. Nenhuma chave escreve.
+     */
+    access: {
+        read: leemOsDois,
+        create: ninguemEscrevePorAPI,
+        update: ninguemEscrevePorAPI,
+        delete: ninguemEscrevePorAPI,
+    },
     labels: { singular: "Imagem", plural: "Imagens" },
     admin: {
         group: "Conteúdo",

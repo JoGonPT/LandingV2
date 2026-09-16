@@ -1,5 +1,7 @@
 import type { GlobalConfig } from "payload";
 
+import { apenasSite, ninguemEscrevePorAPI } from "../access/consumidores";
+
 /**
  * O formulário de reserva e todo o funil que se lhe segue — 78 textos, de longe
  * a maior secção do site.
@@ -15,6 +17,15 @@ import type { GlobalConfig } from "payload";
  */
 export const Booking: GlobalConfig = {
     slug: "booking",
+    /**
+     * Estes globals espelham os dicionarios do site institucional. A chave da
+     * aplicacao de reservas nao os le -- tem o seu proprio conteudo, e misturar
+     * os dois seria repetir o erro de ter a mesma frase escrita em dois sitios.
+     */
+    access: {
+        read: apenasSite,
+        update: ninguemEscrevePorAPI,
+    },
     label: "Reserva",
     admin: {
         group: "Textos do site",

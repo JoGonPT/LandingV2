@@ -190,17 +190,24 @@ export default buildConfig({
     // às chaves de `src/dictionaries/*.json`. A forma dos dados mantém-se, para
     // que ligar o site ao CMS não obrigue a mexer nos componentes.
     globals: [Common, Hero, Booking, Faq, Footer, Cookies, Legal],
-    // Os dois idiomas que o site serve — ver `LOCALES` em `src/lib/site.ts` e o
-    // matcher em `src/middleware.ts`. Não são os cinco da página "Em breve", que
-    // é um componente à parte com traduções próprias e não passa por aqui.
+    // Cinco idiomas, não dois. O site institucional serve `pt` e `en` — ver
+    // `LOCALES` em `src/lib/site.ts`; a aplicação de reservas em app.vruum.pt serve
+    // os cinco, e a localização no Payload é GLOBAL à configuração, não por coleção.
     //
-    // `fallback` faz o inglês por preencher cair no português em vez de mostrar
-    // um vazio: num site que vende viagens, texto em falta é pior do que texto
-    // no idioma errado.
+    // Consequência para o site institucional: os campos passam a ter `fr`, `es` e
+    // `de` no painel, vazios. Com o `fallback` ligado devolvem português, portanto o
+    // site não muda — mas quem edita passa a ver três separadores que não usa.
+    //
+    // `fallback` faz um idioma por preencher cair no português em vez de mostrar um
+    // vazio: num site que vende viagens, texto em falta é pior do que texto no
+    // idioma errado.
     localization: {
         locales: [
             { code: "pt", label: "Português" },
             { code: "en", label: "English" },
+            { code: "fr", label: "Français" },
+            { code: "es", label: "Español" },
+            { code: "de", label: "Deutsch" },
         ],
         defaultLocale: "pt",
         fallback: true,

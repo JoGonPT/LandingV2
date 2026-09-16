@@ -1,6 +1,8 @@
 import { convertLexicalToHTML, defaultHTMLConverters } from "@payloadcms/richtext-lexical/html";
 import type { CollectionConfig } from "payload";
 
+import { leemOsDois, ninguemEscrevePorAPI } from "../access/consumidores";
+
 import { CallToAction } from "../blocks/CallToAction";
 import { RichText } from "../blocks/RichText";
 
@@ -70,6 +72,16 @@ function converterBlocos(body: unknown): unknown {
  */
 export const Destinations: CollectionConfig = {
     slug: "destinations",
+    /**
+     * Conteudo partilhado pelos dois consumidores: o painel edita, o site e a
+     * aplicacao leem. Nenhuma chave escreve.
+     */
+    access: {
+        read: leemOsDois,
+        create: ninguemEscrevePorAPI,
+        update: ninguemEscrevePorAPI,
+        delete: ninguemEscrevePorAPI,
+    },
     labels: { singular: "Destino", plural: "Destinos" },
     admin: {
         group: "Conteúdo",

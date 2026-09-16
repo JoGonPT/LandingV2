@@ -1,11 +1,22 @@
 import type { GlobalConfig } from "payload";
 
+import { apenasSite, ninguemEscrevePorAPI } from "../access/consumidores";
+
 /**
  * O rodapé. Onze rótulos, incluindo os títulos das colunas e o texto curto
  * sobre a empresa.
  */
 export const Footer: GlobalConfig = {
     slug: "footer",
+    /**
+     * Estes globals espelham os dicionarios do site institucional. A chave da
+     * aplicacao de reservas nao os le -- tem o seu proprio conteudo, e misturar
+     * os dois seria repetir o erro de ter a mesma frase escrita em dois sitios.
+     */
+    access: {
+        read: apenasSite,
+        update: ninguemEscrevePorAPI,
+    },
     label: "Rodapé",
     admin: {
         group: "Textos do site",
