@@ -135,7 +135,10 @@ export const Destinations: CollectionConfig = {
             type: "text",
             label: "Cidade",
             localized: true,
-            admin: { description: "O nome só por si, para listagens e migalhas. Ex.: «Guimarães»." },
+            admin: {
+                description:
+                    "O nome só por si, para listagens e migalhas. Ex.: «Guimarães». É também a outra ponta da medição de distância que dá o preço «desde» na aplicação de reservas — por isso tem de ser um sítio que um mapa reconheça.",
+            },
         },
         {
             name: "subtitle",
@@ -223,11 +226,29 @@ export const Destinations: CollectionConfig = {
             label: "Dados da rota",
             admin: {
                 description:
-                    "Valores indicativos, para o visitante saber o que esperar. Não alimentam o motor de preços — esse continua a ser o TransferCRM.",
+                    "A ORIGEM e a CIDADE são o que faz aparecer o preço «desde» na aplicação de reservas: ela mede a estrada entre as duas e pergunta ao motor. Sem uma delas, o destino aparece sem preço. Os outros campos aqui são indicativos.",
             },
             fields: [
-                { name: "origin", type: "text", label: "Origem", localized: true, admin: { description: "Ex.: «Aeroporto Francisco Sá Carneiro (OPO)»." } },
-                { name: "distanceKm", type: "number", label: "Distância (km)", min: 0 },
+                {
+                    name: "origin",
+                    type: "text",
+                    label: "Origem",
+                    localized: true,
+                    admin: {
+                        description:
+                            "A morada de recolha, escrita como a escreveria num mapa — ex.: «Aeroporto Francisco Sá Carneiro (OPO), Maia». É daqui que a aplicação mede a distância real, por isso vale mais ser preciso do que bonito.",
+                    },
+                },
+                {
+                    name: "distanceKm",
+                    type: "number",
+                    label: "Distância (km)",
+                    min: 0,
+                    admin: {
+                        description:
+                            "Apenas indicativo, para o texto. NÃO é usado para calcular o preço — a aplicação mede a estrada entre a origem e a cidade. Escrever 15 aqui não faz o preço descer.",
+                    },
+                },
                 { name: "durationMin", type: "number", label: "Duração (minutos)", min: 0 },
                 { name: "priceFrom", type: "number", label: "Preço desde (€)", min: 0, admin: { description: "Só indicativo. O preço real vem sempre do orçamento." } },
             ],
