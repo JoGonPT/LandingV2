@@ -3,6 +3,9 @@ import { fileURLToPath } from "node:url";
 
 import type { CollectionConfig } from "payload";
 
+import { leemOsDois, ninguemEscrevePorAPI } from "../access/consumidores";
+import { revalidarAppAoMudar } from "../hooks/revalidarApp";
+
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /** WebP a 80. É o compromisso habitual: perde-se o que ninguém vê, poupa-se metade. */
@@ -30,6 +33,21 @@ const WEBP = { format: "webp", options: { quality: 80 } } as const;
  */
 export const Media: CollectionConfig = {
     slug: "media",
+    /*
+     * As imagens dos destinos vivem aqui. Mudar o texto alternativo de uma sem
+     * avisar deixaria a app a servir o antigo ate a cache expirar.
+     */
+    hooks: { afterChange: [revalidarAppAoMudar] },
+    /**
+     * Conteudo partilhado pelos dois consumidores: o painel edita, o site e a
+     * aplicacao leem. Nenhuma chave escreve.
+     */
+    access: {
+        read: leemOsDois,
+        create: ninguemEscrevePorAPI,
+        update: ninguemEscrevePorAPI,
+        delete: ninguemEscrevePorAPI,
+    },
     labels: { singular: "Imagem", plural: "Imagens" },
     admin: {
         group: "Conteúdo",

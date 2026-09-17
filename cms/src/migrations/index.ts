@@ -7,6 +7,7 @@ import * as migration_20260831_081642_imagens from './20260831_081642_imagens';
 import * as migration_20260901_225040_chave_api from './20260901_225040_chave_api';
 import * as migration_20260902_010202_aeroporto from './20260902_010202_aeroporto';
 import * as migration_20260902_081939_blocos from './20260902_081939_blocos';
+import * as migration_20260916_222542_consumidores_e_idiomas from './20260916_222542_consumidores_e_idiomas';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20260902_081939_blocos.up,
     down: migration_20260902_081939_blocos.down,
-    name: '20260902_081939_blocos'
+    name: '20260902_081939_blocos',
+  },
+  {
+    up: migration_20260916_222542_consumidores_e_idiomas.up,
+    down: migration_20260916_222542_consumidores_e_idiomas.down,
+    name: '20260916_222542_consumidores_e_idiomas'
   },
 ];

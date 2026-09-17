@@ -1,5 +1,7 @@
 import type { GlobalConfig } from "payload";
 
+import { apenasSite, ninguemEscrevePorAPI } from "../access/consumidores";
+
 /**
  * Rótulos que aparecem em várias páginas — navegação, estados de carregamento,
  * o aviso de direitos de autor.
@@ -10,6 +12,15 @@ import type { GlobalConfig } from "payload";
  */
 export const Common: GlobalConfig = {
     slug: "common",
+    /**
+     * Estes globals espelham os dicionarios do site institucional. A chave da
+     * aplicacao de reservas nao os le -- tem o seu proprio conteudo, e misturar
+     * os dois seria repetir o erro de ter a mesma frase escrita em dois sitios.
+     */
+    access: {
+        read: apenasSite,
+        update: ninguemEscrevePorAPI,
+    },
     label: "Comuns",
     admin: {
         group: "Textos do site",

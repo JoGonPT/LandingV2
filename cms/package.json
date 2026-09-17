@@ -16,7 +16,10 @@
     "migrate": "payload migrate",
     "migrate:status": "payload migrate:status",
     "importar": "payload run src/scripts/importar-dicionarios.ts",
-    "exemplo:porto": "payload run src/scripts/exemplo-porto.ts"
+    "exemplo:porto": "payload run src/scripts/exemplo-porto.ts",
+    "corrigir:pagamento": "payload run src/scripts/corrigir-pagamento.ts",
+    "traduzir:destinos": "payload run src/scripts/traduzir-destinos.ts",
+    "criar:aveiro-braga": "payload run src/scripts/criar-aveiro-braga.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",

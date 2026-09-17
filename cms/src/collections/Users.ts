@@ -1,5 +1,7 @@
 import type { CollectionConfig } from "payload";
 
+import { apenasPainel } from "../access/consumidores";
+
 /**
  * Utilizadores do CMS.
  *
@@ -25,6 +27,19 @@ export const Users: CollectionConfig = {
      * lista, e apagá-lo por engano corta o conteúdo do site.
      */
     auth: { useAPIKey: true },
+    /**
+     * A leitura fica fechada a pessoas do painel.
+     *
+     * Esta e a colecao onde vivem as chaves de API. Com o comportamento por
+     * omissao do Payload, uma chave podia ler as outras -- e a razao de haver
+     * chaves separadas e poder revogar uma sem cortar a outra.
+     */
+    access: {
+        read: apenasPainel,
+        create: apenasPainel,
+        update: apenasPainel,
+        delete: apenasPainel,
+    },
     admin: {
         useAsTitle: "email",
         defaultColumns: ["email", "name", "updatedAt"],
@@ -34,6 +49,29 @@ export const Users: CollectionConfig = {
             name: "name",
             type: "text",
             label: "Nome",
+        },
+        {
+            /**
+             * Quem e este utilizador, para efeitos de acesso.
+             *
+             * Sem valor significa pessoa do painel -- e o que os utilizadores
+             * antigos sao, e e por isso que esta alteracao nao parte nada do que
+             * ja existe. Uma chave de maquina tem de ser marcada de proposito.
+             */
+            name: "consumer",
+            type: "select",
+            label: "Tipo de acesso",
+            defaultValue: "painel",
+            options: [
+                { label: "Pessoa (painel)", value: "painel" },
+                { label: "Chave do site institucional", value: "site" },
+                { label: "Chave da aplicacao de reservas", value: "app" },
+            ],
+            admin: {
+                position: "sidebar",
+                description:
+                    "As chaves de maquina nao entram no painel e leem apenas o que lhes diz respeito. Uma chave marcada como «site» nao le o conteudo da aplicacao, e vice-versa.",
+            },
         },
     ],
 };
