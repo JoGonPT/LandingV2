@@ -9,3 +9,6 @@ node_modules/
 # Contrapartida: não estão na base de dados nem no repositório, por isso têm de
 # entrar na rotina de cópias do alojamento.
 media/
+
+# imagens descarregadas para o script de criacao de destinos
+.imagens-temp/

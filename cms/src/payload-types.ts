@@ -88,7 +88,12 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('pt' | 'en') | ('pt' | 'en')[];
+  fallbackLocale:
+    | ('false' | 'none' | 'null')
+    | false
+    | null
+    | ('pt' | 'en' | 'fr' | 'es' | 'de')
+    | ('pt' | 'en' | 'fr' | 'es' | 'de')[];
   globals: {
     common: Common;
     hero: Hero;
@@ -107,7 +112,7 @@ export interface Config {
     cookies: CookiesSelect<false> | CookiesSelect<true>;
     legal: LegalSelect<false> | LegalSelect<true>;
   };
-  locale: 'pt' | 'en';
+  locale: 'pt' | 'en' | 'fr' | 'es' | 'de';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -142,6 +147,10 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  /**
+   * As chaves de maquina nao entram no painel e leem apenas o que lhes diz respeito. Uma chave marcada como «site» nao le o conteudo da aplicacao, e vice-versa.
+   */
+  consumer?: ('painel' | 'site' | 'app') | null;
   updatedAt: string;
   createdAt: string;
   enableAPIKey?: boolean | null;
@@ -181,7 +190,7 @@ export interface Destination {
    */
   title: string;
   /**
-   * O nome só por si, para listagens e migalhas. Ex.: «Guimarães».
+   * O nome só por si, para listagens e migalhas. Ex.: «Guimarães». É também a outra ponta da medição de distância que dá o preço «desde» na aplicação de reservas — por isso tem de ser um sítio que um mapa reconheça.
    */
   city?: string | null;
   subtitle?: string | null;
@@ -287,13 +296,16 @@ export interface Destination {
    */
   order?: number | null;
   /**
-   * Valores indicativos, para o visitante saber o que esperar. Não alimentam o motor de preços — esse continua a ser o TransferCRM.
+   * A ORIGEM e a CIDADE são o que faz aparecer o preço «desde» na aplicação de reservas: ela mede a estrada entre as duas e pergunta ao motor. Sem uma delas, o destino aparece sem preço. Os outros campos aqui são indicativos.
    */
   route?: {
     /**
-     * Ex.: «Aeroporto Francisco Sá Carneiro (OPO)».
+     * A morada de recolha, escrita como a escreveria num mapa — ex.: «Aeroporto Francisco Sá Carneiro (OPO), Maia». É daqui que a aplicação mede a distância real, por isso vale mais ser preciso do que bonito.
      */
     origin?: string | null;
+    /**
+     * Apenas indicativo, para o texto. NÃO é usado para calcular o preço — a aplicação mede a estrada entre a origem e a cidade. Escrever 15 aqui não faz o preço descer.
+     */
     distanceKm?: number | null;
     durationMin?: number | null;
     /**
@@ -460,6 +472,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  consumer?: T;
   updatedAt?: T;
   createdAt?: T;
   enableAPIKey?: T;
